@@ -32,7 +32,7 @@ export function ChatInterface() {
     {
       id: "1",
       role: "ai",
-      content: "TrustHub connected. I'm running on Dolphin 3 with enhanced privacy protocols. How can I assist you?",
+      content: "TrustHub connected. How can I assist you today?",
       timestamp: new Date().toISOString(),
     }
   ]);
