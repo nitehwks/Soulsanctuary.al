@@ -387,10 +387,37 @@ Guidelines:
         }))
       ];
 
-      const completion = await openai.chat.completions.create({
-        model: "cognitivecomputations/dolphin-mistral-24b-venice-edition:free",
-        messages: openaiMessages,
-      });
+      // Models to try in order (fallback chain for rate limiting)
+      const models = [
+        "cognitivecomputations/dolphin-mistral-24b-venice-edition:free",
+        "meta-llama/llama-3.2-3b-instruct:free",
+        "google/gemma-2-9b-it:free",
+        "mistralai/mistral-7b-instruct:free"
+      ];
+      
+      let completion = null;
+      let lastError = null;
+      
+      for (const model of models) {
+        try {
+          completion = await openai.chat.completions.create({
+            model,
+            messages: openaiMessages,
+          });
+          break; // Success, exit loop
+        } catch (err: any) {
+          lastError = err;
+          if (err.status === 429) {
+            console.log(`Rate limited on ${model}, trying next model...`);
+            continue; // Try next model
+          }
+          throw err; // Non-rate-limit error, throw immediately
+        }
+      }
+      
+      if (!completion) {
+        throw lastError || new Error("All AI models are currently rate-limited. Please try again in a moment.");
+      }
 
       const aiContent = completion.choices[0]?.message?.content || "I'm sorry, I couldn't generate a response.";
 
