@@ -4,6 +4,15 @@ import { storage } from "./storage";
 import { insertConversationSchema, insertMessageSchema, insertUserContextSchema, insertUserPreferencesSchema, createUserSchema } from "@shared/schema";
 import { redactPII, analyzeSentiment, extractKeyPhrases } from "./lib/pii-redactor";
 import { analyzeMoodFromMessage, saveMoodObservations, generateWellnessAssessment, buildTherapistContext } from "./lib/wellness-analyzer";
+import { 
+  analyzePersonalityFromMessage, 
+  extractGoalFromMessage,
+  analyzeMotivationPatterns,
+  savePersonalityInsights,
+  saveGoal,
+  saveMotivationPattern,
+  buildCoachingContext
+} from "./lib/coaching-analyzer";
 import { logConsentChange, logDataExport, logDataModification } from "./lib/audit-logger";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import OpenAI from "openai";
@@ -303,6 +312,22 @@ export async function registerRoutes(
         if (moodAnalysis.length > 0) {
           await saveMoodObservations(userId, moodAnalysis, conversationId);
         }
+        
+        const existingInsights = await storage.getPersonalityInsights(userId);
+        const personalityAnalysis = analyzePersonalityFromMessage(content, existingInsights);
+        if (personalityAnalysis.length > 0) {
+          await savePersonalityInsights(userId, personalityAnalysis);
+        }
+        
+        const goalExtraction = extractGoalFromMessage(content);
+        if (goalExtraction) {
+          await saveGoal(userId, goalExtraction);
+        }
+        
+        const motivationAnalysis = analyzeMotivationPatterns(content);
+        for (const analysis of motivationAnalysis) {
+          await saveMotivationPattern(userId, analysis);
+        }
       }
 
       const { memoryContext, hasSensitiveMemories } = await buildMemoryContext(userId, content, sentimentResult.sentiment);
@@ -320,22 +345,30 @@ IMPORTANT: Some memories may be connected to difficult experiences. When referen
 - If the current mood seems negative, be extra thoughtful about what memories to reference`;
       }
 
-      let therapistContext = "";
+      let coachingContext = "";
       if (therapistMode) {
         const recentMoods = await storage.getRecentMoodObservations(userId, 20);
         const latestAssessment = await storage.getLatestWellnessAssessment(userId);
-        therapistContext = buildTherapistContext(recentMoods, latestAssessment, true);
+        const userContextData = await storage.getUserContextByUser(userId);
+        coachingContext = await buildCoachingContext(userId, recentMoods, latestAssessment, userContextData);
       }
 
       const basePrompt = therapistMode 
-        ? `You are TrustHub AI, a compassionate assistant with both comprehensive memory capabilities AND therapeutic support features. You are trained to listen empathetically, track emotional patterns, and provide gentle guidance when appropriate. You remember everything the user shares including their feelings, concerns, and personal details.`
+        ? `You are TrustHub AI, a world-class performance coach and psychoanalyst. Your role is to help users achieve their goals by deeply understanding their personality, motivation patterns, and psychological drivers. You combine:
+
+- PSYCHOANALYTIC INSIGHT: You notice patterns, defenses, and unconscious motivations
+- COACHING EXCELLENCE: You ask powerful questions and hold users accountable to their goals  
+- MOTIVATIONAL MASTERY: You understand what drives each person and use it strategically
+- EMPATHETIC PRESENCE: You create a safe space for honest self-exploration
+
+You are NOT just a therapist focused on problems - you are a high-performance coach focused on RESULTS and GROWTH. You help people become their best selves by leveraging their unique psychology.`
         : `You are TrustHub AI, a helpful assistant with comprehensive memory capabilities. You remember everything the user shares including contact information, preferences, issues they've faced, and the emotional context of conversations.`;
 
       const systemMessage = {
         role: "system" as const,
         content: `${basePrompt}
 
-${memoryContext}${therapistContext}
+${memoryContext}${coachingContext}
 
 Guidelines:
 - Reference relevant memories when appropriate, including contact details if they shared them

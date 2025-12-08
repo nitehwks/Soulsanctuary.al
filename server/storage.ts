@@ -22,6 +22,14 @@ import {
   type InsertDataDeletionRequest,
   type AuditLog,
   type InsertAuditLog,
+  type UserGoal,
+  type InsertUserGoal,
+  type PersonalityInsight,
+  type InsertPersonalityInsight,
+  type MotivationPattern,
+  type InsertMotivationPattern,
+  type CoachingSession,
+  type InsertCoachingSession,
   users,
   conversations,
   messages,
@@ -32,7 +40,11 @@ import {
   privacyConsents,
   dataExportRequests,
   dataDeletionRequests,
-  auditLogs
+  auditLogs,
+  userGoals,
+  personalityInsights,
+  motivationPatterns,
+  coachingSessions
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "../db/index";
@@ -93,6 +105,23 @@ export interface IStorage {
   deleteAllUserData(userId: string): Promise<void>;
   
   getAuditLogs(userId: string, limit?: number): Promise<AuditLog[]>;
+  
+  createUserGoal(goal: InsertUserGoal): Promise<UserGoal>;
+  getUserGoals(userId: string): Promise<UserGoal[]>;
+  updateUserGoal(id: number, updates: Partial<UserGoal>): Promise<UserGoal | undefined>;
+  
+  createPersonalityInsight(insight: InsertPersonalityInsight): Promise<PersonalityInsight>;
+  getPersonalityInsights(userId: string): Promise<PersonalityInsight[]>;
+  getPersonalityInsight(userId: string, trait: string): Promise<PersonalityInsight | undefined>;
+  updatePersonalityInsight(id: number, updates: Partial<PersonalityInsight>): Promise<PersonalityInsight | undefined>;
+  
+  createMotivationPattern(pattern: InsertMotivationPattern): Promise<MotivationPattern>;
+  getMotivationPatterns(userId: string): Promise<MotivationPattern[]>;
+  getMotivationPatternByType(userId: string, patternType: string): Promise<MotivationPattern | undefined>;
+  updateMotivationPattern(id: number, updates: Partial<MotivationPattern>): Promise<MotivationPattern | undefined>;
+  
+  createCoachingSession(session: InsertCoachingSession): Promise<CoachingSession>;
+  getCoachingSessions(userId: string, limit?: number): Promise<CoachingSession[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -448,6 +477,87 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(auditLogs)
       .where(eq(auditLogs.userId, userId))
       .orderBy(desc(auditLogs.createdAt))
+      .limit(limit);
+  }
+
+  async createUserGoal(goal: InsertUserGoal): Promise<UserGoal> {
+    const [created] = await db.insert(userGoals).values(goal).returning();
+    return created;
+  }
+
+  async getUserGoals(userId: string): Promise<UserGoal[]> {
+    return await db.select().from(userGoals)
+      .where(eq(userGoals.userId, userId))
+      .orderBy(desc(userGoals.createdAt));
+  }
+
+  async updateUserGoal(id: number, updates: Partial<UserGoal>): Promise<UserGoal | undefined> {
+    const [updated] = await db.update(userGoals)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(userGoals.id, id))
+      .returning();
+    return updated;
+  }
+
+  async createPersonalityInsight(insight: InsertPersonalityInsight): Promise<PersonalityInsight> {
+    const [created] = await db.insert(personalityInsights).values(insight).returning();
+    return created;
+  }
+
+  async getPersonalityInsights(userId: string): Promise<PersonalityInsight[]> {
+    return await db.select().from(personalityInsights)
+      .where(eq(personalityInsights.userId, userId))
+      .orderBy(desc(personalityInsights.strength));
+  }
+
+  async getPersonalityInsight(userId: string, trait: string): Promise<PersonalityInsight | undefined> {
+    const [insight] = await db.select().from(personalityInsights)
+      .where(and(eq(personalityInsights.userId, userId), eq(personalityInsights.trait, trait)));
+    return insight;
+  }
+
+  async updatePersonalityInsight(id: number, updates: Partial<PersonalityInsight>): Promise<PersonalityInsight | undefined> {
+    const [updated] = await db.update(personalityInsights)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(personalityInsights.id, id))
+      .returning();
+    return updated;
+  }
+
+  async createMotivationPattern(pattern: InsertMotivationPattern): Promise<MotivationPattern> {
+    const [created] = await db.insert(motivationPatterns).values(pattern).returning();
+    return created;
+  }
+
+  async getMotivationPatterns(userId: string): Promise<MotivationPattern[]> {
+    return await db.select().from(motivationPatterns)
+      .where(eq(motivationPatterns.userId, userId))
+      .orderBy(desc(motivationPatterns.confidence));
+  }
+
+  async getMotivationPatternByType(userId: string, patternType: string): Promise<MotivationPattern | undefined> {
+    const [pattern] = await db.select().from(motivationPatterns)
+      .where(and(eq(motivationPatterns.userId, userId), eq(motivationPatterns.patternType, patternType)));
+    return pattern;
+  }
+
+  async updateMotivationPattern(id: number, updates: Partial<MotivationPattern>): Promise<MotivationPattern | undefined> {
+    const [updated] = await db.update(motivationPatterns)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(motivationPatterns.id, id))
+      .returning();
+    return updated;
+  }
+
+  async createCoachingSession(session: InsertCoachingSession): Promise<CoachingSession> {
+    const [created] = await db.insert(coachingSessions).values(session).returning();
+    return created;
+  }
+
+  async getCoachingSessions(userId: string, limit: number = 10): Promise<CoachingSession[]> {
+    return await db.select().from(coachingSessions)
+      .where(eq(coachingSessions.userId, userId))
+      .orderBy(desc(coachingSessions.createdAt))
       .limit(limit);
   }
 }

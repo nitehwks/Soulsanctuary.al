@@ -158,6 +158,65 @@ export const dataDeletionRequests = pgTable("data_deletion_requests", {
   completedAt: timestamp("completed_at"),
 });
 
+export const userGoals = pgTable("user_goals", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  category: text("category").notNull(),
+  status: text("status").default("active"),
+  priority: integer("priority").default(5),
+  targetDate: timestamp("target_date"),
+  progressNotes: text("progress_notes").array(),
+  motivators: text("motivators").array(),
+  obstacles: text("obstacles").array(),
+  strategies: text("strategies").array(),
+  milestones: jsonb("milestones"),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const personalityInsights = pgTable("personality_insights", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  traitCategory: text("trait_category").notNull(),
+  trait: text("trait").notNull(),
+  strength: integer("strength").default(50),
+  evidence: text("evidence").array(),
+  implications: text("implications"),
+  coachingApproach: text("coaching_approach"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const motivationPatterns = pgTable("motivation_patterns", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  patternType: text("pattern_type").notNull(),
+  description: text("description").notNull(),
+  triggers: text("triggers").array(),
+  responses: text("responses").array(),
+  effectiveStrategies: text("effective_strategies").array(),
+  ineffectiveStrategies: text("ineffective_strategies").array(),
+  confidence: integer("confidence").default(50),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const coachingSessions = pgTable("coaching_sessions", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  conversationId: integer("conversation_id").references(() => conversations.id),
+  focus: text("focus").notNull(),
+  insights: text("insights").array(),
+  actionItems: text("action_items").array(),
+  breakthroughs: text("breakthroughs").array(),
+  resistanceNoted: text("resistance_noted"),
+  nextSteps: text("next_steps"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -278,3 +337,39 @@ export type InsertDataExportRequest = z.infer<typeof insertDataExportRequestSche
 
 export type DataDeletionRequest = typeof dataDeletionRequests.$inferSelect;
 export type InsertDataDeletionRequest = z.infer<typeof insertDataDeletionRequestSchema>;
+
+export const insertUserGoalSchema = createInsertSchema(userGoals).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  completedAt: true,
+});
+
+export const insertPersonalityInsightSchema = createInsertSchema(personalityInsights).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertMotivationPatternSchema = createInsertSchema(motivationPatterns).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertCoachingSessionSchema = createInsertSchema(coachingSessions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type UserGoal = typeof userGoals.$inferSelect;
+export type InsertUserGoal = z.infer<typeof insertUserGoalSchema>;
+
+export type PersonalityInsight = typeof personalityInsights.$inferSelect;
+export type InsertPersonalityInsight = z.infer<typeof insertPersonalityInsightSchema>;
+
+export type MotivationPattern = typeof motivationPatterns.$inferSelect;
+export type InsertMotivationPattern = z.infer<typeof insertMotivationPatternSchema>;
+
+export type CoachingSession = typeof coachingSessions.$inferSelect;
+export type InsertCoachingSession = z.infer<typeof insertCoachingSessionSchema>;
