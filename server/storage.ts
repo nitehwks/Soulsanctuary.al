@@ -13,13 +13,25 @@ import {
   type InsertMoodObservation,
   type WellnessAssessment,
   type InsertWellnessAssessment,
+  type PrivacyConsent,
+  type InsertPrivacyConsent,
+  type DataExportRequest,
+  type InsertDataExportRequest,
+  type DataDeletionRequest,
+  type InsertDataDeletionRequest,
+  type AuditLog,
+  type InsertAuditLog,
   users,
   conversations,
   messages,
   userContext,
   userPreferences,
   moodObservations,
-  wellnessAssessments
+  wellnessAssessments,
+  privacyConsents,
+  dataExportRequests,
+  dataDeletionRequests,
+  auditLogs
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "../db/index";
@@ -57,6 +69,25 @@ export interface IStorage {
   createWellnessAssessment(assessment: InsertWellnessAssessment): Promise<WellnessAssessment>;
   getLatestWellnessAssessment(userId: string): Promise<WellnessAssessment | undefined>;
   getWellnessAssessmentHistory(userId: string, limit?: number): Promise<WellnessAssessment[]>;
+  
+  createPrivacyConsent(consent: InsertPrivacyConsent): Promise<PrivacyConsent>;
+  getPrivacyConsents(userId: string): Promise<PrivacyConsent[]>;
+  updatePrivacyConsent(userId: string, consentType: string, granted: boolean): Promise<PrivacyConsent | undefined>;
+  
+  createDataExportRequest(request: InsertDataExportRequest): Promise<DataExportRequest>;
+  getDataExportRequests(userId: string): Promise<DataExportRequest[]>;
+  updateDataExportRequest(id: number, updates: Partial<DataExportRequest>): Promise<DataExportRequest | undefined>;
+  
+  createDataDeletionRequest(request: InsertDataDeletionRequest): Promise<DataDeletionRequest>;
+  getDataDeletionRequests(userId: string): Promise<DataDeletionRequest[]>;
+  updateDataDeletionRequest(id: number, updates: Partial<DataDeletionRequest>): Promise<DataDeletionRequest | undefined>;
+  
+  deleteUserMessages(userId: string): Promise<number>;
+  deleteUserContext(userId: string): Promise<number>;
+  deleteUserMoodData(userId: string): Promise<number>;
+  deleteAllUserData(userId: string): Promise<void>;
+  
+  getAuditLogs(userId: string, limit?: number): Promise<AuditLog[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -256,6 +287,128 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(wellnessAssessments)
       .where(eq(wellnessAssessments.userId, userId))
       .orderBy(desc(wellnessAssessments.createdAt))
+      .limit(limit);
+  }
+
+  async createPrivacyConsent(consent: InsertPrivacyConsent): Promise<PrivacyConsent> {
+    const [created] = await db.insert(privacyConsents).values(consent).returning();
+    return created;
+  }
+
+  async getPrivacyConsents(userId: string): Promise<PrivacyConsent[]> {
+    return await db.select().from(privacyConsents)
+      .where(eq(privacyConsents.userId, userId))
+      .orderBy(desc(privacyConsents.createdAt));
+  }
+
+  async updatePrivacyConsent(userId: string, consentType: string, granted: boolean): Promise<PrivacyConsent | undefined> {
+    const existing = await db.select().from(privacyConsents)
+      .where(and(eq(privacyConsents.userId, userId), eq(privacyConsents.consentType, consentType)))
+      .limit(1);
+
+    if (existing.length > 0) {
+      const [updated] = await db.update(privacyConsents)
+        .set({ 
+          granted, 
+          grantedAt: granted ? new Date() : null,
+          revokedAt: granted ? null : new Date()
+        })
+        .where(eq(privacyConsents.id, existing[0].id))
+        .returning();
+      return updated;
+    } else {
+      return this.createPrivacyConsent({
+        userId,
+        consentType,
+        granted,
+        grantedAt: granted ? new Date() : null
+      });
+    }
+  }
+
+  async createDataExportRequest(request: InsertDataExportRequest): Promise<DataExportRequest> {
+    const [created] = await db.insert(dataExportRequests).values(request).returning();
+    return created;
+  }
+
+  async getDataExportRequests(userId: string): Promise<DataExportRequest[]> {
+    return await db.select().from(dataExportRequests)
+      .where(eq(dataExportRequests.userId, userId))
+      .orderBy(desc(dataExportRequests.createdAt));
+  }
+
+  async updateDataExportRequest(id: number, updates: Partial<DataExportRequest>): Promise<DataExportRequest | undefined> {
+    const [updated] = await db.update(dataExportRequests)
+      .set(updates)
+      .where(eq(dataExportRequests.id, id))
+      .returning();
+    return updated;
+  }
+
+  async createDataDeletionRequest(request: InsertDataDeletionRequest): Promise<DataDeletionRequest> {
+    const [created] = await db.insert(dataDeletionRequests).values(request).returning();
+    return created;
+  }
+
+  async getDataDeletionRequests(userId: string): Promise<DataDeletionRequest[]> {
+    return await db.select().from(dataDeletionRequests)
+      .where(eq(dataDeletionRequests.userId, userId))
+      .orderBy(desc(dataDeletionRequests.createdAt));
+  }
+
+  async updateDataDeletionRequest(id: number, updates: Partial<DataDeletionRequest>): Promise<DataDeletionRequest | undefined> {
+    const [updated] = await db.update(dataDeletionRequests)
+      .set(updates)
+      .where(eq(dataDeletionRequests.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteUserMessages(userId: string): Promise<number> {
+    const userConversations = await this.getConversationsByUser(userId);
+    const conversationIds = userConversations.map(c => c.id);
+    
+    if (conversationIds.length === 0) return 0;
+    
+    const deleted = await db.delete(messages)
+      .where(sql`${messages.conversationId} IN (${sql.join(conversationIds, sql`, `)})`)
+      .returning();
+    
+    await db.delete(conversations).where(eq(conversations.userId, userId));
+    
+    return deleted.length;
+  }
+
+  async deleteUserContext(userId: string): Promise<number> {
+    const deleted = await db.delete(userContext)
+      .where(eq(userContext.userId, userId))
+      .returning();
+    return deleted.length;
+  }
+
+  async deleteUserMoodData(userId: string): Promise<number> {
+    const moodDeleted = await db.delete(moodObservations)
+      .where(eq(moodObservations.userId, userId))
+      .returning();
+    
+    await db.delete(wellnessAssessments)
+      .where(eq(wellnessAssessments.userId, userId));
+    
+    return moodDeleted.length;
+  }
+
+  async deleteAllUserData(userId: string): Promise<void> {
+    await this.deleteUserMessages(userId);
+    await this.deleteUserContext(userId);
+    await this.deleteUserMoodData(userId);
+    await db.delete(userPreferences).where(eq(userPreferences.userId, userId));
+    await db.delete(privacyConsents).where(eq(privacyConsents.userId, userId));
+  }
+
+  async getAuditLogs(userId: string, limit: number = 100): Promise<AuditLog[]> {
+    return await db.select().from(auditLogs)
+      .where(eq(auditLogs.userId, userId))
+      .orderBy(desc(auditLogs.createdAt))
       .limit(limit);
   }
 }

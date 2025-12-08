@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Send, Mic, MicOff, PanelLeftClose, PanelLeft, Heart } from "lucide-react";
+import { Send, Mic, MicOff, PanelLeftClose, PanelLeft, Heart, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { ConversationList } from "./ConversationList";
 import { WellnessPanel } from "./WellnessPanel";
+import { PrivacyDashboard } from "./PrivacyDashboard";
 
 interface IWindow extends Window {
   webkitSpeechRecognition: any;
@@ -31,6 +32,7 @@ export function ChatInterface() {
   const [conversationId, setConversationId] = useState<number | null>(null);
   const [showSidebar, setShowSidebar] = useState(true);
   const [showWellness, setShowWellness] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   const { toast } = useToast();
@@ -244,7 +246,7 @@ export function ChatInterface() {
           <span className="text-xs text-muted-foreground ml-2">
             {messages.length > 0 ? `${messages.length} messages` : "Start chatting"}
           </span>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-1">
             <Button
               variant={showWellness ? "secondary" : "ghost"}
               size="icon"
@@ -253,6 +255,15 @@ export function ChatInterface() {
               data-testid="button-toggle-wellness"
             >
               <Heart className={cn("h-4 w-4", showWellness && "text-rose-400")} />
+            </Button>
+            <Button
+              variant={showPrivacy ? "secondary" : "ghost"}
+              size="icon"
+              onClick={() => setShowPrivacy(!showPrivacy)}
+              className="h-8 w-8"
+              data-testid="button-toggle-privacy"
+            >
+              <Shield className={cn("h-4 w-4", showPrivacy && "text-emerald-400")} />
             </Button>
           </div>
         </div>
@@ -388,6 +399,12 @@ export function ChatInterface() {
           />
         )}
       </AnimatePresence>
+
+      <PrivacyDashboard
+        isOpen={showPrivacy}
+        onClose={() => setShowPrivacy(false)}
+        userId={userId}
+      />
     </div>
   );
 }

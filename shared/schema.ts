@@ -76,6 +76,70 @@ export const wellnessAssessments = pgTable("wellness_assessments", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const auditLogs = pgTable("audit_logs", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  action: text("action").notNull(),
+  resourceType: text("resource_type").notNull(),
+  resourceId: text("resource_id"),
+  details: text("details"),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  success: boolean("success").default(true),
+  errorMessage: text("error_message"),
+  chainHash: text("chain_hash").notNull(),
+  previousHash: text("previous_hash").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const dataRetentionPolicies = pgTable("data_retention_policies", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  resourceType: text("resource_type").notNull(),
+  retentionDays: integer("retention_days").default(365),
+  autoDelete: boolean("auto_delete").default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const privacyConsents = pgTable("privacy_consents", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  consentType: text("consent_type").notNull(),
+  granted: boolean("granted").default(false),
+  grantedAt: timestamp("granted_at"),
+  revokedAt: timestamp("revoked_at"),
+  version: text("version").default("1.0"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const dataExportRequests = pgTable("data_export_requests", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  status: text("status").default("pending"),
+  format: text("format").default("json"),
+  includeMessages: boolean("include_messages").default(true),
+  includeContext: boolean("include_context").default(true),
+  includeMoodData: boolean("include_mood_data").default(true),
+  downloadUrl: text("download_url"),
+  expiresAt: timestamp("expires_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  completedAt: timestamp("completed_at"),
+});
+
+export const dataDeletionRequests = pgTable("data_deletion_requests", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  status: text("status").default("pending"),
+  deleteMessages: boolean("delete_messages").default(true),
+  deleteContext: boolean("delete_context").default(true),
+  deleteMoodData: boolean("delete_mood_data").default(true),
+  deleteAccount: boolean("delete_account").default(false),
+  scheduledFor: timestamp("scheduled_for"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  completedAt: timestamp("completed_at"),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -136,3 +200,46 @@ export type InsertMoodObservation = z.infer<typeof insertMoodObservationSchema>;
 
 export type WellnessAssessment = typeof wellnessAssessments.$inferSelect;
 export type InsertWellnessAssessment = z.infer<typeof insertWellnessAssessmentSchema>;
+
+export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertDataRetentionPolicySchema = createInsertSchema(dataRetentionPolicies).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPrivacyConsentSchema = createInsertSchema(privacyConsents).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertDataExportRequestSchema = createInsertSchema(dataExportRequests).omit({
+  id: true,
+  createdAt: true,
+  completedAt: true,
+});
+
+export const insertDataDeletionRequestSchema = createInsertSchema(dataDeletionRequests).omit({
+  id: true,
+  createdAt: true,
+  completedAt: true,
+});
+
+export type AuditLog = typeof auditLogs.$inferSelect;
+export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
+
+export type DataRetentionPolicy = typeof dataRetentionPolicies.$inferSelect;
+export type InsertDataRetentionPolicy = z.infer<typeof insertDataRetentionPolicySchema>;
+
+export type PrivacyConsent = typeof privacyConsents.$inferSelect;
+export type InsertPrivacyConsent = z.infer<typeof insertPrivacyConsentSchema>;
+
+export type DataExportRequest = typeof dataExportRequests.$inferSelect;
+export type InsertDataExportRequest = z.infer<typeof insertDataExportRequestSchema>;
+
+export type DataDeletionRequest = typeof dataDeletionRequests.$inferSelect;
+export type InsertDataDeletionRequest = z.infer<typeof insertDataDeletionRequestSchema>;

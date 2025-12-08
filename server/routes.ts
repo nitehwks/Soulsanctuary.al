@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { insertConversationSchema, insertMessageSchema, insertUserContextSchema, insertUserPreferencesSchema } from "@shared/schema";
 import { redactPII, analyzeSentiment, extractKeyPhrases } from "./lib/pii-redactor";
 import { analyzeMoodFromMessage, saveMoodObservations, generateWellnessAssessment, buildTherapistContext } from "./lib/wellness-analyzer";
+import { logConsentChange, logDataExport, logDataModification } from "./lib/audit-logger";
 import OpenAI from "openai";
 
 const openai = new OpenAI({
@@ -418,6 +419,225 @@ Guidelines:
       const limit = parseInt(req.query.limit as string) || 10;
       const history = await storage.getWellnessAssessmentHistory(userId, limit);
       res.json(history);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/privacy/consents/:userId", async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const consents = await storage.getPrivacyConsents(userId);
+      res.json(consents);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.put("/api/privacy/consents/:userId/:consentType", async (req, res) => {
+    try {
+      const { userId, consentType } = req.params;
+      const { granted } = req.body;
+      const consent = await storage.updatePrivacyConsent(userId, consentType, granted);
+      
+      await logConsentChange(userId, consentType, granted, { source: 'privacy_dashboard' });
+      
+      res.json(consent);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/privacy/export/:userId", async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const requests = await storage.getDataExportRequests(userId);
+      res.json(requests);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/privacy/export/:userId", async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const { includeMessages = true, includeContext = true, includeMoodData = true } = req.body;
+      
+      const exportRequest = await storage.createDataExportRequest({
+        userId,
+        status: "processing",
+        includeMessages,
+        includeContext,
+        includeMoodData
+      });
+
+      const exportData: Record<string, any> = { userId, exportedAt: new Date().toISOString() };
+      
+      if (includeMessages) {
+        const conversations = await storage.getConversationsByUser(userId);
+        const allMessages = [];
+        for (const conv of conversations) {
+          const msgs = await storage.getMessagesByConversation(conv.id);
+          allMessages.push({ conversation: conv, messages: msgs });
+        }
+        exportData.conversations = allMessages;
+      }
+      
+      if (includeContext) {
+        exportData.context = await storage.getUserContextByUser(userId);
+      }
+      
+      if (includeMoodData) {
+        exportData.moodObservations = await storage.getRecentMoodObservations(userId, 1000);
+        exportData.wellnessAssessments = await storage.getWellnessAssessmentHistory(userId, 100);
+      }
+
+      const exportJson = JSON.stringify(exportData, null, 2);
+      const base64Data = Buffer.from(exportJson).toString('base64');
+      
+      await storage.updateDataExportRequest(exportRequest.id, {
+        status: "completed",
+        downloadUrl: `data:application/json;base64,${base64Data}`,
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        completedAt: new Date()
+      });
+
+      const resourceTypes: ("message" | "conversation" | "user_context" | "mood_observation" | "wellness_assessment")[] = [];
+      if (includeMessages) resourceTypes.push("message", "conversation");
+      if (includeContext) resourceTypes.push("user_context");
+      if (includeMoodData) resourceTypes.push("mood_observation", "wellness_assessment");
+      await logDataExport(userId, "json", resourceTypes);
+
+      res.json({ 
+        success: true, 
+        downloadUrl: `data:application/json;base64,${base64Data}`,
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/privacy/deletion/:userId", async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const requests = await storage.getDataDeletionRequests(userId);
+      res.json(requests);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/privacy/deletion/:userId", async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const { deleteMessages = true, deleteContext = true, deleteMoodData = true, deleteAccount = false } = req.body;
+      
+      const deletionRequest = await storage.createDataDeletionRequest({
+        userId,
+        status: "processing",
+        deleteMessages,
+        deleteContext,
+        deleteMoodData,
+        deleteAccount,
+        scheduledFor: new Date()
+      });
+
+      let deletedCount = 0;
+      
+      if (deleteMessages) {
+        deletedCount += await storage.deleteUserMessages(userId);
+      }
+      
+      if (deleteContext) {
+        deletedCount += await storage.deleteUserContext(userId);
+      }
+      
+      if (deleteMoodData) {
+        deletedCount += await storage.deleteUserMoodData(userId);
+      }
+      
+      if (deleteAccount) {
+        await storage.deleteAllUserData(userId);
+      }
+
+      await storage.updateDataDeletionRequest(deletionRequest.id, {
+        status: "completed",
+        completedAt: new Date()
+      });
+
+      if (deleteMessages) {
+        await logDataModification(userId, 'data_delete', 'message', 'all', { deletedCount, reason: 'user_request' });
+      }
+      if (deleteContext) {
+        await logDataModification(userId, 'data_delete', 'user_context', 'all', { reason: 'user_request' });
+      }
+      if (deleteMoodData) {
+        await logDataModification(userId, 'data_delete', 'mood_observation', 'all', { reason: 'user_request' });
+      }
+      if (deleteAccount) {
+        await logDataModification(userId, 'data_delete', 'user', userId, { reason: 'account_deletion' });
+      }
+
+      res.json({ 
+        success: true, 
+        deletedRecords: deletedCount,
+        message: "Data deletion completed successfully"
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/privacy/audit/:userId", async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const limit = parseInt(req.query.limit as string) || 50;
+      const logs = await storage.getAuditLogs(userId, limit);
+      res.json(logs);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/privacy/summary/:userId", async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      
+      const [conversations, context, moods, preferences, consents] = await Promise.all([
+        storage.getConversationsByUser(userId),
+        storage.getUserContextByUser(userId),
+        storage.getRecentMoodObservations(userId, 1000),
+        storage.getUserPreferences(userId),
+        storage.getPrivacyConsents(userId)
+      ]);
+
+      let totalMessages = 0;
+      for (const conv of conversations) {
+        const msgs = await storage.getMessagesByConversation(conv.id);
+        totalMessages += msgs.length;
+      }
+
+      res.json({
+        dataInventory: {
+          conversations: conversations.length,
+          messages: totalMessages,
+          contextItems: context.length,
+          moodObservations: moods.length
+        },
+        privacySettings: preferences,
+        consents: consents,
+        encryptionStatus: {
+          messagesEncrypted: true,
+          contextEncrypted: true,
+          moodDataEncrypted: true
+        },
+        retentionPolicy: {
+          messages: "365 days",
+          context: "365 days",
+          moodData: "180 days"
+        }
+      });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

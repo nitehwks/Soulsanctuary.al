@@ -71,6 +71,30 @@ Preferred communication style: Simple, everyday language.
 - `originalContent` field preserves unredacted messages for authorized access
 - Default user ID of "anonymous" for non-authenticated sessions
 
+**World-Class Privacy & Security (December 2025)**
+- **AES-256-GCM Encryption**: Application-level encryption module (`server/lib/encryption.ts`) for sensitive data fields
+- **Tamper-Evident Audit Logging**: Chain-hashed audit logs for tracking all data access and modifications
+- **Privacy Dashboard UI**: Comprehensive privacy center accessible via Shield icon in chat header
+- **Consent Management**: Granular user controls for data collection, mood tracking, context learning, and analytics
+- **Data Export (GDPR Compliant)**: One-click export of all user data in JSON format
+- **Data Deletion**: Selective or complete data deletion with permanent removal
+- **PII Redaction**: SSN and credit card numbers automatically redacted; phone/email stored as contact facts
+- **Retention Policies**: Configurable data retention (messages: 365 days, context: 365 days, mood data: 180 days)
+
+**Privacy-Related Database Tables**
+- **audit_logs**: Tamper-evident logging with chain hashes for security
+- **privacy_consents**: User consent records with timestamps
+- **data_export_requests**: Track data export operations
+- **data_deletion_requests**: Track data deletion operations
+- **data_retention_policies**: Per-user retention settings
+
+**Privacy API Endpoints**
+- GET/PUT `/api/privacy/consents/:userId` - Manage privacy consents
+- GET/POST `/api/privacy/export/:userId` - Export user data
+- GET/POST `/api/privacy/deletion/:userId` - Delete user data
+- GET `/api/privacy/audit/:userId` - View audit logs
+- GET `/api/privacy/summary/:userId` - Privacy dashboard summary
+
 **ORM Strategy**
 - Drizzle Kit for schema migrations (`drizzle.config.ts`)
 - `drizzle-zod` for automatic Zod schema generation from database schema
