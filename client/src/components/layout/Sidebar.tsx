@@ -1,70 +1,54 @@
-import { Home, Shield, Database, Book, Settings, Activity } from "lucide-react";
+import { Home, Shield, Database, Book, Settings, Activity, Mic } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 export function Sidebar() {
   const [location] = useLocation();
 
   const links = [
-    { href: "/", icon: Home, label: "Secure Chat" },
-    { href: "/dashboard", icon: Activity, label: "Knowledge Graph" },
-    { href: "/settings", icon: Settings, label: "Privacy Controls" },
-    { href: "/docs", icon: Book, label: "Documentation" },
+    { href: "/", icon: Home, label: "Chat" },
+    { href: "/dashboard", icon: Activity, label: "Activity" },
+    { href: "/settings", icon: Settings, label: "Settings" },
   ];
 
   return (
-    <div className="w-64 border-r border-sidebar-border bg-sidebar flex flex-col h-screen">
-      <div className="p-6 border-b border-sidebar-border">
-        <div className="flex items-center gap-2 text-primary font-heading font-bold text-xl">
-          <Shield className="h-6 w-6" />
-          <span>SecureAI Nexus</span>
-        </div>
-        <div className="mt-2 text-xs text-muted-foreground font-mono">
-          System Status: <span className="text-green-500">SECURE</span>
-        </div>
+    <div className="w-16 border-r border-border bg-card flex flex-col h-screen items-center py-4 z-20 shadow-sm">
+      <div className="mb-8 p-2 rounded-xl bg-primary/10 text-primary">
+        <Shield className="h-6 w-6" />
       </div>
 
-      <nav className="flex-1 p-4 space-y-2">
+      <nav className="flex-1 space-y-4 w-full flex flex-col items-center">
         {links.map((link) => {
           const Icon = link.icon;
           const isActive = location === link.href;
           return (
-            <Link key={link.href} href={link.href}>
-              <a
-                className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium transition-all duration-200",
-                  isActive
-                    ? "bg-sidebar-primary/10 text-sidebar-primary border border-sidebar-primary/20 shadow-[0_0_10px_rgba(0,255,255,0.1)]"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                )}
-              >
-                <Icon className="h-4 w-4" />
-                {link.label}
-              </a>
-            </Link>
+            <Tooltip key={link.href}>
+              <TooltipTrigger asChild>
+                <Link href={link.href}>
+                  <a
+                    className={cn(
+                      "p-3 rounded-xl transition-all duration-200 flex items-center justify-center",
+                      isActive
+                        ? "bg-primary text-primary-foreground shadow-md scale-105"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    )}
+                  >
+                    <Icon className="h-5 w-5" />
+                  </a>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>{link.label}</p>
+              </TooltipContent>
+            </Tooltip>
           );
         })}
       </nav>
 
-      <div className="p-4 border-t border-sidebar-border">
-        <div className="bg-sidebar-accent/50 p-4 rounded-md border border-sidebar-border">
-          <div className="text-xs text-muted-foreground mb-2 font-mono uppercase tracking-wider">
-            Connected Nodes
-          </div>
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-xs">
-              <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
-              <span className="text-foreground">CRM System</span>
-            </div>
-            <div className="flex items-center gap-2 text-xs">
-              <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse delay-75"></div>
-              <span className="text-foreground">Email Server</span>
-            </div>
-            <div className="flex items-center gap-2 text-xs">
-              <div className="h-2 w-2 rounded-full bg-yellow-500"></div>
-              <span className="text-foreground">Analytics DB</span>
-            </div>
-          </div>
+      <div className="mt-auto p-2">
+        <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-primary to-purple-500 flex items-center justify-center text-[10px] font-bold text-white cursor-pointer hover:opacity-90">
+          TH
         </div>
       </div>
     </div>
