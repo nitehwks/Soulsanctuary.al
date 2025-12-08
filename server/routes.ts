@@ -10,6 +10,44 @@ const openai = new OpenAI({
   apiKey: process.env.AI_INTEGRATIONS_OPENROUTER_API_KEY,
 });
 
+function generateConversationTitle(content: string): string {
+  const cleanContent = content.trim().replace(/\s+/g, ' ');
+  
+  if (!cleanContent || cleanContent.length === 0) {
+    return "New Conversation";
+  }
+  
+  const questionMatch = cleanContent.match(/^(what|how|why|when|where|who|can|could|would|should|is|are|do|does|will)[^.!?]*[?]/i);
+  if (questionMatch) {
+    let question = questionMatch[0];
+    if (question.length > 40) {
+      question = question.substring(0, 37) + "...";
+    }
+    return question;
+  }
+  
+  const statementMatch = cleanContent.match(/^(i want|i need|i'm looking|help me|tell me|show me|explain|create|build|make|write|find|search)[^.!?]*/i);
+  if (statementMatch) {
+    let statement = statementMatch[0];
+    if (statement.length > 40) {
+      statement = statement.substring(0, 37) + "...";
+    }
+    return statement;
+  }
+  
+  const firstSentence = cleanContent.split(/[.!?]/)[0];
+  if (firstSentence && firstSentence.length <= 40) {
+    return firstSentence;
+  }
+  
+  if (firstSentence && firstSentence.length > 0) {
+    const words = firstSentence.split(' ').slice(0, 6).join(' ');
+    return words + "...";
+  }
+  
+  return "New Conversation";
+}
+
 async function extractFactsFromMessage(content: string, userId: string) {
   const patterns = [
     { regex: /(?:i am|i'm|my name is)\s+(\w+)/i, category: "Name" },
@@ -190,8 +228,9 @@ Guidelines:
         wasObfuscated: false,
       });
 
-      if (conversationHistory.length <= 2) {
-        const title = content.substring(0, 50) + (content.length > 50 ? "..." : "");
+      const conversation = await storage.getConversation(conversationId);
+      if (conversation && (!conversation.title || conversation.title === "New Conversation")) {
+        const title = generateConversationTitle(redactionResult.redactedContent);
         await storage.updateConversationTitle(conversationId, title);
       }
 
