@@ -103,13 +103,20 @@ export function ChatInterface() {
 
     // Simulate Dolphin 3 AI processing
     setTimeout(() => {
+      const lowerContent = userMessage.content.toLowerCase();
       const hasSensitive = /\b[\w\.-]+@[\w\.-]+\.\w{2,4}\b|\d{3}-\d{3}-\d{4}/.test(userMessage.content);
+      const isMemoryRequest = lowerContent.includes("remember") || lowerContent.includes("previous") || lowerContent.includes("recall") || lowerContent.includes("search") || lowerContent.includes("topic");
       
       let responseContent = "I've processed your request using the Dolphin 3 8B parameter model.";
+      let systemAction = null;
+
       if (hasSensitive) {
           responseContent = "I noticed some sensitive contact information in your message. Per TrustHub protocols, this has been redacted from my long-term memory store.";
-      } else if (userMessage.content.toLowerCase().includes("database") || userMessage.content.toLowerCase().includes("planetscale")) {
+      } else if (lowerContent.includes("database") || lowerContent.includes("planetscale")) {
           responseContent = "I can structure that data for PlanetScale. Would you like me to generate the schema for this interaction?";
+      } else if (isMemoryRequest) {
+          systemAction = "searching";
+          responseContent = "I've searched our previous conversations in the database. You're referring to the project architecture we discussed last Tuesday. Here is the summary of that context...";
       }
 
       const aiResponse: Message = {
@@ -117,11 +124,12 @@ export function ChatInterface() {
         role: "ai",
         content: responseContent,
         timestamp: new Date().toISOString(),
+        isObfuscated: false
       };
       
       setMessages(prev => [...prev, aiResponse]);
       setIsProcessing(false);
-    }, 1000);
+    }, 1500); // Increased delay slightly to show search effect
   };
 
   return (
@@ -175,11 +183,17 @@ export function ChatInterface() {
              <motion.div 
                initial={{ opacity: 0 }} 
                animate={{ opacity: 1 }}
-               className="flex items-center gap-2 text-xs text-muted-foreground ml-12"
+               className="flex flex-col items-start gap-2 ml-12"
              >
-               <span className="w-1.5 h-1.5 bg-primary/50 rounded-full animate-bounce"></span>
-               <span className="w-1.5 h-1.5 bg-primary/50 rounded-full animate-bounce delay-75"></span>
-               <span className="w-1.5 h-1.5 bg-primary/50 rounded-full animate-bounce delay-150"></span>
+               <div className="flex items-center gap-2 text-xs text-primary font-mono bg-primary/5 px-2 py-1 rounded border border-primary/10">
+                  <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse"></span>
+                  Querying PlanetScale Vector Index...
+               </div>
+               <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                 <span className="w-1.5 h-1.5 bg-primary/50 rounded-full animate-bounce"></span>
+                 <span className="w-1.5 h-1.5 bg-primary/50 rounded-full animate-bounce delay-75"></span>
+                 <span className="w-1.5 h-1.5 bg-primary/50 rounded-full animate-bounce delay-150"></span>
+               </div>
              </motion.div>
           )}
         </div>
