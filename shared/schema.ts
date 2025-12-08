@@ -7,6 +7,9 @@ export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
+  name: text("name"),
+  email: text("email"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const conversations = pgTable("conversations", {
@@ -143,6 +146,17 @@ export const dataDeletionRequests = pgTable("data_deletion_requests", {
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
+  name: true,
+  email: true,
+});
+
+export const createUserSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Please enter a valid email address"),
+  confirmEmail: z.string().email("Please confirm your email address"),
+}).refine((data) => data.email === data.confirmEmail, {
+  message: "Email addresses must match",
+  path: ["confirmEmail"],
 });
 
 export const insertConversationSchema = createInsertSchema(conversations).omit({
@@ -166,6 +180,7 @@ export const insertUserContextSchema = createInsertSchema(userContext).omit({
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type CreateUserInput = z.infer<typeof createUserSchema>;
 
 export type Conversation = typeof conversations.$inferSelect;
 export type InsertConversation = z.infer<typeof insertConversationSchema>;

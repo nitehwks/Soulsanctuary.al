@@ -4,12 +4,20 @@ import { PrivacyShield } from "@/components/chat/PrivacyShield";
 import { KnowledgeGraph } from "@/components/dashboard/KnowledgeGraph";
 import { MemoryPanel } from "@/components/chat/MemoryPanel";
 import { motion } from "framer-motion";
-import { ChevronRight, Database, ShieldCheck, Activity } from "lucide-react";
+import { ChevronRight, Database, ShieldCheck, Activity, LogOut, User } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { useUser } from "@/contexts/UserContext";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 export default function Home() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const { currentUser, setCurrentUser } = useUser();
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+  };
 
   return (
     <Layout>
@@ -21,12 +29,36 @@ export default function Home() {
                     TrustHub
                     <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-sans font-medium">BETA</span>
                 </h1>
-                <button 
-                  onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                  className="lg:hidden p-2 hover:bg-muted rounded-md"
-                >
-                    <Activity className="w-4 h-4" />
-                </button>
+                <div className="flex items-center gap-2">
+                  {currentUser && (
+                    <div className="flex items-center gap-2 mr-2">
+                      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                        <User className="w-3.5 h-3.5" />
+                        <span data-testid="text-current-user">{currentUser.name || currentUser.email}</span>
+                      </div>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8"
+                            onClick={handleLogout}
+                            data-testid="button-logout"
+                          >
+                            <LogOut className="w-4 h-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Switch User</TooltipContent>
+                      </Tooltip>
+                    </div>
+                  )}
+                  <button 
+                    onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                    className="lg:hidden p-2 hover:bg-muted rounded-md"
+                  >
+                      <Activity className="w-4 h-4" />
+                  </button>
+                </div>
             </div>
             <ChatInterface />
         </div>

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
+import { useUser } from "@/contexts/UserContext";
 
 interface Conversation {
   id: number;
@@ -24,25 +25,34 @@ export function ConversationList({
   onNewConversation 
 }: ConversationListProps) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchConversations = async () => {
-    try {
-      const response = await fetch('/api/conversations?userId=anonymous');
-      if (response.ok) {
-        const data = await response.json();
-        setConversations(data);
-      }
-    } catch (error) {
-      console.error('Failed to load conversations:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [loading, setLoading] = useState(false);
+  const { currentUser } = useUser();
+  const userId = currentUser?.id;
 
   useEffect(() => {
+    if (!userId) {
+      setLoading(false);
+      setConversations([]);
+      return;
+    }
+    
+    const fetchConversations = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch(`/api/conversations?userId=${userId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setConversations(data);
+        }
+      } catch (error) {
+        console.error('Failed to load conversations:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
     fetchConversations();
-  }, [currentConversationId]);
+  }, [currentConversationId, userId]);
 
   return (
     <div className="flex flex-col h-full">

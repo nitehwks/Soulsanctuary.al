@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { useUser } from "@/contexts/UserContext";
 import { ConversationList } from "./ConversationList";
 import { WellnessPanel } from "./WellnessPanel";
 import { PrivacyDashboard } from "./PrivacyDashboard";
@@ -36,7 +37,8 @@ export function ChatInterface() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   const { toast } = useToast();
-  const userId = "anonymous";
+  const { currentUser, isLoading: isUserLoading } = useUser();
+  const userId = currentUser?.id;
 
   useEffect(() => {
     const { webkitSpeechRecognition, SpeechRecognition } = window as unknown as IWindow;
@@ -65,12 +67,14 @@ export function ChatInterface() {
   }, []);
 
   const createNewConversation = async () => {
+    if (!userId) return;
+    
     try {
       const response = await fetch('/api/conversations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: 'anonymous'
+          userId
         })
       });
       
@@ -108,9 +112,14 @@ export function ChatInterface() {
   };
 
   useEffect(() => {
+    if (!userId || isUserLoading) return;
+    
     const initConversation = async () => {
       try {
-        const response = await fetch('/api/conversations?userId=anonymous');
+        setMessages([]);
+        setConversationId(null);
+        
+        const response = await fetch(`/api/conversations?userId=${userId}`);
         if (response.ok) {
           const conversations = await response.json();
           if (conversations.length > 0) {
@@ -128,7 +137,7 @@ export function ChatInterface() {
     };
     
     initConversation();
-  }, []);
+  }, [userId, isUserLoading]);
 
   const toggleListening = () => {
     if (isListening) {
@@ -154,7 +163,7 @@ export function ChatInterface() {
   }, [messages]);
 
   const handleSend = async () => {
-    if (!input.trim() || !conversationId) return;
+    if (!input.trim() || !conversationId || !userId) return;
 
     const optimisticUserMessage: Message = {
       id: Date.now(),
@@ -175,7 +184,7 @@ export function ChatInterface() {
         body: JSON.stringify({
           conversationId,
           content: currentInput,
-          userId: 'anonymous'
+          userId
         })
       });
 
