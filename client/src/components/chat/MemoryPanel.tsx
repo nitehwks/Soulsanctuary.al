@@ -1,20 +1,24 @@
 import { motion } from "framer-motion";
-import { User, Briefcase, MapPin, Tag } from "lucide-react";
+import { User, Briefcase, MapPin, Tag, Building, Heart, RefreshCw } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { useEffect, useState, useCallback } from "react";
 
 interface UserContext {
   id: number;
   category: string;
   value: string;
   confidence: number;
+  updatedAt: string;
 }
 
 const ICON_MAP: Record<string, any> = {
+  "Name": User,
   "Role": Briefcase,
   "Location": MapPin,
-  "Interest": Tag,
+  "Interest": Heart,
   "Project": Tag,
+  "Company": Building,
   "default": Tag
 };
 
@@ -22,23 +26,26 @@ export function MemoryPanel() {
   const [contextData, setContextData] = useState<UserContext[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchContext = async () => {
-      try {
-        const response = await fetch('/api/context/anonymous');
-        if (response.ok) {
-          const data = await response.json();
-          setContextData(data);
-        }
-      } catch (error) {
-        console.error('Failed to load user context:', error);
-      } finally {
-        setLoading(false);
+  const fetchContext = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/context/anonymous');
+      if (response.ok) {
+        const data = await response.json();
+        setContextData(data);
       }
-    };
-
-    fetchContext();
+    } catch (error) {
+      console.error('Failed to load user context:', error);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchContext();
+    const interval = setInterval(fetchContext, 10000);
+    return () => clearInterval(interval);
+  }, [fetchContext]);
 
   return (
     <Card className="p-4 bg-background border border-border mt-6">
@@ -47,19 +54,31 @@ export function MemoryPanel() {
           <User className="w-3 h-3" />
           Retained Context
         </h3>
-        <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium" data-testid="text-context-count">
-          {contextData.length} Facts
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium" data-testid="text-context-count">
+            {contextData.length} Facts
+          </span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={fetchContext}
+            data-testid="button-refresh-context"
+          >
+            <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
+          </Button>
+        </div>
       </div>
 
       <div className="space-y-3">
-        {loading ? (
+        {loading && contextData.length === 0 ? (
           <div className="text-center text-sm text-muted-foreground py-4">
             Loading context...
           </div>
         ) : contextData.length === 0 ? (
           <div className="text-center text-sm text-muted-foreground py-4">
-            No context learned yet
+            <p>No context learned yet</p>
+            <p className="text-[10px] mt-1 opacity-70">Tell the AI about yourself to see facts appear here</p>
           </div>
         ) : (
           contextData.map((item, i) => {
@@ -97,7 +116,7 @@ export function MemoryPanel() {
 
       <div className="mt-4 pt-3 border-t border-border">
          <div className="text-[10px] text-muted-foreground text-center">
-            Memory retention active. Facts are categorized automatically.
+            Memory retention active. Facts are extracted automatically from your conversations.
          </div>
       </div>
     </Card>

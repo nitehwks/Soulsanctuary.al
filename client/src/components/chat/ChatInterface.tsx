@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Send, Mic, MicOff } from "lucide-react";
+import { Send, Mic, MicOff, PanelLeftClose, PanelLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { ConversationList } from "./ConversationList";
 
 interface IWindow extends Window {
   webkitSpeechRecognition: any;
@@ -27,6 +28,7 @@ export function ChatInterface() {
   const [isListening, setIsListening] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversationId, setConversationId] = useState<number | null>(null);
+  const [showSidebar, setShowSidebar] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   const { toast } = useToast();
@@ -57,40 +59,71 @@ export function ChatInterface() {
     }
   }, []);
 
+  const createNewConversation = async () => {
+    try {
+      const response = await fetch('/api/conversations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: 'anonymous'
+        })
+      });
+      
+      if (!response.ok) throw new Error('Failed to create conversation');
+      
+      const conversation = await response.json();
+      setConversationId(conversation.id);
+      setMessages([]);
+    } catch (error) {
+      console.error('Failed to create conversation:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create new chat",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const loadConversation = async (id: number) => {
+    try {
+      setConversationId(id);
+      const messagesResponse = await fetch(`/api/messages/${id}`);
+      if (messagesResponse.ok) {
+        const loadedMessages = await messagesResponse.json();
+        setMessages(loadedMessages);
+      }
+    } catch (error) {
+      console.error('Failed to load conversation:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load conversation",
+        variant: "destructive"
+      });
+    }
+  };
+
   useEffect(() => {
     const initConversation = async () => {
       try {
-        const response = await fetch('/api/conversations', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: 'anonymous',
-            title: 'New Conversation'
-          })
-        });
-        
-        if (!response.ok) throw new Error('Failed to create conversation');
-        
-        const conversation = await response.json();
-        setConversationId(conversation.id);
-        
-        const messagesResponse = await fetch(`/api/messages/${conversation.id}`);
-        if (messagesResponse.ok) {
-          const loadedMessages = await messagesResponse.json();
-          setMessages(loadedMessages);
+        const response = await fetch('/api/conversations?userId=anonymous');
+        if (response.ok) {
+          const conversations = await response.json();
+          if (conversations.length > 0) {
+            loadConversation(conversations[0].id);
+          } else {
+            createNewConversation();
+          }
+        } else {
+          createNewConversation();
         }
       } catch (error) {
-        console.error('Failed to initialize conversation:', error);
-        toast({
-          title: "Error",
-          description: "Failed to initialize chat session",
-          variant: "destructive"
-        });
+        console.error('Failed to initialize:', error);
+        createNewConversation();
       }
     };
     
     initConversation();
-  }, [toast]);
+  }, []);
 
   const toggleListening = () => {
     if (isListening) {
@@ -176,114 +209,158 @@ export function ChatInterface() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-background relative">
-      <ScrollArea className="flex-1 px-4 py-8" ref={scrollRef}>
-        <div className="max-w-3xl mx-auto space-y-8 pb-4">
-          <AnimatePresence initial={false}>
-            {messages.map((msg) => (
-              <motion.div
-                key={msg.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={cn(
-                  "flex gap-4",
-                  msg.role === "user" ? "justify-end" : "justify-start"
-                )}
-                data-testid={`message-${msg.role}-${msg.id}`}
-              >
-                {msg.role === "assistant" && (
-                  <Avatar className="h-8 w-8 border border-border bg-background">
-                    <AvatarFallback className="text-[10px] font-bold text-primary">D3</AvatarFallback>
-                  </Avatar>
-                )}
-                
-                <div className={cn(
-                  "max-w-[80%]",
-                  msg.role === "user" ? "text-right" : "text-left"
-                )}>
-                  <div className={cn(
-                    "px-4 py-2.5 rounded-2xl text-sm leading-relaxed",
-                    msg.role === "user" 
-                      ? "bg-primary text-primary-foreground rounded-br-sm" 
-                      : "bg-muted text-foreground rounded-bl-sm"
-                  )}>
-                    {msg.content}
-                    {msg.wasObfuscated && (
-                      <span className="ml-2 text-[10px] opacity-60">[redacted]</span>
-                    )}
-                  </div>
-                  <div className="text-[10px] text-muted-foreground mt-1 opacity-50">
-                     {new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                  </div>
-                </div>
-
-                {msg.role === "user" && (
-                   <Avatar className="h-8 w-8 border border-border bg-muted">
-                    <AvatarFallback className="text-[10px]">ME</AvatarFallback>
-                  </Avatar>
-                )}
-              </motion.div>
-            ))}
-          </AnimatePresence>
-          
-          {isProcessing && (
-             <motion.div 
-               initial={{ opacity: 0 }} 
-               animate={{ opacity: 1 }}
-               className="flex flex-col items-start gap-2 ml-12"
-               data-testid="processing-indicator"
-             >
-               <div className="flex items-center gap-2 text-xs text-primary font-mono bg-primary/5 px-2 py-1 rounded border border-primary/10">
-                  <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse"></span>
-                  Processing with Venice AI...
-               </div>
-               <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                 <span className="w-1.5 h-1.5 bg-primary/50 rounded-full animate-bounce"></span>
-                 <span className="w-1.5 h-1.5 bg-primary/50 rounded-full animate-bounce delay-75"></span>
-                 <span className="w-1.5 h-1.5 bg-primary/50 rounded-full animate-bounce delay-150"></span>
-               </div>
-             </motion.div>
-          )}
-        </div>
-      </ScrollArea>
-
-      <div className="p-4 bg-background/80 backdrop-blur-sm sticky bottom-0 z-10 border-t border-border/40">
-        <div className="max-w-3xl mx-auto">
-          <form 
-            onSubmit={(e) => { e.preventDefault(); handleSend(); }}
-            className="flex gap-2 items-center bg-card border border-input rounded-full px-2 py-2 shadow-sm focus-within:ring-2 focus-within:ring-ring"
+    <div className="flex h-full bg-background relative">
+      <AnimatePresence initial={false}>
+        {showSidebar && (
+          <motion.div
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: 280, opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }}
+            className="border-r border-border bg-card/50 h-full overflow-hidden"
           >
-             <Button 
-              type="button" 
-              variant="ghost" 
-              size="icon" 
-              className={cn("rounded-full h-8 w-8 ml-1", isListening && "text-red-500 animate-pulse bg-red-500/10")}
-              onClick={toggleListening}
-              data-testid="button-voice"
-            >
-              {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-            </Button>
-            
-            <Input 
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask anything..."
-              className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent shadow-none px-2 font-medium"
-              data-testid="input-message"
+            <ConversationList 
+              currentConversationId={conversationId}
+              onSelectConversation={loadConversation}
+              onNewConversation={createNewConversation}
             />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="flex-1 flex flex-col min-w-0">
+        <div className="h-10 border-b border-border/50 flex items-center px-2 bg-background/50">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setShowSidebar(!showSidebar)}
+            className="h-8 w-8"
+            data-testid="button-toggle-sidebar"
+          >
+            {showSidebar ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeft className="h-4 w-4" />}
+          </Button>
+          <span className="text-xs text-muted-foreground ml-2">
+            {messages.length > 0 ? `${messages.length} messages` : "Start chatting"}
+          </span>
+        </div>
+
+        <ScrollArea className="flex-1 px-4 py-8" ref={scrollRef}>
+          <div className="max-w-3xl mx-auto space-y-8 pb-4">
+            {messages.length === 0 && (
+              <div className="text-center py-20">
+                <div className="text-4xl mb-4">💬</div>
+                <h3 className="text-lg font-medium mb-2">Welcome to TrustHub</h3>
+                <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                  I remember everything you tell me across conversations. Share something about yourself and I'll remember it for next time!
+                </p>
+              </div>
+            )}
             
-            <Button 
-              type="submit" 
-              size="icon" 
-              disabled={!input.trim() || isProcessing} 
-              className="rounded-full h-8 w-8 mr-1 bg-primary hover:bg-primary/90 shrink-0"
-              data-testid="button-send"
+            <AnimatePresence initial={false}>
+              {messages.map((msg) => (
+                <motion.div
+                  key={msg.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={cn(
+                    "flex gap-4",
+                    msg.role === "user" ? "justify-end" : "justify-start"
+                  )}
+                  data-testid={`message-${msg.role}-${msg.id}`}
+                >
+                  {msg.role === "assistant" && (
+                    <Avatar className="h-8 w-8 border border-border bg-background">
+                      <AvatarFallback className="text-[10px] font-bold text-primary">AI</AvatarFallback>
+                    </Avatar>
+                  )}
+                  
+                  <div className={cn(
+                    "max-w-[80%]",
+                    msg.role === "user" ? "text-right" : "text-left"
+                  )}>
+                    <div className={cn(
+                      "px-4 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap",
+                      msg.role === "user" 
+                        ? "bg-primary text-primary-foreground rounded-br-sm" 
+                        : "bg-muted text-foreground rounded-bl-sm"
+                    )}>
+                      {msg.content}
+                      {msg.wasObfuscated && (
+                        <span className="ml-2 text-[10px] opacity-60">[redacted]</span>
+                      )}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground mt-1 opacity-50">
+                       {new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                    </div>
+                  </div>
+
+                  {msg.role === "user" && (
+                     <Avatar className="h-8 w-8 border border-border bg-muted">
+                      <AvatarFallback className="text-[10px]">ME</AvatarFallback>
+                    </Avatar>
+                  )}
+                </motion.div>
+              ))}
+            </AnimatePresence>
+            
+            {isProcessing && (
+               <motion.div 
+                 initial={{ opacity: 0 }} 
+                 animate={{ opacity: 1 }}
+                 className="flex flex-col items-start gap-2 ml-12"
+                 data-testid="processing-indicator"
+               >
+                 <div className="flex items-center gap-2 text-xs text-primary font-mono bg-primary/5 px-2 py-1 rounded border border-primary/10">
+                    <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse"></span>
+                    Processing with Venice AI...
+                 </div>
+                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                   <span className="w-1.5 h-1.5 bg-primary/50 rounded-full animate-bounce"></span>
+                   <span className="w-1.5 h-1.5 bg-primary/50 rounded-full animate-bounce delay-75"></span>
+                   <span className="w-1.5 h-1.5 bg-primary/50 rounded-full animate-bounce delay-150"></span>
+                 </div>
+               </motion.div>
+            )}
+          </div>
+        </ScrollArea>
+
+        <div className="p-4 bg-background/80 backdrop-blur-sm sticky bottom-0 z-10 border-t border-border/40">
+          <div className="max-w-3xl mx-auto">
+            <form 
+              onSubmit={(e) => { e.preventDefault(); handleSend(); }}
+              className="flex gap-2 items-center bg-card border border-input rounded-full px-2 py-2 shadow-sm focus-within:ring-2 focus-within:ring-ring"
             >
-              <Send className="h-4 w-4" />
-            </Button>
-          </form>
-          <div className="text-center mt-2">
-            <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-medium">TrustHub Secure Environment • Venice AI</span>
+               <Button 
+                type="button" 
+                variant="ghost" 
+                size="icon" 
+                className={cn("rounded-full h-8 w-8 ml-1", isListening && "text-red-500 animate-pulse bg-red-500/10")}
+                onClick={toggleListening}
+                data-testid="button-voice"
+              >
+                {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+              </Button>
+              
+              <Input 
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Ask anything..."
+                className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent shadow-none px-2 font-medium"
+                data-testid="input-message"
+              />
+              
+              <Button 
+                type="submit" 
+                size="icon" 
+                disabled={!input.trim() || isProcessing} 
+                className="rounded-full h-8 w-8 mr-1 bg-primary hover:bg-primary/90 shrink-0"
+                data-testid="button-send"
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            </form>
+            <div className="text-center mt-2">
+              <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-medium">TrustHub Secure Environment • Venice AI</span>
+            </div>
           </div>
         </div>
       </div>
