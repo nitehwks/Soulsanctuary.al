@@ -480,7 +480,7 @@ Guidelines:
           intensity: m.intensity,
           createdAt: m.createdAt
         })),
-        topicsDiscussed: [...new Set(moodData.map(m => m.topic))].slice(0, 10)
+        topicsDiscussed: Array.from(new Set(moodData.map(m => m.topic))).slice(0, 10)
       };
       
       res.json({

@@ -23,7 +23,7 @@ export default function Home() {
   const [showKnowledge, setShowKnowledge] = useState(false);
   const [mode, setMode] = useState<ChatMode>("chat");
   const [dbStatus, setDbStatus] = useState<"connected" | "disconnected" | "checking">("checking");
-  const { user } = useAuth();
+  const { user, isGuest, logout } = useAuth();
 
   useEffect(() => {
     const checkDbStatus = async () => {
@@ -40,7 +40,7 @@ export default function Home() {
   }, []);
 
   const handleLogout = () => {
-    window.location.href = "/api/logout";
+    logout();
   };
 
   return (
@@ -106,6 +106,11 @@ export default function Home() {
                             ? `${user.firstName || ''} ${user.lastName || ''}`.trim()
                             : user.email || 'User'}
                         </span>
+                        {isGuest && (
+                          <span className="text-[10px] bg-amber-500/20 text-amber-600 px-1.5 py-0.5 rounded font-medium">
+                            Guest
+                          </span>
+                        )}
                       </div>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -119,7 +124,7 @@ export default function Home() {
                             <LogOut className="w-4 h-4" />
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>Sign Out</TooltipContent>
+                        <TooltipContent>{isGuest ? "Exit Guest Mode" : "Sign Out"}</TooltipContent>
                       </Tooltip>
                     </div>
                   )}

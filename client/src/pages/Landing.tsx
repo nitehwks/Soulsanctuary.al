@@ -8,6 +8,12 @@ export default function Landing() {
     window.location.href = "/api/login";
   };
 
+  const handleGuestAccess = () => {
+    localStorage.setItem('guestMode', 'true');
+    localStorage.setItem('guestUserId', 'guest-' + Date.now());
+    window.location.reload();
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex flex-col">
       <header className="border-b border-border/50 backdrop-blur-sm">
@@ -151,9 +157,14 @@ export default function Landing() {
           <p className="text-muted-foreground mb-4">
             Sign in with Google, Apple, GitHub, X, or email
           </p>
-          <Button size="lg" onClick={handleLogin} data-testid="button-login-bottom">
-            Sign In to Get Started
-          </Button>
+          <div className="flex gap-4 justify-center">
+            <Button size="lg" onClick={handleLogin} data-testid="button-login-bottom">
+              Sign In to Get Started
+            </Button>
+            <Button size="lg" variant="outline" onClick={handleGuestAccess} data-testid="button-guest-access">
+              Try as Guest
+            </Button>
+          </div>
         </div>
       </main>
 
