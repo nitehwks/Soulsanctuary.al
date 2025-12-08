@@ -121,6 +121,61 @@ export default function Docs() {
                     </div>
                 </section>
 
+                {/* Operating Costs */}
+                <section className="space-y-6">
+                    <h2 className="text-2xl font-bold font-heading text-primary flex items-center gap-2">
+                        <span className="w-2 h-8 bg-yellow-500 rounded-sm"></span>
+                        Projected Operating Costs
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="bg-card border border-border rounded-lg p-6">
+                             <div className="text-sm text-muted-foreground uppercase tracking-wider mb-2">Compute & Hosting</div>
+                             <div className="text-3xl font-bold font-heading mb-1">$25<span className="text-sm font-sans font-normal text-muted-foreground">/mo</span></div>
+                             <p className="text-xs text-muted-foreground mb-4">Replit Core Subscription</p>
+                             <ul className="space-y-2 text-xs text-muted-foreground">
+                                <li className="flex items-center gap-2">
+                                    <div className="w-1 h-1 bg-green-500 rounded-full"></div>
+                                    Includes 50GB Storage
+                                </li>
+                                <li className="flex items-center gap-2">
+                                    <div className="w-1 h-1 bg-green-500 rounded-full"></div>
+                                    Unlimited Bandwidth
+                                </li>
+                             </ul>
+                        </div>
+                        <div className="bg-card border border-border rounded-lg p-6">
+                             <div className="text-sm text-muted-foreground uppercase tracking-wider mb-2">AI Inference</div>
+                             <div className="text-3xl font-bold font-heading mb-1">$5<span className="text-sm font-sans font-normal text-muted-foreground">/mo</span></div>
+                             <p className="text-xs text-muted-foreground mb-4">Estimated API Usage</p>
+                             <ul className="space-y-2 text-xs text-muted-foreground">
+                                <li className="flex items-center gap-2">
+                                    <div className="w-1 h-1 bg-green-500 rounded-full"></div>
+                                    ~25M Tokens (Dolphin 3)
+                                </li>
+                                <li className="flex items-center gap-2">
+                                    <div className="w-1 h-1 bg-green-500 rounded-full"></div>
+                                    Based on OpenRouter pricing
+                                </li>
+                             </ul>
+                        </div>
+                         <div className="bg-card border border-border rounded-lg p-6">
+                             <div className="text-sm text-muted-foreground uppercase tracking-wider mb-2">Database</div>
+                             <div className="text-3xl font-bold font-heading mb-1">$0<span className="text-sm font-sans font-normal text-muted-foreground">/mo</span></div>
+                             <p className="text-xs text-muted-foreground mb-4">PlanetScale Hobby Tier</p>
+                             <ul className="space-y-2 text-xs text-muted-foreground">
+                                <li className="flex items-center gap-2">
+                                    <div className="w-1 h-1 bg-green-500 rounded-full"></div>
+                                    5GB Storage Included
+                                </li>
+                                <li className="flex items-center gap-2">
+                                    <div className="w-1 h-1 bg-green-500 rounded-full"></div>
+                                    1 Billion Row Reads/mo
+                                </li>
+                             </ul>
+                        </div>
+                    </div>
+                </section>
+
                 {/* Security */}
                 <section className="space-y-6">
                     <h2 className="text-2xl font-bold font-heading text-primary flex items-center gap-2">
