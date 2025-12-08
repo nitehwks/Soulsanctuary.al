@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Send, Mic, MicOff, PanelLeftClose, PanelLeft } from "lucide-react";
+import { Send, Mic, MicOff, PanelLeftClose, PanelLeft, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { ConversationList } from "./ConversationList";
+import { WellnessPanel } from "./WellnessPanel";
 
 interface IWindow extends Window {
   webkitSpeechRecognition: any;
@@ -29,9 +30,11 @@ export function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversationId, setConversationId] = useState<number | null>(null);
   const [showSidebar, setShowSidebar] = useState(true);
+  const [showWellness, setShowWellness] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   const { toast } = useToast();
+  const userId = "anonymous";
 
   useEffect(() => {
     const { webkitSpeechRecognition, SpeechRecognition } = window as unknown as IWindow;
@@ -241,6 +244,17 @@ export function ChatInterface() {
           <span className="text-xs text-muted-foreground ml-2">
             {messages.length > 0 ? `${messages.length} messages` : "Start chatting"}
           </span>
+          <div className="ml-auto">
+            <Button
+              variant={showWellness ? "secondary" : "ghost"}
+              size="icon"
+              onClick={() => setShowWellness(!showWellness)}
+              className="h-8 w-8"
+              data-testid="button-toggle-wellness"
+            >
+              <Heart className={cn("h-4 w-4", showWellness && "text-rose-400")} />
+            </Button>
+          </div>
         </div>
 
         <ScrollArea className="flex-1 px-4 py-8" ref={scrollRef}>
@@ -364,6 +378,16 @@ export function ChatInterface() {
           </div>
         </div>
       </div>
+
+      <AnimatePresence>
+        {showWellness && (
+          <WellnessPanel 
+            isOpen={showWellness} 
+            onClose={() => setShowWellness(false)} 
+            userId={userId}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

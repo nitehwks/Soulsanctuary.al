@@ -47,8 +47,33 @@ export const userPreferences = pgTable("user_preferences", {
   userId: text("user_id").notNull().unique(),
   storeContactInfo: boolean("store_contact_info").default(true),
   privacyLevel: text("privacy_level").default("balanced"),
+  therapistModeEnabled: boolean("therapist_mode_enabled").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const moodObservations = pgTable("mood_observations", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull().default("anonymous"),
+  topic: text("topic").notNull(),
+  mood: text("mood").notNull(),
+  attitude: text("attitude"),
+  intensity: integer("intensity").default(5),
+  observation: text("observation"),
+  conversationId: integer("conversation_id").references(() => conversations.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const wellnessAssessments = pgTable("wellness_assessments", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull().default("anonymous"),
+  overallMood: text("overall_mood").notNull(),
+  stressLevel: integer("stress_level").default(5),
+  patterns: text("patterns").array(),
+  concerns: text("concerns").array(),
+  positives: text("positives").array(),
+  advice: text("advice"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
@@ -93,5 +118,21 @@ export const insertUserPreferencesSchema = createInsertSchema(userPreferences).o
   updatedAt: true,
 });
 
+export const insertMoodObservationSchema = createInsertSchema(moodObservations).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertWellnessAssessmentSchema = createInsertSchema(wellnessAssessments).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type UserPreferences = typeof userPreferences.$inferSelect;
 export type InsertUserPreferences = z.infer<typeof insertUserPreferencesSchema>;
+
+export type MoodObservation = typeof moodObservations.$inferSelect;
+export type InsertMoodObservation = z.infer<typeof insertMoodObservationSchema>;
+
+export type WellnessAssessment = typeof wellnessAssessments.$inferSelect;
+export type InsertWellnessAssessment = z.infer<typeof insertWellnessAssessmentSchema>;

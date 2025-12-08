@@ -7,10 +7,19 @@ import {
   type InsertMessage,
   type UserContext,
   type InsertUserContext,
+  type UserPreferences,
+  type InsertUserPreferences,
+  type MoodObservation,
+  type InsertMoodObservation,
+  type WellnessAssessment,
+  type InsertWellnessAssessment,
   users,
   conversations,
   messages,
-  userContext
+  userContext,
+  userPreferences,
+  moodObservations,
+  wellnessAssessments
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "../db/index";
@@ -36,6 +45,18 @@ export interface IStorage {
   updateUserContext(id: number, value: string, confidence: number): Promise<UserContext | undefined>;
   upsertUserContext(userId: string, category: string, value: string, confidence: number): Promise<UserContext>;
   upsertUserContextWithSentiment(userId: string, category: string, value: string, confidence: number, sentiment: string, sourceContext: string): Promise<UserContext>;
+  
+  getUserPreferences(userId: string): Promise<UserPreferences | undefined>;
+  upsertUserPreferences(prefs: InsertUserPreferences): Promise<UserPreferences>;
+  
+  createMoodObservation(observation: InsertMoodObservation): Promise<MoodObservation>;
+  getMoodObservationsByUser(userId: string): Promise<MoodObservation[]>;
+  getMoodObservationsByTopic(userId: string, topic: string): Promise<MoodObservation[]>;
+  getRecentMoodObservations(userId: string, limit?: number): Promise<MoodObservation[]>;
+  
+  createWellnessAssessment(assessment: InsertWellnessAssessment): Promise<WellnessAssessment>;
+  getLatestWellnessAssessment(userId: string): Promise<WellnessAssessment | undefined>;
+  getWellnessAssessmentHistory(userId: string, limit?: number): Promise<WellnessAssessment[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -169,6 +190,73 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return created;
     }
+  }
+
+  async getUserPreferences(userId: string): Promise<UserPreferences | undefined> {
+    const [prefs] = await db.select().from(userPreferences).where(eq(userPreferences.userId, userId));
+    return prefs;
+  }
+
+  async upsertUserPreferences(prefs: InsertUserPreferences): Promise<UserPreferences> {
+    const existing = await db.select().from(userPreferences)
+      .where(eq(userPreferences.userId, prefs.userId));
+    
+    if (existing.length > 0) {
+      const [updated] = await db.update(userPreferences)
+        .set({ ...prefs, updatedAt: new Date() })
+        .where(eq(userPreferences.userId, prefs.userId))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db.insert(userPreferences)
+        .values(prefs)
+        .returning();
+      return created;
+    }
+  }
+
+  async createMoodObservation(observation: InsertMoodObservation): Promise<MoodObservation> {
+    const [created] = await db.insert(moodObservations).values(observation).returning();
+    return created;
+  }
+
+  async getMoodObservationsByUser(userId: string): Promise<MoodObservation[]> {
+    return await db.select().from(moodObservations)
+      .where(eq(moodObservations.userId, userId))
+      .orderBy(desc(moodObservations.createdAt));
+  }
+
+  async getMoodObservationsByTopic(userId: string, topic: string): Promise<MoodObservation[]> {
+    return await db.select().from(moodObservations)
+      .where(and(eq(moodObservations.userId, userId), ilike(moodObservations.topic, `%${topic}%`)))
+      .orderBy(desc(moodObservations.createdAt));
+  }
+
+  async getRecentMoodObservations(userId: string, limit: number = 20): Promise<MoodObservation[]> {
+    return await db.select().from(moodObservations)
+      .where(eq(moodObservations.userId, userId))
+      .orderBy(desc(moodObservations.createdAt))
+      .limit(limit);
+  }
+
+  async createWellnessAssessment(assessment: InsertWellnessAssessment): Promise<WellnessAssessment> {
+    const [created] = await db.insert(wellnessAssessments).values(assessment).returning();
+    return created;
+  }
+
+  async getLatestWellnessAssessment(userId: string): Promise<WellnessAssessment | undefined> {
+    const [assessment] = await db.select().from(wellnessAssessments)
+      .where(eq(wellnessAssessments.userId, userId))
+      .orderBy(desc(wellnessAssessments.createdAt))
+      .limit(1);
+    return assessment;
+  }
+
+  async getWellnessAssessmentHistory(userId: string, limit: number = 10): Promise<WellnessAssessment[]> {
+    return await db.select().from(wellnessAssessments)
+      .where(eq(wellnessAssessments.userId, userId))
+      .orderBy(desc(wellnessAssessments.createdAt))
+      .limit(limit);
   }
 }
 

@@ -1,8 +1,9 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertConversationSchema, insertMessageSchema, insertUserContextSchema } from "@shared/schema";
+import { insertConversationSchema, insertMessageSchema, insertUserContextSchema, insertUserPreferencesSchema } from "@shared/schema";
 import { redactPII, analyzeSentiment, extractKeyPhrases } from "./lib/pii-redactor";
+import { analyzeMoodFromMessage, saveMoodObservations, generateWellnessAssessment, buildTherapistContext } from "./lib/wellness-analyzer";
 import OpenAI from "openai";
 
 const openai = new OpenAI({
@@ -214,6 +215,9 @@ export async function registerRoutes(
         return res.status(400).json({ error: "conversationId and content are required" });
       }
 
+      const userPrefs = await storage.getUserPreferences(userId);
+      const therapistMode = userPrefs?.therapistModeEnabled ?? false;
+
       const redactionResult = redactPII(content);
       const sentimentResult = analyzeSentiment(content);
       const keyPhrases = extractKeyPhrases(content);
@@ -231,6 +235,13 @@ export async function registerRoutes(
 
       await extractFactsFromMessage(content, userId, sentimentResult.sentiment, redactionResult.extractedPII);
 
+      if (therapistMode) {
+        const moodAnalysis = analyzeMoodFromMessage(content, sentimentResult.sentiment, sentimentResult.score);
+        if (moodAnalysis.length > 0) {
+          await saveMoodObservations(userId, moodAnalysis, conversationId);
+        }
+      }
+
       const { memoryContext, hasSensitiveMemories } = await buildMemoryContext(userId, content, sentimentResult.sentiment);
 
       const conversationHistory = await storage.getMessagesByConversation(conversationId);
@@ -246,11 +257,22 @@ IMPORTANT: Some memories may be connected to difficult experiences. When referen
 - If the current mood seems negative, be extra thoughtful about what memories to reference`;
       }
 
+      let therapistContext = "";
+      if (therapistMode) {
+        const recentMoods = await storage.getRecentMoodObservations(userId, 20);
+        const latestAssessment = await storage.getLatestWellnessAssessment(userId);
+        therapistContext = buildTherapistContext(recentMoods, latestAssessment, true);
+      }
+
+      const basePrompt = therapistMode 
+        ? `You are TrustHub AI, a compassionate assistant with both comprehensive memory capabilities AND therapeutic support features. You are trained to listen empathetically, track emotional patterns, and provide gentle guidance when appropriate. You remember everything the user shares including their feelings, concerns, and personal details.`
+        : `You are TrustHub AI, a helpful assistant with comprehensive memory capabilities. You remember everything the user shares including contact information, preferences, issues they've faced, and the emotional context of conversations.`;
+
       const systemMessage = {
         role: "system" as const,
-        content: `You are TrustHub AI, a helpful assistant with comprehensive memory capabilities. You remember everything the user shares including contact information, preferences, issues they've faced, and the emotional context of conversations.
+        content: `${basePrompt}
 
-${memoryContext}
+${memoryContext}${therapistContext}
 
 Guidelines:
 - Reference relevant memories when appropriate, including contact details if they shared them
@@ -318,6 +340,86 @@ Guidelines:
       res.json(context);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/preferences/:userId", async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      let prefs = await storage.getUserPreferences(userId);
+      if (!prefs) {
+        prefs = await storage.upsertUserPreferences({ userId, therapistModeEnabled: false });
+      }
+      res.json(prefs);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.put("/api/preferences/:userId", async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const { therapistModeEnabled, storeContactInfo, privacyLevel } = req.body;
+      const prefs = await storage.upsertUserPreferences({ 
+        userId, 
+        therapistModeEnabled: therapistModeEnabled ?? false,
+        storeContactInfo: storeContactInfo ?? true,
+        privacyLevel: privacyLevel ?? 'balanced'
+      });
+      res.json(prefs);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/mood/:userId", async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const moods = await storage.getRecentMoodObservations(userId, 30);
+      res.json(moods);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/mood/:userId/topic/:topic", async (req, res) => {
+    try {
+      const { userId, topic } = req.params;
+      const moods = await storage.getMoodObservationsByTopic(userId, topic);
+      res.json(moods);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/wellness/:userId", async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const assessment = await storage.getLatestWellnessAssessment(userId);
+      res.json(assessment || null);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/wellness/:userId/generate", async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const assessment = await generateWellnessAssessment(userId);
+      res.json(assessment);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/wellness/:userId/history", async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const limit = parseInt(req.query.limit as string) || 10;
+      const history = await storage.getWellnessAssessmentHistory(userId, limit);
+      res.json(history);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
     }
   });
 
