@@ -84,7 +84,7 @@ export async function registerRoutes(
       }));
 
       const completion = await openai.chat.completions.create({
-        model: "cognitivecomputations/dolphin3.0-r1-mistral-24b:free",
+        model: "meta-llama/llama-4-maverick:free",
         messages: openaiMessages,
       });
 

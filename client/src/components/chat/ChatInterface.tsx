@@ -235,7 +235,7 @@ export function ChatInterface() {
              >
                <div className="flex items-center gap-2 text-xs text-primary font-mono bg-primary/5 px-2 py-1 rounded border border-primary/10">
                   <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse"></span>
-                  Processing with Dolphin 3.0...
+                  Processing with Llama 4 Maverick...
                </div>
                <div className="flex items-center gap-2 text-xs text-muted-foreground">
                  <span className="w-1.5 h-1.5 bg-primary/50 rounded-full animate-bounce"></span>
@@ -267,7 +267,7 @@ export function ChatInterface() {
             <Input 
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask Dolphin 3..."
+              placeholder="Ask anything..."
               className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent shadow-none px-2 font-medium"
               data-testid="input-message"
             />
@@ -283,7 +283,7 @@ export function ChatInterface() {
             </Button>
           </form>
           <div className="text-center mt-2">
-            <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-medium">TrustHub Secure Environment • Dolphin 3</span>
+            <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-medium">TrustHub Secure Environment • Llama 4</span>
           </div>
         </div>
       </div>
