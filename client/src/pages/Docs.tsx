@@ -145,16 +145,16 @@ export default function Docs() {
                         </div>
                         <div className="bg-card border border-border rounded-lg p-6">
                              <div className="text-sm text-muted-foreground uppercase tracking-wider mb-2">AI Inference</div>
-                             <div className="text-3xl font-bold font-heading mb-1">$5<span className="text-sm font-sans font-normal text-muted-foreground">/mo</span></div>
-                             <p className="text-xs text-muted-foreground mb-4">Estimated API Usage</p>
+                             <div className="text-3xl font-bold font-heading mb-1">$0<span className="text-sm font-sans font-normal text-muted-foreground">/mo</span></div>
+                             <p className="text-xs text-muted-foreground mb-4">OpenRouter Free Tier</p>
                              <ul className="space-y-2 text-xs text-muted-foreground">
                                 <li className="flex items-center gap-2">
                                     <div className="w-1 h-1 bg-green-500 rounded-full"></div>
-                                    ~25M Tokens (Dolphin 3)
+                                    50 reqs/day (Dolphin 3.0 Free)
                                 </li>
                                 <li className="flex items-center gap-2">
-                                    <div className="w-1 h-1 bg-green-500 rounded-full"></div>
-                                    Based on OpenRouter pricing
+                                    <div className="w-1 h-1 bg-yellow-500 rounded-full"></div>
+                                    Paid tier: ~$0.04/1M tokens
                                 </li>
                              </ul>
                         </div>

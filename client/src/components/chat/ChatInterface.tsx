@@ -111,7 +111,7 @@ export function ChatInterface() {
       let systemAction = null;
 
       if (lowerContent.includes("cost") || lowerContent.includes("pricing") || lowerContent.includes("full scale")) {
-          responseContent = "Based on Replit's latest pricing for a full-scale deployment:\n\n• Replit Core: $25/month (covers development & base usage)\n• Autoscale Deployment: Usage-based. E.g., ~75k requests/month costs ~$3.07\n• Database: PostgreSQL (10GB) is included with Core usage limits, then billed on compute time.\n\nTotal estimated start cost: ~$25-30/month for a production-ready app.";
+          responseContent = "Based on Replit's latest pricing for a full-scale deployment:\n\n• Replit Core: $25/month (covers development & base usage)\n• Autoscale Deployment: Usage-based. E.g., ~75k requests/month costs ~$3.07\n• Database: PlanetScale Hobby Tier is Free ($0/mo)\n• AI Engine: OpenRouter offers a Free Tier for Dolphin 3.0 (50 reqs/day), then ~$0.04/1M tokens.\n\nTotal estimated start cost: ~$28/month (mostly Replit Core subscription).";
       } else if (hasSensitive) {
           responseContent = "I noticed some sensitive contact information in your message. Per TrustHub protocols, this has been redacted from my long-term memory store.";
       } else if (lowerContent.includes("database") || lowerContent.includes("planetscale")) {
