@@ -54,7 +54,7 @@ export default function Home() {
                         <div className="p-3 bg-background border border-border rounded-lg flex items-center justify-between">
                              <div className="flex items-center gap-2">
                                 <Activity className="w-4 h-4 text-blue-500" />
-                                <span className="text-sm font-medium">Llama 4 Maverick</span>
+                                <span className="text-sm font-medium">Venice Uncensored</span>
                             </div>
                             <span className="text-[10px] bg-green-500/10 text-green-500 px-2 py-0.5 rounded">Active</span>
                         </div>
