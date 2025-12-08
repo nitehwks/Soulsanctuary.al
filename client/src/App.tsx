@@ -3,17 +3,17 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { UserProvider, useUser } from "@/contexts/UserContext";
+import { useAuth } from "@/hooks/useAuth";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import Dashboard from "@/pages/Dashboard";
 import SettingsPage from "@/pages/Settings";
 import Docs from "@/pages/Docs";
-import UserSelection from "@/pages/UserSelection";
+import Landing from "@/pages/Landing";
 import { Loader2 } from "lucide-react";
 
 function AuthenticatedRouter() {
-  const { currentUser, isLoading } = useUser();
+  const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -23,8 +23,8 @@ function AuthenticatedRouter() {
     );
   }
 
-  if (!currentUser) {
-    return <UserSelection />;
+  if (!isAuthenticated) {
+    return <Landing />;
   }
 
   return (
@@ -42,10 +42,8 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <UserProvider>
-          <Toaster />
-          <AuthenticatedRouter />
-        </UserProvider>
+        <Toaster />
+        <AuthenticatedRouter />
       </TooltipProvider>
     </QueryClientProvider>
   );

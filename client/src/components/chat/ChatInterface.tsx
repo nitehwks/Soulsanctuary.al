@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import { useUser } from "@/contexts/UserContext";
+import { useAuth } from "@/hooks/useAuth";
 import { ConversationList } from "./ConversationList";
 import { WellnessPanel } from "./WellnessPanel";
 import { PrivacyDashboard } from "./PrivacyDashboard";
@@ -41,8 +41,8 @@ export function ChatInterface({ mode = "chat" }: ChatInterfaceProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   const { toast } = useToast();
-  const { currentUser, isLoading: isUserLoading } = useUser();
-  const userId = currentUser?.id;
+  const { user, isLoading: isUserLoading } = useAuth();
+  const userId = user?.id;
 
   useEffect(() => {
     const { webkitSpeechRecognition, SpeechRecognition } = window as unknown as IWindow;

@@ -3,7 +3,7 @@ import { User, Briefcase, MapPin, Tag, Building, Heart, RefreshCw, Phone, Mail }
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState, useCallback } from "react";
-import { useUser } from "@/contexts/UserContext";
+import { useAuth } from "@/hooks/useAuth";
 
 interface UserContext {
   id: number;
@@ -26,10 +26,10 @@ const ICON_MAP: Record<string, any> = {
 };
 
 export function MemoryPanel() {
-  const { currentUser } = useUser();
+  const { user } = useAuth();
   const [contextData, setContextData] = useState<UserContext[]>([]);
   const [loading, setLoading] = useState(true);
-  const userId = currentUser?.id;
+  const userId = user?.id;
 
   const fetchContext = useCallback(async () => {
     if (!userId) {

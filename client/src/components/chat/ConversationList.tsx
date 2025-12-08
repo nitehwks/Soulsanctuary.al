@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
-import { useUser } from "@/contexts/UserContext";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Conversation {
   id: number;
@@ -28,8 +28,8 @@ export function ConversationList({
 }: ConversationListProps) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(false);
-  const { currentUser } = useUser();
-  const userId = currentUser?.id;
+  const { user } = useAuth();
+  const userId = user?.id;
 
   useEffect(() => {
     if (!userId) {

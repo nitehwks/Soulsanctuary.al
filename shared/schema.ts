@@ -1,15 +1,29 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, serial, timestamp, boolean, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, serial, timestamp, boolean, integer, jsonb, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: jsonb("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  },
+  (table) => [index("IDX_session_expire").on(table.expire)],
+);
+
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+  username: text("username"),
+  password: text("password"),
   name: text("name"),
-  email: text("email"),
+  email: text("email").unique(),
+  firstName: text("first_name"),
+  lastName: text("last_name"),
+  profileImageUrl: text("profile_image_url"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const conversations = pgTable("conversations", {
@@ -149,6 +163,9 @@ export const insertUserSchema = createInsertSchema(users).pick({
   password: true,
   name: true,
   email: true,
+  firstName: true,
+  lastName: true,
+  profileImageUrl: true,
 });
 
 export const createUserSchema = z.object({
@@ -182,6 +199,7 @@ export const insertUserContextSchema = createInsertSchema(userContext).omit({
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type UpsertUser = typeof users.$inferInsert;
 export type CreateUserInput = z.infer<typeof createUserSchema>;
 
 export type Conversation = typeof conversations.$inferSelect;

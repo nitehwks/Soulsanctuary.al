@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { useUser } from "@/contexts/UserContext";
+import { useAuth } from "@/hooks/useAuth";
 
 interface TopicGroup {
   category: string;
@@ -46,12 +46,12 @@ interface KnowledgePanelProps {
 }
 
 export function KnowledgePanel({ isOpen, onClose }: KnowledgePanelProps) {
-  const { currentUser } = useUser();
+  const { user } = useAuth();
   const [data, setData] = useState<KnowledgeData | null>(null);
   const [loading, setLoading] = useState(false);
   const [expandedTopic, setExpandedTopic] = useState<string | null>(null);
   
-  const userId = currentUser?.id;
+  const userId = user?.id;
 
   useEffect(() => {
     if (isOpen && userId) {

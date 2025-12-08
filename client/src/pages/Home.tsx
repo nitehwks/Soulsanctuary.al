@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { useUser } from "@/contexts/UserContext";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -23,7 +23,7 @@ export default function Home() {
   const [showKnowledge, setShowKnowledge] = useState(false);
   const [mode, setMode] = useState<ChatMode>("chat");
   const [dbStatus, setDbStatus] = useState<"connected" | "disconnected" | "checking">("checking");
-  const { currentUser, setCurrentUser } = useUser();
+  const { user } = useAuth();
 
   useEffect(() => {
     const checkDbStatus = async () => {
@@ -40,7 +40,7 @@ export default function Home() {
   }, []);
 
   const handleLogout = () => {
-    setCurrentUser(null);
+    window.location.href = "/api/logout";
   };
 
   return (
@@ -93,11 +93,19 @@ export default function Home() {
                     <TooltipContent>View all facts I've learned about you</TooltipContent>
                   </Tooltip>
                   
-                  {currentUser && (
+                  {user && (
                     <div className="flex items-center gap-2 ml-2 pl-2 border-l border-border">
                       <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                        <User className="w-3.5 h-3.5" />
-                        <span data-testid="text-current-user">{currentUser.name || currentUser.email}</span>
+                        {user.profileImageUrl ? (
+                          <img src={user.profileImageUrl} alt="" className="w-6 h-6 rounded-full" />
+                        ) : (
+                          <User className="w-3.5 h-3.5" />
+                        )}
+                        <span data-testid="text-current-user">
+                          {user.firstName || user.lastName 
+                            ? `${user.firstName || ''} ${user.lastName || ''}`.trim()
+                            : user.email || 'User'}
+                        </span>
                       </div>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -111,7 +119,7 @@ export default function Home() {
                             <LogOut className="w-4 h-4" />
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>Switch User</TooltipContent>
+                        <TooltipContent>Sign Out</TooltipContent>
                       </Tooltip>
                     </div>
                   )}
