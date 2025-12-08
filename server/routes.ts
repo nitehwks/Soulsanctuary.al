@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertConversationSchema, insertMessageSchema, insertUserContextSchema } from "@shared/schema";
-import { redactPII } from "./lib/pii-redactor";
+import { redactPII, analyzeSentiment, extractKeyPhrases } from "./lib/pii-redactor";
 import OpenAI from "openai";
 
 const openai = new OpenAI({
@@ -48,7 +48,7 @@ function generateConversationTitle(content: string): string {
   return "New Conversation";
 }
 
-async function extractFactsFromMessage(content: string, userId: string) {
+async function extractFactsFromMessage(content: string, userId: string, sentiment: string, extractedPII: { emails: string[], phones: string[] }) {
   const patterns = [
     { regex: /(?:i am|i'm|my name is)\s+(\w+)/i, category: "Name" },
     { regex: /(?:i work as|i'm a|my job is|i am a)\s+([^,.!?]+)/i, category: "Role" },
@@ -56,42 +56,74 @@ async function extractFactsFromMessage(content: string, userId: string) {
     { regex: /(?:i like|i love|i enjoy|interested in)\s+([^,.!?]+)/i, category: "Interest" },
     { regex: /(?:working on|my project|building)\s+([^,.!?]+)/i, category: "Project" },
     { regex: /(?:my company|i work at|employed at)\s+([^,.!?]+)/i, category: "Company" },
+    { regex: /(?:my number is|call me at|reach me at|phone is)\s*[:\s]*(.+)/i, category: "Phone" },
+    { regex: /(?:my email is|email me at|reach me at|contact me at)\s*[:\s]*(.+)/i, category: "Email" },
+    { regex: /(?:my address is|i live at)\s+([^,.]+)/i, category: "Address" },
+    { regex: /(?:i need|i want|looking for)\s+([^,.!?]+)/i, category: "Need" },
+    { regex: /(?:the problem is|my issue is|i'm having trouble with)\s+([^,.!?]+)/i, category: "Issue" },
   ];
+
+  const sourceContext = content.substring(0, 200);
 
   for (const { regex, category } of patterns) {
     const match = content.match(regex);
     if (match && match[1]) {
       const value = match[1].trim();
       if (value.length > 2 && value.length < 100) {
-        await storage.upsertUserContext(userId, category, value, 85);
+        await storage.upsertUserContextWithSentiment(userId, category, value, 85, sentiment, sourceContext);
       }
     }
   }
+
+  for (const email of extractedPII.emails) {
+    await storage.upsertUserContextWithSentiment(userId, "Email", email, 95, sentiment, sourceContext);
+  }
+  
+  for (const phone of extractedPII.phones) {
+    await storage.upsertUserContextWithSentiment(userId, "Phone", phone, 95, sentiment, sourceContext);
+  }
 }
 
-async function buildMemoryContext(userId: string, currentMessage: string): Promise<string> {
+async function buildMemoryContext(userId: string, currentMessage: string, currentSentiment: string): Promise<{ memoryContext: string; hasSensitiveMemories: boolean }> {
   const userContext = await storage.getUserContextByUser(userId);
   
   const keywords = currentMessage.toLowerCase().split(/\s+/).filter(w => w.length > 3);
-  let relevantMemories: string[] = [];
+  let relevantMemories: Array<{ content: string; sentiment?: string | null }> = [];
   
   if (keywords.length > 0) {
     for (const keyword of keywords.slice(0, 3)) {
       const searchResults = await storage.searchMessages(userId, keyword);
       for (const msg of searchResults.slice(0, 5)) {
-        if (!relevantMemories.includes(msg.content)) {
-          relevantMemories.push(`[${msg.role}]: ${msg.content.substring(0, 200)}`);
+        const exists = relevantMemories.some(m => m.content === msg.content);
+        if (!exists) {
+          relevantMemories.push({
+            content: `[${msg.role}]: ${msg.content.substring(0, 200)}`,
+            sentiment: msg.sentiment
+          });
         }
       }
     }
   }
 
   let memoryContext = "";
+  let hasSensitiveMemories = false;
+
+  const sensitiveContexts = userContext.filter(ctx => 
+    ctx.sentiment === 'negative' || ctx.sentiment === 'slightly_negative'
+  );
+  
+  if (sensitiveContexts.length > 0) {
+    hasSensitiveMemories = true;
+  }
   
   if (userContext.length > 0) {
     memoryContext += "Known facts about this user:\n";
     for (const ctx of userContext) {
-      memoryContext += `- ${ctx.category}: ${ctx.value}\n`;
+      let emotionNote = "";
+      if (ctx.sentiment === 'negative' || ctx.sentiment === 'slightly_negative') {
+        emotionNote = " [shared during a difficult moment]";
+      }
+      memoryContext += `- ${ctx.category}: ${ctx.value}${emotionNote}\n`;
     }
     memoryContext += "\n";
   }
@@ -99,12 +131,17 @@ async function buildMemoryContext(userId: string, currentMessage: string): Promi
   if (relevantMemories.length > 0) {
     memoryContext += "Relevant memories from past conversations:\n";
     for (const memory of relevantMemories.slice(0, 10)) {
-      memoryContext += `${memory}\n`;
+      let emotionNote = "";
+      if (memory.sentiment === 'negative' || memory.sentiment === 'slightly_negative') {
+        emotionNote = " [sensitive topic]";
+        hasSensitiveMemories = true;
+      }
+      memoryContext += `${memory.content}${emotionNote}\n`;
     }
     memoryContext += "\n";
   }
   
-  return memoryContext;
+  return { memoryContext, hasSensitiveMemories };
 }
 
 export async function registerRoutes(
@@ -178,32 +215,50 @@ export async function registerRoutes(
       }
 
       const redactionResult = redactPII(content);
+      const sentimentResult = analyzeSentiment(content);
+      const keyPhrases = extractKeyPhrases(content);
       
       const userMessage = await storage.createMessage({
         conversationId,
         role: "user",
         content: redactionResult.redactedContent,
-        originalContent: redactionResult.wasRedacted ? redactionResult.originalContent : null,
+        originalContent: redactionResult.wasRedacted ? content : null,
         wasObfuscated: redactionResult.wasRedacted,
+        sentiment: sentimentResult.sentiment,
+        sentimentScore: sentimentResult.score,
+        keyPhrases: keyPhrases,
       });
 
-      await extractFactsFromMessage(redactionResult.redactedContent, userId);
+      await extractFactsFromMessage(content, userId, sentimentResult.sentiment, redactionResult.extractedPII);
 
-      const memoryContext = await buildMemoryContext(userId, redactionResult.redactedContent);
+      const { memoryContext, hasSensitiveMemories } = await buildMemoryContext(userId, content, sentimentResult.sentiment);
 
       const conversationHistory = await storage.getMessagesByConversation(conversationId);
       
+      let sensitivityGuidelines = "";
+      if (hasSensitiveMemories || sentimentResult.sentiment === 'negative' || sentimentResult.sentiment === 'slightly_negative') {
+        sensitivityGuidelines = `
+IMPORTANT: Some memories may be connected to difficult experiences. When referencing these:
+- Be gentle and empathetic in your tone
+- Don't bring up painful details unless relevant
+- Acknowledge the user's feelings if they seem upset
+- Offer support without being patronizing
+- If the current mood seems negative, be extra thoughtful about what memories to reference`;
+      }
+
       const systemMessage = {
         role: "system" as const,
-        content: `You are TrustHub AI, a helpful assistant with memory capabilities. You remember information about users across conversations and use this context to provide personalized responses.
+        content: `You are TrustHub AI, a helpful assistant with comprehensive memory capabilities. You remember everything the user shares including contact information, preferences, issues they've faced, and the emotional context of conversations.
 
 ${memoryContext}
 
 Guidelines:
-- Reference relevant memories when appropriate
-- Remember user preferences and past discussions
-- Be helpful and conversational
-- If the user shares personal information, acknowledge it naturally`
+- Reference relevant memories when appropriate, including contact details if they shared them
+- Remember user preferences, past discussions, and issues they mentioned
+- Be helpful, warm, and conversational
+- If the user shares personal information, acknowledge it and confirm you'll remember it
+- When recalling information from difficult conversations, be sensitive and supportive
+- Store and recall key details like phone numbers, emails, and important facts${sensitivityGuidelines}`
       };
 
       const openaiMessages = [

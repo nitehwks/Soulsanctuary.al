@@ -35,6 +35,7 @@ export interface IStorage {
   getUserContextByUser(userId: string): Promise<UserContext[]>;
   updateUserContext(id: number, value: string, confidence: number): Promise<UserContext | undefined>;
   upsertUserContext(userId: string, category: string, value: string, confidence: number): Promise<UserContext>;
+  upsertUserContextWithSentiment(userId: string, category: string, value: string, confidence: number, sentiment: string, sourceContext: string): Promise<UserContext>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -147,6 +148,24 @@ export class DatabaseStorage implements IStorage {
     } else {
       const [created] = await db.insert(userContext)
         .values({ userId, category, value, confidence })
+        .returning();
+      return created;
+    }
+  }
+
+  async upsertUserContextWithSentiment(userId: string, category: string, value: string, confidence: number, sentiment: string, sourceContext: string): Promise<UserContext> {
+    const existing = await db.select().from(userContext)
+      .where(and(eq(userContext.userId, userId), eq(userContext.category, category)));
+    
+    if (existing.length > 0) {
+      const [updated] = await db.update(userContext)
+        .set({ value, confidence, sentiment, sourceContext, updatedAt: new Date() })
+        .where(eq(userContext.id, existing[0].id))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db.insert(userContext)
+        .values({ userId, category, value, confidence, sentiment, sourceContext })
         .returning();
       return created;
     }

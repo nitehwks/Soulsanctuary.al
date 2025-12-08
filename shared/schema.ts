@@ -24,6 +24,9 @@ export const messages = pgTable("messages", {
   content: text("content").notNull(),
   originalContent: text("original_content"),
   wasObfuscated: boolean("was_obfuscated").default(false),
+  sentiment: text("sentiment"),
+  sentimentScore: integer("sentiment_score"),
+  keyPhrases: text("key_phrases").array(),
   timestamp: timestamp("timestamp").defaultNow().notNull(),
 });
 
@@ -33,6 +36,17 @@ export const userContext = pgTable("user_context", {
   category: text("category").notNull(),
   value: text("value").notNull(),
   confidence: integer("confidence").default(85),
+  sentiment: text("sentiment"),
+  sourceContext: text("source_context"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const userPreferences = pgTable("user_preferences", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull().unique(),
+  storeContactInfo: boolean("store_contact_info").default(true),
+  privacyLevel: text("privacy_level").default("balanced"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -72,3 +86,12 @@ export type InsertMessage = z.infer<typeof insertMessageSchema>;
 
 export type UserContext = typeof userContext.$inferSelect;
 export type InsertUserContext = z.infer<typeof insertUserContextSchema>;
+
+export const insertUserPreferencesSchema = createInsertSchema(userPreferences).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type UserPreferences = typeof userPreferences.$inferSelect;
+export type InsertUserPreferences = z.infer<typeof insertUserPreferencesSchema>;
