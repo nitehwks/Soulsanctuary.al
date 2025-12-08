@@ -25,7 +25,11 @@ interface Message {
   wasObfuscated?: boolean;
 }
 
-export function ChatInterface() {
+interface ChatInterfaceProps {
+  mode?: "chat" | "therapist";
+}
+
+export function ChatInterface({ mode = "chat" }: ChatInterfaceProps) {
   const [input, setInput] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -74,7 +78,8 @@ export function ChatInterface() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId
+          userId,
+          mode
         })
       });
       
@@ -119,7 +124,7 @@ export function ChatInterface() {
         setMessages([]);
         setConversationId(null);
         
-        const response = await fetch(`/api/conversations?userId=${userId}`);
+        const response = await fetch(`/api/conversations?userId=${userId}&mode=${mode}`);
         if (response.ok) {
           const conversations = await response.json();
           if (conversations.length > 0) {
@@ -137,7 +142,7 @@ export function ChatInterface() {
     };
     
     initConversation();
-  }, [userId, isUserLoading]);
+  }, [userId, isUserLoading, mode]);
 
   const toggleListening = () => {
     if (isListening) {
@@ -236,6 +241,7 @@ export function ChatInterface() {
               currentConversationId={conversationId}
               onSelectConversation={loadConversation}
               onNewConversation={createNewConversation}
+              mode={mode}
             />
           </motion.div>
         )}

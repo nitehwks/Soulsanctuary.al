@@ -16,6 +16,7 @@ export const conversations = pgTable("conversations", {
   id: serial("id").primaryKey(),
   userId: text("user_id").notNull().default("anonymous"),
   title: text("title"),
+  mode: text("mode").notNull().default("chat"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -165,6 +166,7 @@ export const insertConversationSchema = createInsertSchema(conversations).omit({
   updatedAt: true,
 }).extend({
   title: z.string().nullable().optional(),
+  mode: z.enum(["chat", "therapist"]).optional().default("chat"),
 });
 
 export const insertMessageSchema = createInsertSchema(messages).omit({

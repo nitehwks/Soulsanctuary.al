@@ -1,8 +1,9 @@
 import { motion } from "framer-motion";
-import { User, Briefcase, MapPin, Tag, Building, Heart, RefreshCw } from "lucide-react";
+import { User, Briefcase, MapPin, Tag, Building, Heart, RefreshCw, Phone, Mail } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState, useCallback } from "react";
+import { useUser } from "@/contexts/UserContext";
 
 interface UserContext {
   id: number;
@@ -19,17 +20,27 @@ const ICON_MAP: Record<string, any> = {
   "Interest": Heart,
   "Project": Tag,
   "Company": Building,
+  "Phone": Phone,
+  "Email": Mail,
   "default": Tag
 };
 
 export function MemoryPanel() {
+  const { currentUser } = useUser();
   const [contextData, setContextData] = useState<UserContext[]>([]);
   const [loading, setLoading] = useState(true);
+  const userId = currentUser?.id;
 
   const fetchContext = useCallback(async () => {
+    if (!userId) {
+      setContextData([]);
+      setLoading(false);
+      return;
+    }
+    
     try {
       setLoading(true);
-      const response = await fetch('/api/context/anonymous');
+      const response = await fetch(`/api/context/${userId}`);
       if (response.ok) {
         const data = await response.json();
         setContextData(data);
@@ -39,7 +50,7 @@ export function MemoryPanel() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
     fetchContext();

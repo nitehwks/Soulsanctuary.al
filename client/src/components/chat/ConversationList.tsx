@@ -17,12 +17,14 @@ interface ConversationListProps {
   currentConversationId: number | null;
   onSelectConversation: (id: number) => void;
   onNewConversation: () => void;
+  mode?: "chat" | "therapist";
 }
 
 export function ConversationList({ 
   currentConversationId, 
   onSelectConversation, 
-  onNewConversation 
+  onNewConversation,
+  mode = "chat"
 }: ConversationListProps) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(false);
@@ -39,7 +41,7 @@ export function ConversationList({
     const fetchConversations = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`/api/conversations?userId=${userId}`);
+        const response = await fetch(`/api/conversations?userId=${userId}&mode=${mode}`);
         if (response.ok) {
           const data = await response.json();
           setConversations(data);
@@ -52,7 +54,7 @@ export function ConversationList({
     };
     
     fetchConversations();
-  }, [currentConversationId, userId]);
+  }, [currentConversationId, userId, mode]);
 
   return (
     <div className="flex flex-col h-full">

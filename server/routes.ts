@@ -219,7 +219,13 @@ export async function registerRoutes(
   app.get("/api/conversations", async (req, res) => {
     try {
       const userId = req.query.userId as string || "anonymous";
-      const conversations = await storage.getConversationsByUser(userId);
+      const mode = req.query.mode as string || undefined;
+      let conversations = await storage.getConversationsByUser(userId);
+      
+      if (mode) {
+        conversations = conversations.filter(c => c.mode === mode);
+      }
+      
       res.json(conversations);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -371,6 +377,71 @@ Guidelines:
       const userId = req.params.userId;
       const context = await storage.getUserContextByUser(userId);
       res.json(context);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/knowledge/:userId", async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const context = await storage.getUserContextByUser(userId);
+      const moodData = await storage.getRecentMoodObservations(userId, 50);
+      
+      const topicGroups: Record<string, { 
+        category: string;
+        items: Array<{ value: string; confidence: number; sentiment?: string | null }>;
+        summary: string;
+        keywords: string[];
+      }> = {};
+      
+      for (const item of context) {
+        const category = item.category;
+        if (!topicGroups[category]) {
+          topicGroups[category] = {
+            category,
+            items: [],
+            summary: "",
+            keywords: []
+          };
+        }
+        topicGroups[category].items.push({
+          value: item.value,
+          confidence: item.confidence || 85,
+          sentiment: item.sentiment
+        });
+        
+        const words = item.value.split(/\s+/).filter(w => w.length > 2);
+        for (const word of words) {
+          if (!topicGroups[category].keywords.includes(word.toLowerCase())) {
+            topicGroups[category].keywords.push(word.toLowerCase());
+          }
+        }
+      }
+      
+      for (const key of Object.keys(topicGroups)) {
+        const group = topicGroups[key];
+        const itemCount = group.items.length;
+        const avgConfidence = Math.round(group.items.reduce((sum, i) => sum + i.confidence, 0) / itemCount);
+        group.summary = `${itemCount} fact${itemCount > 1 ? 's' : ''} known with ${avgConfidence}% average confidence`;
+      }
+      
+      const moodSummary = {
+        recentMoods: moodData.slice(0, 10).map(m => ({
+          topic: m.topic,
+          mood: m.mood,
+          intensity: m.intensity,
+          createdAt: m.createdAt
+        })),
+        topicsDiscussed: [...new Set(moodData.map(m => m.topic))].slice(0, 10)
+      };
+      
+      res.json({
+        topics: Object.values(topicGroups),
+        moodSummary,
+        totalFacts: context.length,
+        totalMoodObservations: moodData.length
+      });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
