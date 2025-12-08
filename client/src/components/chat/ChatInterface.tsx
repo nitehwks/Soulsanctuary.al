@@ -1,44 +1,37 @@
 import { useState, useEffect, useRef } from "react";
-import { Send, Mic, MicOff, StopCircle, Volume2 } from "lucide-react";
+import { Send, Mic, MicOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
-// Web Speech API Types
 interface IWindow extends Window {
   webkitSpeechRecognition: any;
   SpeechRecognition: any;
 }
 
 interface Message {
-  id: string;
-  role: "user" | "ai";
+  id: number;
+  role: string;
   content: string;
   timestamp: string;
-  isObfuscated?: boolean;
+  wasObfuscated?: boolean;
 }
 
 export function ChatInterface() {
   const [input, setInput] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [conversationId, setConversationId] = useState<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
-  
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      role: "ai",
-      content: "TrustHub connected. How can I assist you today?",
-      timestamp: new Date().toISOString(),
-    }
-  ]);
+  const { toast } = useToast();
 
   useEffect(() => {
-    // Initialize Speech Recognition
     const { webkitSpeechRecognition, SpeechRecognition } = window as unknown as IWindow;
     const SpeechRecognitionAPI = SpeechRecognition || webkitSpeechRecognition;
     
@@ -64,6 +57,41 @@ export function ChatInterface() {
     }
   }, []);
 
+  useEffect(() => {
+    const initConversation = async () => {
+      try {
+        const response = await fetch('/api/conversations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: 'anonymous',
+            title: 'New Conversation'
+          })
+        });
+        
+        if (!response.ok) throw new Error('Failed to create conversation');
+        
+        const conversation = await response.json();
+        setConversationId(conversation.id);
+        
+        const messagesResponse = await fetch(`/api/messages/${conversation.id}`);
+        if (messagesResponse.ok) {
+          const loadedMessages = await messagesResponse.json();
+          setMessages(loadedMessages);
+        }
+      } catch (error) {
+        console.error('Failed to initialize conversation:', error);
+        toast({
+          title: "Error",
+          description: "Failed to initialize chat session",
+          variant: "destructive"
+        });
+      }
+    };
+    
+    initConversation();
+  }, [toast]);
+
   const toggleListening = () => {
     if (isListening) {
       recognitionRef.current?.stop();
@@ -88,50 +116,63 @@ export function ChatInterface() {
   }, [messages]);
 
   const handleSend = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() || !conversationId) return;
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
+    const optimisticUserMessage: Message = {
+      id: Date.now(),
       role: "user",
       content: input,
       timestamp: new Date().toISOString(),
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    setMessages(prev => [...prev, optimisticUserMessage]);
+    const currentInput = input;
     setInput("");
     setIsProcessing(true);
 
-    // Simulate Dolphin 3 AI processing
-    setTimeout(() => {
-      const lowerContent = userMessage.content.toLowerCase();
-      const hasSensitive = /\b[\w\.-]+@[\w\.-]+\.\w{2,4}\b|\d{3}-\d{3}-\d{4}/.test(userMessage.content);
-      const isMemoryRequest = lowerContent.includes("remember") || lowerContent.includes("previous") || lowerContent.includes("recall") || lowerContent.includes("search") || lowerContent.includes("topic");
-      
-      let responseContent = "I've processed your request using the Dolphin 3 8B parameter model.";
-      let systemAction = null;
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conversationId,
+          content: currentInput,
+          userId: 'anonymous'
+        })
+      });
 
-      if (lowerContent.includes("cost") || lowerContent.includes("pricing") || lowerContent.includes("full scale")) {
-          responseContent = "Based on Replit's latest pricing for a full-scale deployment:\n\n• Replit Core: $25/month (covers development & base usage)\n• Autoscale Deployment: Usage-based. E.g., ~75k requests/month costs ~$3.07\n• Database: PlanetScale Hobby Tier is Free ($0/mo)\n• AI Engine: OpenRouter offers a Free Tier for Dolphin 3.0 (50 reqs/day), then ~$0.04/1M tokens.\n\nTotal estimated start cost: ~$28/month (mostly Replit Core subscription).";
-      } else if (hasSensitive) {
-          responseContent = "I noticed some sensitive contact information in your message. Per TrustHub protocols, this has been redacted from my long-term memory store.";
-      } else if (lowerContent.includes("database") || lowerContent.includes("planetscale")) {
-          responseContent = "I can structure that data for PlanetScale. Would you like me to generate the schema for this interaction?";
-      } else if (isMemoryRequest) {
-          systemAction = "searching";
-          responseContent = "I've searched our previous conversations in the database. You're referring to the project architecture we discussed last Tuesday. Here is the summary of that context...";
+      if (!response.ok) {
+        throw new Error('Failed to send message');
       }
 
-      const aiResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "ai",
-        content: responseContent,
-        timestamp: new Date().toISOString(),
-        isObfuscated: false
-      };
+      const data = await response.json();
       
-      setMessages(prev => [...prev, aiResponse]);
+      setMessages(prev => {
+        const withoutOptimistic = prev.filter(m => m.id !== optimisticUserMessage.id);
+        return [...withoutOptimistic, data.userMessage, data.aiMessage];
+      });
+
+      if (data.wasRedacted) {
+        toast({
+          title: "Privacy Protection Active",
+          description: "Sensitive information was detected and redacted from storage",
+          variant: "default"
+        });
+      }
+
+    } catch (error: any) {
+      console.error('Chat error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send message",
+        variant: "destructive"
+      });
+      
+      setMessages(prev => prev.filter(m => m.id !== optimisticUserMessage.id));
+      setInput(currentInput);
+    } finally {
       setIsProcessing(false);
-    }, 1500); // Increased delay slightly to show search effect
+    }
   };
 
   return (
@@ -148,8 +189,9 @@ export function ChatInterface() {
                   "flex gap-4",
                   msg.role === "user" ? "justify-end" : "justify-start"
                 )}
+                data-testid={`message-${msg.role}-${msg.id}`}
               >
-                {msg.role === "ai" && (
+                {msg.role === "assistant" && (
                   <Avatar className="h-8 w-8 border border-border bg-background">
                     <AvatarFallback className="text-[10px] font-bold text-primary">D3</AvatarFallback>
                   </Avatar>
@@ -166,6 +208,9 @@ export function ChatInterface() {
                       : "bg-muted text-foreground rounded-bl-sm"
                   )}>
                     {msg.content}
+                    {msg.wasObfuscated && (
+                      <span className="ml-2 text-[10px] opacity-60">[redacted]</span>
+                    )}
                   </div>
                   <div className="text-[10px] text-muted-foreground mt-1 opacity-50">
                      {new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
@@ -186,10 +231,11 @@ export function ChatInterface() {
                initial={{ opacity: 0 }} 
                animate={{ opacity: 1 }}
                className="flex flex-col items-start gap-2 ml-12"
+               data-testid="processing-indicator"
              >
                <div className="flex items-center gap-2 text-xs text-primary font-mono bg-primary/5 px-2 py-1 rounded border border-primary/10">
                   <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse"></span>
-                  Querying PlanetScale Vector Index...
+                  Processing with Dolphin 3.0...
                </div>
                <div className="flex items-center gap-2 text-xs text-muted-foreground">
                  <span className="w-1.5 h-1.5 bg-primary/50 rounded-full animate-bounce"></span>
@@ -213,6 +259,7 @@ export function ChatInterface() {
               size="icon" 
               className={cn("rounded-full h-8 w-8 ml-1", isListening && "text-red-500 animate-pulse bg-red-500/10")}
               onClick={toggleListening}
+              data-testid="button-voice"
             >
               {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
             </Button>
@@ -222,6 +269,7 @@ export function ChatInterface() {
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask Dolphin 3..."
               className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent shadow-none px-2 font-medium"
+              data-testid="input-message"
             />
             
             <Button 
@@ -229,6 +277,7 @@ export function ChatInterface() {
               size="icon" 
               disabled={!input.trim() || isProcessing} 
               className="rounded-full h-8 w-8 mr-1 bg-primary hover:bg-primary/90 shrink-0"
+              data-testid="button-send"
             >
               <Send className="h-4 w-4" />
             </Button>

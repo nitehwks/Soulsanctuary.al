@@ -47,16 +47,16 @@ export default function Home() {
                         <div className="p-3 bg-background border border-border rounded-lg flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <Database className="w-4 h-4 text-primary" />
-                                <span className="text-sm font-medium">PlanetScale</span>
+                                <span className="text-sm font-medium">PostgreSQL</span>
                             </div>
-                            <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" title="Pending Connection"></div>
+                            <div className="w-2 h-2 rounded-full bg-green-500" title="Connected"></div>
                         </div>
                         <div className="p-3 bg-background border border-border rounded-lg flex items-center justify-between">
                              <div className="flex items-center gap-2">
                                 <Activity className="w-4 h-4 text-blue-500" />
-                                <span className="text-sm font-medium">AI Engine</span>
+                                <span className="text-sm font-medium">Dolphin 3.0</span>
                             </div>
-                            <span className="text-[10px] bg-blue-500/10 text-blue-500 px-2 py-0.5 rounded" title="Frontend Simulation">Simulated</span>
+                            <span className="text-[10px] bg-green-500/10 text-green-500 px-2 py-0.5 rounded">Active</span>
                         </div>
                         <div className="p-3 bg-background border border-border rounded-lg flex items-center justify-between">
                             <div className="flex items-center gap-2">
