@@ -2,6 +2,7 @@ import { Layout } from "@/components/layout/Layout";
 import { ChatInterface } from "@/components/chat/ChatInterface";
 import { PrivacyShield } from "@/components/chat/PrivacyShield";
 import { KnowledgeGraph } from "@/components/dashboard/KnowledgeGraph";
+import { MemoryPanel } from "@/components/chat/MemoryPanel";
 import { motion } from "framer-motion";
 import { ChevronRight, Database, ShieldCheck, Activity } from "lucide-react";
 import { useState } from "react";
@@ -59,6 +60,8 @@ export default function Home() {
                         </div>
                     </div>
                 </div>
+
+                <MemoryPanel />
 
                 <div>
                     <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Knowledge Graph</h3>

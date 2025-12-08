@@ -110,7 +110,9 @@ export function ChatInterface() {
       let responseContent = "I've processed your request using the Dolphin 3 8B parameter model.";
       let systemAction = null;
 
-      if (hasSensitive) {
+      if (lowerContent.includes("cost") || lowerContent.includes("pricing") || lowerContent.includes("full scale")) {
+          responseContent = "Based on Replit's latest pricing for a full-scale deployment:\n\n• Replit Core: $25/month (covers development & base usage)\n• Autoscale Deployment: Usage-based. E.g., ~75k requests/month costs ~$3.07\n• Database: PostgreSQL (10GB) is included with Core usage limits, then billed on compute time.\n\nTotal estimated start cost: ~$25-30/month for a production-ready app.";
+      } else if (hasSensitive) {
           responseContent = "I noticed some sensitive contact information in your message. Per TrustHub protocols, this has been redacted from my long-term memory store.";
       } else if (lowerContent.includes("database") || lowerContent.includes("planetscale")) {
           responseContent = "I can structure that data for PlanetScale. Would you like me to generate the schema for this interaction?";
