@@ -19,7 +19,7 @@ const getOidcConfig = memoize(
 );
 
 export function getSession() {
-  const sessionTtl = 7 * 24 * 60 * 60 * 1000;
+  const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
   const pgStore = connectPg(session);
   const sessionStore = new pgStore({
     conString: process.env.DATABASE_URL,
@@ -34,8 +34,7 @@ export function getSession() {
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+      secure: true,
       maxAge: sessionTtl,
     },
   });
@@ -79,48 +78,46 @@ export async function setupAuth(app: Express) {
     verified(null, user);
   };
 
+  // Keep track of registered strategies
   const registeredStrategies = new Set<string>();
 
-  const getCallbackUrl = (req: any): string => {
-    // Respect X-Forwarded-Proto header for proper protocol detection behind proxies
-    const protocol = req.get('X-Forwarded-Proto') || req.protocol || 'https';
-    const host = req.get('host') || req.hostname;
-    return `${protocol}://${host}/api/callback`;
-  };
-
-  const ensureStrategy = (req: any) => {
-    const callbackURL = getCallbackUrl(req);
-    const strategyName = `replitauth:${callbackURL}`;
+  // Helper function to ensure strategy exists for a domain
+  const ensureStrategy = (domain: string) => {
+    const strategyName = `replitauth:${domain}`;
     if (!registeredStrategies.has(strategyName)) {
       const strategy = new Strategy(
         {
           name: strategyName,
           config,
           scope: "openid email profile offline_access",
-          callbackURL,
+          callbackURL: `https://${domain}/api/callback`,
         },
         verify,
       );
       passport.use(strategy);
       registeredStrategies.add(strategyName);
     }
-    return strategyName;
   };
 
   passport.serializeUser((user: Express.User, cb) => cb(null, user));
   passport.deserializeUser((user: Express.User, cb) => cb(null, user));
 
   app.get("/api/login", (req, res, next) => {
-    const strategyName = ensureStrategy(req);
-    passport.authenticate(strategyName, {
+    // Use host header which includes the full domain
+    const host = req.get('host') || req.hostname;
+    console.log(`Login request - hostname: ${req.hostname}, host: ${host}, protocol: ${req.protocol}`);
+    ensureStrategy(host);
+    passport.authenticate(`replitauth:${host}`, {
       prompt: "login consent",
       scope: ["openid", "email", "profile", "offline_access"],
     })(req, res, next);
   });
 
   app.get("/api/callback", (req, res, next) => {
-    const strategyName = ensureStrategy(req);
-    passport.authenticate(strategyName, {
+    const host = req.get('host') || req.hostname;
+    console.log(`Callback request - hostname: ${req.hostname}, host: ${host}`);
+    ensureStrategy(host);
+    passport.authenticate(`replitauth:${host}`, {
       successReturnToOrRedirect: "/",
       failureRedirect: "/api/login",
     })(req, res, next);
