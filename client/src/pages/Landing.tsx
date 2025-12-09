@@ -20,7 +20,7 @@ export default function Landing() {
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Shield className="h-6 w-6 text-primary" />
-            <span className="font-heading font-bold text-xl">TrustHub</span>
+            <span className="font-heading font-bold text-xl">Insightful AI</span>
           </div>
           <Button onClick={handleLogin} data-testid="button-login-header">
             Sign In
@@ -40,7 +40,7 @@ export default function Landing() {
               <span className="text-primary"> AI Companion</span>
             </h1>
             <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              TrustHub combines intelligent conversation with world-class privacy protection. 
+              Insightful AI combines intelligent conversation with world-class privacy protection. 
               Your data stays secure with AES-256 encryption, while our AI learns and remembers 
               what matters to you.
             </p>
@@ -216,7 +216,7 @@ export default function Landing() {
 
       <footer className="border-t border-border/50 py-6">
         <div className="container mx-auto px-6 text-center text-sm text-muted-foreground">
-          <p>TrustHub - Privacy-First AI Chat Platform</p>
+          <p>Insightful AI - Privacy-First AI Companion</p>
         </div>
       </footer>
     </div>

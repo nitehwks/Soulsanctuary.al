@@ -288,7 +288,7 @@ export function ChatInterface({ mode = "chat" }: ChatInterfaceProps) {
             {messages.length === 0 && (
               <div className="text-center py-20">
                 <div className="text-4xl mb-4">💬</div>
-                <h3 className="text-lg font-medium mb-2">Welcome to TrustHub</h3>
+                <h3 className="text-lg font-medium mb-2">Welcome to Insightful AI</h3>
                 <p className="text-sm text-muted-foreground max-w-md mx-auto">
                   I remember everything you tell me across conversations. Share something about yourself and I'll remember it for next time!
                 </p>
@@ -399,7 +399,7 @@ export function ChatInterface({ mode = "chat" }: ChatInterfaceProps) {
               </Button>
             </form>
             <div className="text-center mt-2">
-              <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-medium">TrustHub Secure Environment • Venice AI</span>
+              <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-medium">Insightful AI Secure Environment</span>
             </div>
           </div>
         </div>

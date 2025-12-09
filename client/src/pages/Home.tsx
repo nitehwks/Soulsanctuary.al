@@ -51,7 +51,7 @@ export default function Home() {
             <div className="h-14 border-b border-border flex items-center justify-between px-6 bg-card/50 backdrop-blur-sm z-10">
                 <div className="flex items-center gap-4">
                   <h1 className="text-lg font-heading font-bold text-foreground flex items-center gap-2">
-                      TrustHub
+                      Insightful AI
                       <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-sans font-medium">BETA</span>
                   </h1>
                   

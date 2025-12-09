@@ -1,8 +1,8 @@
-# TrustHub - Secure AI Chat Platform
+# Insightful AI - Privacy-First AI Companion
 
 ## Overview
 
-TrustHub is a privacy-focused AI chat application powered by Dolphin 3 via OpenRouter. The platform emphasizes secure, intelligent conversations with built-in PII (Personally Identifiable Information) redaction, contextual learning, and real-time analytics. It features a modern React frontend with shadcn/ui components and an Express backend with PostgreSQL database for persistent storage.
+Insightful AI is a privacy-focused AI companion powered by multiple AI models via OpenRouter. The platform emphasizes secure, intelligent conversations with built-in PII (Personally Identifiable Information) redaction, contextual learning, evidence-based therapeutic tools (DBT, CBT, Mindfulness, etc.), and goal-oriented coaching. It features a modern React frontend with shadcn/ui components and an Express backend with PostgreSQL database for persistent storage.
 
 ## User Preferences
 
