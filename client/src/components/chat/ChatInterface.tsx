@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Send, Mic, MicOff, PanelLeftClose, PanelLeft, Heart, Shield, Target } from "lucide-react";
+import { Send, Mic, MicOff, PanelLeftClose, PanelLeft, Heart, Shield, Target, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -12,6 +12,7 @@ import { ConversationList } from "./ConversationList";
 import { WellnessPanel } from "./WellnessPanel";
 import { PrivacyDashboard } from "./PrivacyDashboard";
 import { CoachingHighlights } from "./CoachingHighlights";
+import { PsychologicalProfileCard } from "./PsychologicalProfileCard";
 
 interface IWindow extends Window {
   webkitSpeechRecognition: any;
@@ -40,6 +41,10 @@ export function ChatInterface({ mode = "chat" }: ChatInterfaceProps) {
   const [showWellness, setShowWellness] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [showCoaching, setShowCoaching] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
+  const [profileData, setProfileData] = useState<any>(null);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [coachingEligible, setCoachingEligible] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   const { toast } = useToast();
@@ -145,6 +150,62 @@ export function ChatInterface({ mode = "chat" }: ChatInterfaceProps) {
     
     initConversation();
   }, [userId, isUserLoading, mode]);
+
+  useEffect(() => {
+    if (!userId || mode !== "therapist") return;
+    
+    const checkCoachingEligibility = async () => {
+      try {
+        const response = await fetch(`/api/coaching/eligibility/${userId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setCoachingEligible(data.eligible);
+          if (data.eligible && messages.length === 0) {
+            setShowProfile(true);
+            fetchProfile();
+          }
+        }
+      } catch (error) {
+        console.error('Failed to check coaching eligibility:', error);
+      }
+    };
+    
+    checkCoachingEligibility();
+  }, [userId, mode, messages.length]);
+
+  const fetchProfile = async () => {
+    if (!userId) return;
+    
+    setProfileLoading(true);
+    try {
+      const response = await fetch(`/api/coaching/profile/${userId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setProfileData(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch profile:', error);
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
+  const handleConfirmProfile = () => {
+    toast({
+      title: "Profile Confirmed",
+      description: "Your psychological profile has been saved. Let's choose your coaching approach!",
+    });
+  };
+
+  const handleSelectModality = (modality: any) => {
+    setShowProfile(false);
+    const message = `I'd like to work with you using ${modality.name}. ${modality.reasoning}`;
+    setInput(message);
+    toast({
+      title: `${modality.name} Selected`,
+      description: "I'll tailor our sessions using this approach.",
+    });
+  };
 
   const toggleListening = () => {
     if (isListening) {
@@ -299,30 +360,60 @@ export function ChatInterface({ mode = "chat" }: ChatInterfaceProps) {
         <ScrollArea className="flex-1 px-4 py-8" ref={scrollRef}>
           <div className="max-w-3xl mx-auto space-y-8 pb-4">
             {messages.length === 0 && (
-              <div className="text-center py-20">
-                <div className="text-4xl mb-4">{mode === "therapist" ? "🎯" : "💬"}</div>
-                <h3 className="text-lg font-medium mb-2">
-                  {mode === "therapist" 
-                    ? "Welcome to Your Coaching Session" 
-                    : "Welcome to Insightful AI"}
-                </h3>
-                <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                  {mode === "therapist" 
-                    ? "I'm your performance coach and psychoanalyst. Let's unlock your potential, understand your motivations, and achieve your goals together."
-                    : "I remember everything you tell me across conversations. Share something about yourself and I'll remember it for next time!"}
-                </p>
-                {mode === "therapist" && (
-                  <div className="mt-6 flex flex-wrap gap-2 justify-center">
-                    {["Set Goals", "Explore Patterns", "Boost Motivation", "Self-Discovery"].map((topic) => (
-                      <button
-                        key={topic}
-                        onClick={() => setInput(`I want to work on: ${topic}`)}
-                        className="px-3 py-1.5 text-xs font-medium rounded-full bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 transition-colors"
-                        data-testid={`button-topic-${topic.toLowerCase().replace(" ", "-")}`}
-                      >
-                        {topic}
-                      </button>
-                    ))}
+              <div className="space-y-6">
+                {showProfile && mode === "therapist" ? (
+                  <div className="max-w-xl mx-auto">
+                    <PsychologicalProfileCard
+                      profile={profileData}
+                      isLoading={profileLoading}
+                      onConfirmProfile={handleConfirmProfile}
+                      onDismiss={() => setShowProfile(false)}
+                      onSelectModality={handleSelectModality}
+                    />
+                  </div>
+                ) : (
+                  <div className="text-center py-20">
+                    <div className="text-4xl mb-4">{mode === "therapist" ? "🎯" : "💬"}</div>
+                    <h3 className="text-lg font-medium mb-2">
+                      {mode === "therapist" 
+                        ? "Welcome to Your Coaching Session" 
+                        : "Welcome to Insightful AI"}
+                    </h3>
+                    <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                      {mode === "therapist" 
+                        ? "I'm your performance coach and psychoanalyst. Let's unlock your potential, understand your motivations, and achieve your goals together."
+                        : "I remember everything you tell me across conversations. Share something about yourself and I'll remember it for next time!"}
+                    </p>
+                    {mode === "therapist" && coachingEligible && !showProfile && (
+                      <div className="mt-4">
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setShowProfile(true);
+                            fetchProfile();
+                          }}
+                          className="border-purple-500/30 text-purple-400 hover:bg-purple-500/10"
+                          data-testid="button-view-profile"
+                        >
+                          <Brain className="h-4 w-4 mr-2" />
+                          View Your Psychological Profile
+                        </Button>
+                      </div>
+                    )}
+                    {mode === "therapist" && (
+                      <div className="mt-6 flex flex-wrap gap-2 justify-center">
+                        {["Set Goals", "Explore Patterns", "Boost Motivation", "Self-Discovery"].map((topic) => (
+                          <button
+                            key={topic}
+                            onClick={() => setInput(`I want to work on: ${topic}`)}
+                            className="px-3 py-1.5 text-xs font-medium rounded-full bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 transition-colors"
+                            data-testid={`button-topic-${topic.toLowerCase().replace(" ", "-")}`}
+                          >
+                            {topic}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

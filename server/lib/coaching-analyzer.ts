@@ -506,3 +506,238 @@ function groupBy<T>(array: T[], key: keyof T): Record<string, T[]> {
 function formatCategory(category: string): string {
   return category.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 }
+
+export interface PsychologicalProfile {
+  summary: string;
+  coreTraits: {
+    trait: string;
+    description: string;
+    strength: "strong" | "moderate" | "emerging";
+  }[];
+  motivationalDrivers: string[];
+  potentialChallenges: string[];
+  recommendedModalities: {
+    id: string;
+    name: string;
+    description: string;
+    matchScore: number;
+    reasoning: string;
+  }[];
+  profileQuestion: string;
+}
+
+const THERAPY_MODALITIES = [
+  {
+    id: "dbt",
+    name: "Dialectical Behavior Therapy (DBT)",
+    description: "Focuses on emotional regulation, distress tolerance, and interpersonal effectiveness",
+    matchPatterns: ["emotional", "stress", "relationship", "overwhelm", "impulsive", "mood", "anxiety"],
+    approach: "Combines mindfulness with practical skills for managing intense emotions"
+  },
+  {
+    id: "cbt",
+    name: "Cognitive Behavioral Therapy (CBT)",
+    description: "Identifies and restructures unhelpful thought patterns and behaviors",
+    matchPatterns: ["negative", "thinking", "worry", "fear", "perfectionist", "ruminate", "catastrophize"],
+    approach: "Evidence-based approach to change thought patterns that affect feelings and behaviors"
+  },
+  {
+    id: "mindfulness",
+    name: "Mindfulness-Based Stress Reduction (MBSR)",
+    description: "Cultivates present-moment awareness to reduce stress and enhance well-being",
+    matchPatterns: ["stress", "anxiety", "present", "calm", "peace", "overwhelm", "focus"],
+    approach: "Meditation and body awareness techniques for stress reduction"
+  },
+  {
+    id: "act",
+    name: "Acceptance and Commitment Therapy (ACT)",
+    description: "Builds psychological flexibility through acceptance and values-based action",
+    matchPatterns: ["stuck", "avoidance", "meaning", "purpose", "values", "acceptance", "committed"],
+    approach: "Accept what's outside your control, commit to actions that enrich your life"
+  },
+  {
+    id: "psychoanalytic",
+    name: "Psychoanalytic/Psychodynamic Coaching",
+    description: "Explores unconscious patterns, past experiences, and hidden motivations",
+    matchPatterns: ["pattern", "childhood", "relationship", "unconscious", "repeat", "why", "understand"],
+    approach: "Deep exploration of how past experiences shape current behavior"
+  },
+  {
+    id: "solution_focused",
+    name: "Solution-Focused Brief Therapy (SFBT)",
+    description: "Focuses on solutions rather than problems, leveraging existing strengths",
+    matchPatterns: ["goal", "solution", "quick", "practical", "strength", "what works", "progress"],
+    approach: "Goal-oriented approach that builds on what's already working"
+  },
+  {
+    id: "motivational",
+    name: "Motivational Interviewing (MI)",
+    description: "Explores ambivalence and enhances intrinsic motivation for change",
+    matchPatterns: ["change", "motivation", "ambivalent", "ready", "want", "decision", "stuck"],
+    approach: "Collaborative approach to strengthen motivation and commitment to change"
+  },
+  {
+    id: "spiritual",
+    name: "Spiritual/Contemplative Practices",
+    description: "Integrates spiritual or contemplative dimensions into personal growth",
+    matchPatterns: ["spiritual", "faith", "prayer", "meditation", "meaning", "purpose", "transcend", "god"],
+    approach: "Incorporates prayer, contemplation, and spiritual principles"
+  }
+];
+
+export async function generatePsychologicalProfile(userId: string): Promise<PsychologicalProfile | null> {
+  const personalityInsights = await storage.getPersonalityInsights(userId);
+  const userContext = await storage.getUserContextByUser(userId);
+  const goals = await storage.getUserGoals(userId);
+  const motivationPatterns = await storage.getMotivationPatterns(userId);
+  const recentMoods = await storage.getRecentMoodObservations(userId, 20);
+
+  if (personalityInsights.length < 2 && userContext.length < 5) {
+    return null;
+  }
+
+  const coreTraits: PsychologicalProfile["coreTraits"] = [];
+  const seenCategories = new Set<string>();
+
+  for (const insight of personalityInsights.slice(0, 6)) {
+    if (seenCategories.has(insight.traitCategory)) continue;
+    seenCategories.add(insight.traitCategory);
+
+    const strengthVal = insight.strength ?? 50;
+    const strength = strengthVal >= 80 ? "strong" : strengthVal >= 50 ? "moderate" : "emerging";
+    coreTraits.push({
+      trait: insight.trait,
+      description: Array.isArray(insight.evidence) ? insight.evidence.join('. ') : `Based on your communication patterns`,
+      strength
+    });
+  }
+
+  const motivationalDrivers: string[] = [];
+  const driverCategories = userContext
+    .filter(c => ['aspiration', 'goal', 'interest', 'value'].includes(c.category.toLowerCase()))
+    .slice(0, 5);
+  
+  for (const ctx of driverCategories) {
+    motivationalDrivers.push(ctx.value);
+  }
+
+  for (const pattern of motivationPatterns.slice(0, 3)) {
+    if (pattern.triggers) {
+      motivationalDrivers.push(`Activated by ${pattern.triggers.join(', ')}`);
+    }
+  }
+
+  const potentialChallenges: string[] = [];
+  const challengeContext = userContext.filter(c => 
+    ['challenge', 'obstacle', 'fear', 'worry', 'struggle'].includes(c.category.toLowerCase())
+  );
+  
+  for (const ctx of challengeContext.slice(0, 4)) {
+    potentialChallenges.push(ctx.value);
+  }
+
+  const negativePatterns = personalityInsights.filter(i => 
+    i.trait.toLowerCase().includes('perfectionist') ||
+    i.trait.toLowerCase().includes('avoidant') ||
+    i.trait.toLowerCase().includes('risk averse')
+  );
+  
+  for (const pattern of negativePatterns.slice(0, 2)) {
+    potentialChallenges.push(`Tendency toward ${pattern.trait.toLowerCase()}`);
+  }
+
+  const allText = [
+    ...userContext.map(c => c.value),
+    ...personalityInsights.map(i => i.trait + ' ' + (i.evidence || '')),
+    ...goals.map(g => g.title + ' ' + (g.description || '')),
+    ...recentMoods.map(m => m.mood + ' ' + (m.observation || ''))
+  ].join(' ').toLowerCase();
+
+  const modalityScores: { modality: typeof THERAPY_MODALITIES[0]; score: number }[] = [];
+  
+  for (const modality of THERAPY_MODALITIES) {
+    let score = 0;
+    const matchedPatterns: string[] = [];
+    
+    for (const pattern of modality.matchPatterns) {
+      if (allText.includes(pattern)) {
+        score += 10;
+        matchedPatterns.push(pattern);
+      }
+    }
+
+    if (allText.includes('emotional') || allText.includes('overwhelm')) {
+      if (modality.id === 'dbt') score += 15;
+    }
+    if (allText.includes('thinking') || allText.includes('thought')) {
+      if (modality.id === 'cbt') score += 15;
+    }
+    if (allText.includes('stress') || allText.includes('calm')) {
+      if (modality.id === 'mindfulness') score += 15;
+    }
+
+    modalityScores.push({ modality, score });
+  }
+
+  modalityScores.sort((a, b) => b.score - a.score);
+  
+  const recommendedModalities = modalityScores.slice(0, 4).map(({ modality, score }) => ({
+    id: modality.id,
+    name: modality.name,
+    description: modality.description,
+    matchScore: Math.min(100, score * 2),
+    reasoning: modality.approach
+  }));
+
+  const primaryTraits = coreTraits.slice(0, 3).map(t => t.trait).join(', ');
+  const primaryDrivers = motivationalDrivers.slice(0, 2).join(' and ');
+  
+  const summary = generateProfileSummary(coreTraits, motivationalDrivers, potentialChallenges);
+
+  const profileQuestion = `Based on what I've learned about you, it seems like you're someone who ${
+    coreTraits[0] ? `demonstrates ${coreTraits[0].trait.toLowerCase()} tendencies` : 'values personal growth'
+  }${
+    motivationalDrivers[0] ? `, driven by ${motivationalDrivers[0].toLowerCase()}` : ''
+  }${
+    potentialChallenges[0] ? `, though you may sometimes face challenges around ${potentialChallenges[0].toLowerCase()}` : ''
+  }. Does this resonate with how you see yourself?`;
+
+  return {
+    summary,
+    coreTraits,
+    motivationalDrivers: motivationalDrivers.slice(0, 5),
+    potentialChallenges: potentialChallenges.slice(0, 4),
+    recommendedModalities,
+    profileQuestion
+  };
+}
+
+function generateProfileSummary(
+  traits: PsychologicalProfile["coreTraits"],
+  drivers: string[],
+  challenges: string[]
+): string {
+  const parts: string[] = [];
+  
+  if (traits.length > 0) {
+    const strongTraits = traits.filter(t => t.strength === "strong");
+    const moderateTraits = traits.filter(t => t.strength === "moderate");
+    
+    if (strongTraits.length > 0) {
+      parts.push(`You exhibit strong ${strongTraits.map(t => t.trait.toLowerCase()).join(' and ')} characteristics.`);
+    }
+    if (moderateTraits.length > 0) {
+      parts.push(`You also show ${moderateTraits.map(t => t.trait.toLowerCase()).join(' and ')} tendencies.`);
+    }
+  }
+  
+  if (drivers.length > 0) {
+    parts.push(`Your primary motivational drivers appear to be ${drivers.slice(0, 3).join(', ')}.`);
+  }
+  
+  if (challenges.length > 0) {
+    parts.push(`Areas for potential growth include ${challenges.slice(0, 2).join(' and ')}.`);
+  }
+  
+  return parts.join(' ') || "Based on our conversations, I'm developing a picture of your unique psychological profile.";
+}

@@ -11,7 +11,8 @@ import {
   savePersonalityInsights,
   saveGoal,
   saveMotivationPattern,
-  buildCoachingContext
+  buildCoachingContext,
+  generatePsychologicalProfile
 } from "./lib/coaching-analyzer";
 import { logConsentChange, logDataExport, logDataModification } from "./lib/audit-logger";
 import { setupAuth, isAuthenticated } from "./replitAuth";
@@ -803,6 +804,59 @@ Guidelines:
       const limit = parseInt(req.query.limit as string) || 50;
       const logs = await storage.getAuditLogs(userId, limit);
       res.json(logs);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/coaching/profile/:userId", async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const profile = await generatePsychologicalProfile(userId);
+      
+      if (!profile) {
+        return res.status(404).json({ 
+          error: "Insufficient data",
+          message: "We need more conversations to build your psychological profile. Keep chatting and I'll learn more about you!",
+          ready: false
+        });
+      }
+      
+      res.json({ ...profile, ready: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/coaching/eligibility/:userId", async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const userContext = await storage.getUserContextByUser(userId);
+      const conversationCount = await storage.getConversationCount(userId);
+      const personalityInsights = await storage.getPersonalityInsights(userId);
+      
+      const hasEnoughConversations = conversationCount >= 10;
+      const hasEnoughContext = userContext.length >= 5;
+      const hasGoalOrPatternData = userContext.some(f => 
+        f.category === 'goal' || f.category === 'aspiration' || 
+        f.category === 'challenge' || f.category === 'personality'
+      );
+      const hasPersonalityData = personalityInsights.length >= 2;
+      
+      const eligible = hasEnoughConversations && hasEnoughContext && hasGoalOrPatternData;
+      
+      res.json({
+        eligible,
+        criteria: {
+          conversations: { current: conversationCount, required: 10, met: hasEnoughConversations },
+          contextFacts: { current: userContext.length, required: 5, met: hasEnoughContext },
+          goalPatternData: { met: hasGoalOrPatternData },
+          personalityData: { current: personalityInsights.length, required: 2, met: hasPersonalityData }
+        },
+        message: eligible 
+          ? "You have enough data for personalized coaching! Would you like to see your psychological profile?"
+          : `Keep chatting! You need ${Math.max(0, 10 - conversationCount)} more conversations and ${Math.max(0, 5 - userContext.length)} more context facts for auto-coaching.`
+      });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
