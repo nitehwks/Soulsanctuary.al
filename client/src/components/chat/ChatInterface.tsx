@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Send, Mic, MicOff, PanelLeftClose, PanelLeft, Heart, Shield } from "lucide-react";
+import { Send, Mic, MicOff, PanelLeftClose, PanelLeft, Heart, Shield, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -11,6 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { ConversationList } from "./ConversationList";
 import { WellnessPanel } from "./WellnessPanel";
 import { PrivacyDashboard } from "./PrivacyDashboard";
+import { CoachingHighlights } from "./CoachingHighlights";
 
 interface IWindow extends Window {
   webkitSpeechRecognition: any;
@@ -38,6 +39,7 @@ export function ChatInterface({ mode = "chat" }: ChatInterfaceProps) {
   const [showSidebar, setShowSidebar] = useState(true);
   const [showWellness, setShowWellness] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
+  const [showCoaching, setShowCoaching] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   const { toast } = useToast();
@@ -262,6 +264,17 @@ export function ChatInterface({ mode = "chat" }: ChatInterfaceProps) {
             {messages.length > 0 ? `${messages.length} messages` : "Start chatting"}
           </span>
           <div className="ml-auto flex items-center gap-1">
+            {mode === "therapist" && (
+              <Button
+                variant={showCoaching ? "secondary" : "ghost"}
+                size="icon"
+                onClick={() => setShowCoaching(!showCoaching)}
+                className="h-8 w-8"
+                data-testid="button-toggle-coaching"
+              >
+                <Target className={cn("h-4 w-4", showCoaching && "text-purple-400")} />
+              </Button>
+            )}
             <Button
               variant={showWellness ? "secondary" : "ghost"}
               size="icon"
@@ -287,11 +300,31 @@ export function ChatInterface({ mode = "chat" }: ChatInterfaceProps) {
           <div className="max-w-3xl mx-auto space-y-8 pb-4">
             {messages.length === 0 && (
               <div className="text-center py-20">
-                <div className="text-4xl mb-4">💬</div>
-                <h3 className="text-lg font-medium mb-2">Welcome to Insightful AI</h3>
+                <div className="text-4xl mb-4">{mode === "therapist" ? "🎯" : "💬"}</div>
+                <h3 className="text-lg font-medium mb-2">
+                  {mode === "therapist" 
+                    ? "Welcome to Your Coaching Session" 
+                    : "Welcome to Insightful AI"}
+                </h3>
                 <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                  I remember everything you tell me across conversations. Share something about yourself and I'll remember it for next time!
+                  {mode === "therapist" 
+                    ? "I'm your performance coach and psychoanalyst. Let's unlock your potential, understand your motivations, and achieve your goals together."
+                    : "I remember everything you tell me across conversations. Share something about yourself and I'll remember it for next time!"}
                 </p>
+                {mode === "therapist" && (
+                  <div className="mt-6 flex flex-wrap gap-2 justify-center">
+                    {["Set Goals", "Explore Patterns", "Boost Motivation", "Self-Discovery"].map((topic) => (
+                      <button
+                        key={topic}
+                        onClick={() => setInput(`I want to work on: ${topic}`)}
+                        className="px-3 py-1.5 text-xs font-medium rounded-full bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 transition-colors"
+                        data-testid={`button-topic-${topic.toLowerCase().replace(" ", "-")}`}
+                      >
+                        {topic}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
             
@@ -406,7 +439,7 @@ export function ChatInterface({ mode = "chat" }: ChatInterfaceProps) {
       </div>
 
       <AnimatePresence>
-        {showWellness && (
+        {showWellness && userId && (
           <WellnessPanel 
             isOpen={showWellness} 
             onClose={() => setShowWellness(false)} 
@@ -415,11 +448,29 @@ export function ChatInterface({ mode = "chat" }: ChatInterfaceProps) {
         )}
       </AnimatePresence>
 
-      <PrivacyDashboard
-        isOpen={showPrivacy}
-        onClose={() => setShowPrivacy(false)}
-        userId={userId}
-      />
+      {userId && (
+        <PrivacyDashboard
+          isOpen={showPrivacy}
+          onClose={() => setShowPrivacy(false)}
+          userId={userId}
+        />
+      )}
+
+      <AnimatePresence>
+        {showCoaching && mode === "therapist" && (
+          <motion.div
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: 320, opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }}
+            className="border-l border-border bg-card/50 h-full overflow-y-auto"
+          >
+            <CoachingHighlights 
+              userId={userId}
+              onSuggestPrompt={(prompt) => setInput(prompt)}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
