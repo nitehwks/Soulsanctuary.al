@@ -7,8 +7,9 @@ import { KnowledgePanel } from "@/components/chat/KnowledgePanel";
 import { motion } from "framer-motion";
 import { 
   ChevronRight, Database, ShieldCheck, Activity, LogOut, User, 
-  MessageSquare, Heart, Brain, CheckCircle2
+  MessageSquare, Heart, Brain, CheckCircle2, Sparkles
 } from "lucide-react";
+import { Link } from "wouter";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -92,6 +93,18 @@ export default function Home() {
                     </TooltipTrigger>
                     <TooltipContent>View all facts I've learned about you</TooltipContent>
                   </Tooltip>
+
+                  <Link href="/addons">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="gap-2 text-xs"
+                      data-testid="button-addons"
+                    >
+                      <Sparkles className="h-4 w-4" />
+                      Wellness Tools
+                    </Button>
+                  </Link>
                   
                   {user && (
                     <div className="flex items-center gap-2 ml-2 pl-2 border-l border-border">

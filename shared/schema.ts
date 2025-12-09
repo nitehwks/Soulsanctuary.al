@@ -373,3 +373,146 @@ export type InsertMotivationPattern = z.infer<typeof insertMotivationPatternSche
 
 export type CoachingSession = typeof coachingSessions.$inferSelect;
 export type InsertCoachingSession = z.infer<typeof insertCoachingSessionSchema>;
+
+// Premium Therapy Modules
+export const therapyModules = pgTable("therapy_modules", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  description: text("description").notNull(),
+  longDescription: text("long_description"),
+  category: text("category").notNull(), // 'dbt', 'cbt', 'mindfulness', 'spiritual', 'grounding'
+  icon: text("icon").default("brain"),
+  color: text("color").default("blue"),
+  isPremium: boolean("is_premium").default(true),
+  price: integer("price").default(0), // In cents, 0 = free
+  features: text("features").array(),
+  scientificBasis: text("scientific_basis"),
+  researchLinks: text("research_links").array(),
+  order: integer("order").default(0),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Individual Exercises within Modules
+export const therapyExercises = pgTable("therapy_exercises", {
+  id: serial("id").primaryKey(),
+  moduleId: integer("module_id").notNull().references(() => therapyModules.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  slug: text("slug").notNull(),
+  description: text("description").notNull(),
+  instructions: text("instructions").notNull(),
+  duration: integer("duration").default(10), // Minutes
+  difficulty: text("difficulty").default("beginner"), // 'beginner', 'intermediate', 'advanced'
+  exerciseType: text("exercise_type").notNull(), // 'breathing', 'journaling', 'meditation', 'worksheet', 'audio'
+  content: jsonb("content"), // Flexible content structure
+  audioUrl: text("audio_url"),
+  order: integer("order").default(0),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// User Subscriptions to Premium Modules
+export const userSubscriptions = pgTable("user_subscriptions", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  moduleId: integer("module_id").notNull().references(() => therapyModules.id),
+  status: text("status").default("active"), // 'active', 'expired', 'cancelled'
+  startedAt: timestamp("started_at").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at"),
+  paymentId: text("payment_id"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// User Progress on Exercises
+export const userExerciseProgress = pgTable("user_exercise_progress", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  exerciseId: integer("exercise_id").notNull().references(() => therapyExercises.id, { onDelete: "cascade" }),
+  status: text("status").default("not_started"), // 'not_started', 'in_progress', 'completed'
+  completedCount: integer("completed_count").default(0),
+  lastCompletedAt: timestamp("last_completed_at"),
+  notes: text("notes"),
+  rating: integer("rating"), // 1-5 effectiveness rating
+  journalEntry: text("journal_entry"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Coping Strategies Library
+export const copingStrategies = pgTable("coping_strategies", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  category: text("category").notNull(), // 'grounding', 'breathing', 'mindfulness', 'physical', 'social', 'cognitive'
+  description: text("description").notNull(),
+  steps: text("steps").array(),
+  duration: text("duration"), // '2-5 minutes', '10-15 minutes', etc.
+  effectiveness: text("effectiveness").array(), // What it helps with
+  scientificBasis: text("scientific_basis"),
+  isPremium: boolean("is_premium").default(false),
+  order: integer("order").default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// User Favorite Strategies
+export const userFavoriteStrategies = pgTable("user_favorite_strategies", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  strategyId: integer("strategy_id").notNull().references(() => copingStrategies.id, { onDelete: "cascade" }),
+  timesUsed: integer("times_used").default(0),
+  lastUsedAt: timestamp("last_used_at"),
+  personalNotes: text("personal_notes"),
+  effectivenessRating: integer("effectiveness_rating"), // 1-5
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Insert schemas for new tables
+export const insertTherapyModuleSchema = createInsertSchema(therapyModules).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertTherapyExerciseSchema = createInsertSchema(therapyExercises).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertUserSubscriptionSchema = createInsertSchema(userSubscriptions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertUserExerciseProgressSchema = createInsertSchema(userExerciseProgress).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertCopingStrategySchema = createInsertSchema(copingStrategies).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertUserFavoriteStrategySchema = createInsertSchema(userFavoriteStrategies).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Types for new tables
+export type TherapyModule = typeof therapyModules.$inferSelect;
+export type InsertTherapyModule = z.infer<typeof insertTherapyModuleSchema>;
+
+export type TherapyExercise = typeof therapyExercises.$inferSelect;
+export type InsertTherapyExercise = z.infer<typeof insertTherapyExerciseSchema>;
+
+export type UserSubscription = typeof userSubscriptions.$inferSelect;
+export type InsertUserSubscription = z.infer<typeof insertUserSubscriptionSchema>;
+
+export type UserExerciseProgress = typeof userExerciseProgress.$inferSelect;
+export type InsertUserExerciseProgress = z.infer<typeof insertUserExerciseProgressSchema>;
+
+export type CopingStrategy = typeof copingStrategies.$inferSelect;
+export type InsertCopingStrategy = z.infer<typeof insertCopingStrategySchema>;
+
+export type UserFavoriteStrategy = typeof userFavoriteStrategies.$inferSelect;
+export type InsertUserFavoriteStrategy = z.infer<typeof insertUserFavoriteStrategySchema>;
