@@ -22,7 +22,11 @@ import {
   ArrowLeft,
   Zap,
   Shield,
-  Users
+  Users,
+  Crown,
+  Rocket,
+  TrendingUp,
+  Eye
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "wouter";
@@ -172,6 +176,89 @@ const therapyModules: TherapyModule[] = [
   }
 ];
 
+const pricingTiers = [
+  {
+    id: "free",
+    name: "Free",
+    price: 0,
+    description: "Get started with basic AI chat and wellness tools",
+    icon: <Heart className="w-6 h-6" />,
+    color: "from-slate-500 to-gray-600",
+    features: [
+      "Unlimited AI chat conversations",
+      "Basic memory & context",
+      "Grounding & crisis skills module",
+      "Privacy dashboard",
+      "PII auto-redaction"
+    ],
+    limitations: [
+      "Standard response speed",
+      "Basic conversation history"
+    ]
+  },
+  {
+    id: "pro",
+    name: "Pro",
+    price: 1499,
+    description: "Unlock coaching mode and premium therapy modules",
+    icon: <Rocket className="w-6 h-6" />,
+    color: "from-blue-500 to-indigo-600",
+    popular: true,
+    features: [
+      "Everything in Free",
+      "Therapist/Coaching mode",
+      "Auto-Coaching activation",
+      "Goal tracking & progress",
+      "1 premium therapy module",
+      "Priority response speed",
+      "Extended conversation history"
+    ],
+    limitations: []
+  },
+  {
+    id: "premium",
+    name: "Premium",
+    price: 2999,
+    description: "Full access to all features and therapy modules",
+    icon: <Crown className="w-6 h-6" />,
+    color: "from-amber-500 to-orange-600",
+    features: [
+      "Everything in Pro",
+      "All premium therapy modules",
+      "Advanced psychoanalytic insights",
+      "Motivation pattern analysis",
+      "Personalized coaching programs",
+      "Data export & portability",
+      "Priority support"
+    ],
+    limitations: []
+  }
+];
+
+const autoCoachingFeature = {
+  id: "auto-coaching",
+  name: "Auto-Coaching Mode",
+  description: "AI automatically switches to coaching mode when it knows enough about you",
+  longDescription: "Our intelligent Auto-Coaching feature monitors your conversation patterns and learns about your goals, challenges, and personality. Once it has gathered enough context about you (typically after 10+ meaningful conversations), it automatically activates Therapist/Coaching mode to provide personalized performance coaching, goal accountability, and psychoanalytic insights tailored specifically to your needs.",
+  icon: <Eye className="w-8 h-8" />,
+  color: "from-purple-500 to-violet-600",
+  price: 499,
+  features: [
+    "Automatic mode switching based on user context",
+    "Personality-aware coaching style",
+    "Goal detection and tracking",
+    "Motivation pattern recognition",
+    "Proactive check-ins and accountability",
+    "Personalized growth suggestions"
+  ],
+  triggers: [
+    "10+ conversations with substantial content",
+    "Detected goals or aspirations",
+    "Recurring patterns or challenges",
+    "Sufficient personality data"
+  ]
+};
+
 const copingStrategies = [
   {
     name: "Box Breathing",
@@ -252,11 +339,146 @@ export default function PremiumAddons() {
             </motion.div>
           </div>
 
-          <Tabs defaultValue="modules" className="space-y-6">
-            <TabsList className="grid w-full max-w-md grid-cols-2">
+          <Tabs defaultValue="plans" className="space-y-6">
+            <TabsList className="grid w-full max-w-lg grid-cols-3">
+              <TabsTrigger value="plans" data-testid="tab-plans">Plans & Pricing</TabsTrigger>
               <TabsTrigger value="modules" data-testid="tab-modules">Therapy Modules</TabsTrigger>
               <TabsTrigger value="strategies" data-testid="tab-strategies">Quick Strategies</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="plans" className="space-y-8">
+              <div className="grid md:grid-cols-3 gap-6">
+                {pricingTiers.map((tier, index) => (
+                  <motion.div
+                    key={tier.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    className="relative"
+                  >
+                    {tier.popular && (
+                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
+                        <Badge className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
+                          Most Popular
+                        </Badge>
+                      </div>
+                    )}
+                    <Card className={`h-full flex flex-col ${tier.popular ? 'border-primary ring-2 ring-primary/20' : ''}`} data-testid={`card-tier-${tier.id}`}>
+                      <CardHeader className="text-center">
+                        <div className={`mx-auto p-3 rounded-full bg-gradient-to-br ${tier.color} text-white mb-4`}>
+                          {tier.icon}
+                        </div>
+                        <CardTitle className="text-xl">{tier.name}</CardTitle>
+                        <CardDescription>{tier.description}</CardDescription>
+                        <div className="mt-4">
+                          <span className="text-4xl font-bold">
+                            {tier.price === 0 ? 'Free' : `$${(tier.price / 100).toFixed(0)}`}
+                          </span>
+                          {tier.price > 0 && <span className="text-muted-foreground">/month</span>}
+                        </div>
+                      </CardHeader>
+                      <CardContent className="flex-1">
+                        <ul className="space-y-2">
+                          {tier.features.map((feature, i) => (
+                            <li key={i} className="flex items-start gap-2 text-sm">
+                              <Check className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
+                              <span>{feature}</span>
+                            </li>
+                          ))}
+                          {tier.limitations.map((limit, i) => (
+                            <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                              <span className="w-4 h-4 flex items-center justify-center">•</span>
+                              <span>{limit}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </CardContent>
+                      <CardFooter>
+                        <Button 
+                          className={`w-full ${tier.popular ? 'bg-gradient-to-r from-blue-500 to-indigo-600' : ''}`}
+                          variant={tier.popular ? 'default' : 'outline'}
+                          data-testid={`button-select-${tier.id}`}
+                        >
+                          {tier.price === 0 ? 'Get Started' : 'Subscribe'}
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  </motion.div>
+                ))}
+              </div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+              >
+                <Card className="overflow-hidden border-purple-500/30 bg-gradient-to-r from-purple-500/5 to-violet-500/5">
+                  <div className={`h-2 bg-gradient-to-r ${autoCoachingFeature.color}`} />
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className={`p-3 rounded-lg bg-gradient-to-br ${autoCoachingFeature.color} text-white`}>
+                          {autoCoachingFeature.icon}
+                        </div>
+                        <div>
+                          <CardTitle className="flex items-center gap-2">
+                            {autoCoachingFeature.name}
+                            <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">
+                              <Sparkles className="w-3 h-3 mr-1" />
+                              AI-Powered
+                            </Badge>
+                          </CardTitle>
+                          <CardDescription>{autoCoachingFeature.description}</CardDescription>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-2xl font-bold">${(autoCoachingFeature.price / 100).toFixed(0)}</span>
+                        <span className="text-muted-foreground">/mo</span>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground mb-6">{autoCoachingFeature.longDescription}</p>
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div>
+                        <h4 className="font-semibold mb-3 flex items-center gap-2">
+                          <TrendingUp className="w-4 h-4 text-purple-400" />
+                          Features
+                        </h4>
+                        <ul className="space-y-2">
+                          {autoCoachingFeature.features.map((feature, i) => (
+                            <li key={i} className="flex items-start gap-2 text-sm">
+                              <Check className="w-4 h-4 text-purple-400 mt-0.5 flex-shrink-0" />
+                              <span>{feature}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold mb-3 flex items-center gap-2">
+                          <Target className="w-4 h-4 text-purple-400" />
+                          Activation Triggers
+                        </h4>
+                        <ul className="space-y-2">
+                          {autoCoachingFeature.triggers.map((trigger, i) => (
+                            <li key={i} className="flex items-start gap-2 text-sm">
+                              <Eye className="w-4 h-4 text-purple-400 mt-0.5 flex-shrink-0" />
+                              <span>{trigger}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </CardContent>
+                  <CardFooter>
+                    <Button className={`bg-gradient-to-r ${autoCoachingFeature.color} text-white`} data-testid="button-add-auto-coaching">
+                      <Zap className="w-4 h-4 mr-2" />
+                      Add Auto-Coaching
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </motion.div>
+            </TabsContent>
 
             <TabsContent value="modules" className="space-y-6">
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -66,6 +66,7 @@ export const userPreferences = pgTable("user_preferences", {
   storeContactInfo: boolean("store_contact_info").default(true),
   privacyLevel: text("privacy_level").default("balanced"),
   therapistModeEnabled: boolean("therapist_mode_enabled").default(false),
+  autoCoachingEnabled: boolean("auto_coaching_enabled").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

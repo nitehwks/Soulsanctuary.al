@@ -62,6 +62,7 @@ export interface IStorage {
   createConversation(conversation: InsertConversation): Promise<Conversation>;
   getConversation(id: number): Promise<Conversation | undefined>;
   getConversationsByUser(userId: string): Promise<Conversation[]>;
+  getConversationCount(userId: string): Promise<number>;
   updateConversationTitle(id: number, title: string): Promise<Conversation | undefined>;
   
   createMessage(message: InsertMessage): Promise<Message>;
@@ -186,6 +187,13 @@ export class DatabaseStorage implements IStorage {
 
   async getConversationsByUser(userId: string): Promise<Conversation[]> {
     return await db.select().from(conversations).where(eq(conversations.userId, userId)).orderBy(desc(conversations.updatedAt));
+  }
+
+  async getConversationCount(userId: string): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(*)` })
+      .from(conversations)
+      .where(eq(conversations.userId, userId));
+    return Number(result[0]?.count ?? 0);
   }
 
   async updateConversationTitle(id: number, title: string): Promise<Conversation | undefined> {

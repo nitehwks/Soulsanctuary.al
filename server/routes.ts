@@ -288,7 +288,28 @@ export async function registerRoutes(
       }
 
       const userPrefs = await storage.getUserPreferences(userId);
-      const therapistMode = userPrefs?.therapistModeEnabled ?? false;
+      let therapistMode = userPrefs?.therapistModeEnabled ?? false;
+      
+      // Auto-coaching: Check if we know enough about the user to automatically enable coaching mode
+      if (!therapistMode && userPrefs?.autoCoachingEnabled !== false) {
+        const userContextFacts = await storage.getUserContextByUser(userId);
+        const conversationCount = await storage.getConversationCount(userId);
+        
+        // Enable auto-coaching if:
+        // - User has 10+ conversations AND
+        // - User has 5+ context facts about them (personality, goals, preferences)
+        const hasEnoughConversations = conversationCount >= 10;
+        const hasEnoughContext = userContextFacts.length >= 5;
+        const hasGoalOrPatternData = userContextFacts.some(f => 
+          f.category === 'goal' || f.category === 'aspiration' || 
+          f.category === 'challenge' || f.category === 'personality'
+        );
+        
+        if (hasEnoughConversations && hasEnoughContext && hasGoalOrPatternData) {
+          therapistMode = true;
+          console.log(`Auto-coaching activated for user ${userId}: ${conversationCount} conversations, ${userContextFacts.length} facts`);
+        }
+      }
 
       const redactionResult = redactPII(content);
       const sentimentResult = analyzeSentiment(content);
