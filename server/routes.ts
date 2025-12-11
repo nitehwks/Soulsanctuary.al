@@ -409,12 +409,17 @@ Guidelines:
         }))
       ];
 
-      // Uncensored models to try in order (fallback chain for rate limiting)
+      // Models to try in order - free first, then very cheap paid as fallback
       const models = [
+        // Free uncensored models (try first)
         "venice/uncensored:free",
         "nousresearch/hermes-3-llama-3.1-405b:free",
         "meta-llama/llama-3.3-70b-instruct:free",
-        "qwen/qwen-2.5-72b-instruct:free"
+        "google/gemini-2.0-flash-exp:free",
+        // Very cheap paid fallbacks (~$0.0001-0.001 per message)
+        "deepseek/deepseek-chat",
+        "mistralai/mistral-nemo",
+        "meta-llama/llama-3.1-8b-instruct"
       ];
       
       let completion = null;
@@ -438,7 +443,8 @@ Guidelines:
       }
       
       if (!completion) {
-        throw lastError || new Error("All AI models are currently rate-limited. Please try again in a moment.");
+        console.error("All models failed. Last error:", lastError);
+        throw new Error("All AI models are currently busy. Please wait a moment and try again.");
       }
 
       const aiContent = completion.choices[0]?.message?.content || "I'm sorry, I couldn't generate a response.";
