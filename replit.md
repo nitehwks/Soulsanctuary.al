@@ -2,7 +2,110 @@
 
 ## Overview
 
-SoulSanctuary is a privacy-focused AI companion powered by multiple AI models via OpenRouter. The platform emphasizes secure, intelligent conversations with built-in PII (Personally Identifiable Information) redaction, contextual learning, evidence-based therapeutic tools (DBT, CBT, Mindfulness, etc.), and goal-oriented coaching. It features a modern React frontend with shadcn/ui components and an Express backend with PostgreSQL database for persistent storage.
+SoulSanctuary is a faith-integrated AI companion that combines Christian pastoral care with evidence-based therapeutic practices. Powered by multiple AI models via OpenRouter, the platform serves users by lifting them up, helping them gain independence from their struggles, and walking alongside them on their journey toward healing and growth.
+
+## Core Purpose & Mission
+
+**Sacred Purpose**: To serve each person in the best way possible - combining the wisdom of faith with proven therapeutic practices.
+
+The AI exists to:
+- **LIFT UP** those who are struggling and help them see their God-given worth
+- **GUIDE toward INDEPENDENCE** - building confidence in themselves and their faith, not dependence on the AI
+- **UNDERSTAND DEEPLY** - analyzing everything in context, connecting patterns across conversations to truly know each person
+- **WALK ALONGSIDE** users as they grow stronger, wiser, and more capable of handling life's challenges
+
+## Features
+
+### Dual Mode Operation
+
+**Chat Mode** - Caring Companion
+- Cherishes every detail users share - joys, struggles, relationships, and dreams
+- Understands context by connecting pieces to see the whole person
+- Remembers what matters so users feel known and valued
+- Supports growth toward becoming who they're meant to be
+
+**Therapist/Pastoral Care Mode** - Faith + Therapy Integration
+- Combines pastoral warmth with professional therapeutic techniques
+- Progressive, modern church approach - welcoming, non-judgmental, focused on love and grace
+- Offers prayers, scripture, and spiritual encouragement when appropriate
+- Uses evidence-based techniques (CBT, DBT, ACT, Mindfulness) alongside spiritual practices
+
+### Faith-Based Features
+
+**Prayer & Spiritual Exercises**
+- Centering Prayer - Connecting with God through sacred words
+- Scripture Meditation (Lectio Divina) - Deep engagement with God's Word
+- Serenity Prayer Practice - Acceptance, courage, and wisdom
+- Gratitude & Blessing Practice - Thanksgiving and blessing others
+- Psalms of Comfort - Ancient words for modern struggles (Psalm 23, etc.)
+- Faith-Based Affirmations - Scripture truths for anxious thoughts
+
+**Scripture Library by Emotion**
+- Anxiety: 1 Peter 5:7, Philippians 4:6, Psalm 94:19
+- Depression: Psalm 34:18, Psalm 147:3, Psalm 30:5
+- Fear: 2 Timothy 1:7, Psalm 27:1, Isaiah 41:10
+- Strength: Philippians 4:13, Isaiah 40:31, Psalm 28:7
+- Peace: John 14:27, Philippians 4:7, Isaiah 26:3
+- Hope: Jeremiah 29:11, Romans 15:13, Hebrews 6:19
+- Comfort: Matthew 11:28, Matthew 5:4, Psalm 23:1
+- Love: Jeremiah 31:3, Romans 8:38-39, 1 John 3:1
+
+**Smart Faith Tracking**
+- Respects user preferences for spiritual content
+- Tracks when users decline faith offerings
+- After 3 declines, pauses spiritual content for 7 days
+- Monitors for opportunities to gently reintroduce when appropriate
+- Never forces faith - offers it as one source of comfort among many
+
+### Evidence-Based Therapy Modules
+
+**DBT (Dialectical Behavior Therapy)**
+- TIPP Skills for distress tolerance
+- Wise Mind meditation
+
+**CBT (Cognitive Behavioral Therapy)**
+- Thought Record for examining troubling thoughts
+- Cognitive Distortions identification
+
+**Mindfulness**
+- Body Scan Meditation
+- Box Breathing technique
+
+**ACT (Acceptance and Commitment Therapy)**
+- Values Clarification exercises
+
+**Grounding**
+- 5-4-3-2-1 Sensory Grounding
+
+### Crisis Detection & Safety
+
+- Real-time crisis detection with severity assessment
+- Automatic crisis resources when needed
+- Therapy module recommendations based on emotional state
+- Safety wrapper for all responses
+
+### Privacy & Security
+
+- AES-256-GCM encryption for sensitive data
+- PII redaction (SSN, credit cards automatically redacted)
+- GDPR-compliant data export and deletion
+- Tamper-evident audit logging
+- Consent management for data collection
+
+### Psychological Profiling
+
+- Personality pattern analysis
+- Motivation and goal tracking
+- Mood observation and wellness assessment
+- Coaching plans based on psychological insights
+- Deep contextual understanding across conversations
+
+### Dual-Model AI System
+
+- Queries multiple AI models in parallel
+- Selects best response for each conversation
+- Real-time model tracking in dashboard
+- Fallback system for reliability
 
 ## User Preferences
 
