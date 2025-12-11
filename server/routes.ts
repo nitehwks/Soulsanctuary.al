@@ -561,8 +561,9 @@ Guidelines:
           );
           
           if (shouldProbe) {
-            const knownCategories = userContext.map(c => c.category.toLowerCase());
-            const recentTopics = content.toLowerCase().split(/\s+/).filter(w => w.length > 4).slice(0, 5);
+            const userContextForProbing = await storage.getUserContextByUser(userId);
+            const knownCategories = userContextForProbing.map((c: { category: string }) => c.category.toLowerCase());
+            const recentTopics = content.toLowerCase().split(/\s+/).filter((w: string) => w.length > 4).slice(0, 5);
             
             const question = selectProbingQuestion(
               { 
@@ -581,7 +582,7 @@ Guidelines:
               
               // Update probing state
               const updatedQuestionsAsked = [...(probingState.questionsAsked || []), question.id];
-              const updatedTopicsExplored = [...new Set([...(probingState.topicsExplored || []), question.category])];
+              const updatedTopicsExplored = Array.from(new Set([...(probingState.topicsExplored || []), question.category]));
               
               await storage.updateUserProbingState(userId, {
                 lastAskedAt: new Date(),
