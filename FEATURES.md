@@ -1,8 +1,8 @@
-# Insightful AI - Unique Features & Security Overview
+# SoulSanctuary AI - Unique Features & Security Overview
 
-## What Makes Insightful AI Unique
+## What Makes SoulSanctuary AI Unique
 
-Insightful AI is a privacy-first AI companion that combines intelligent conversation with world-class security and evidence-based therapeutic tools. Unlike typical AI chatbots, Insightful AI is designed from the ground up to protect your most sensitive information while providing personalized support.
+SoulSanctuary AI is a privacy-first AI companion that combines intelligent conversation with world-class security and evidence-based therapeutic tools. Unlike typical AI chatbots, SoulSanctuary AI is designed from the ground up to protect your most sensitive information while providing personalized support.
 
 ---
 
@@ -39,7 +39,7 @@ Insightful AI is a privacy-first AI companion that combines intelligent conversa
 ### Enterprise-Grade Encryption
 
 #### AES-256-GCM Encryption
-Insightful AI uses **AES-256-GCM (Advanced Encryption Standard with Galois/Counter Mode)** for all sensitive data encryption:
+SoulSanctuary AI uses **AES-256-GCM (Advanced Encryption Standard with Galois/Counter Mode)** for all sensitive data encryption:
 
 - **256-bit key strength**: The same encryption standard used by governments and financial institutions worldwide
 - **Galois/Counter Mode (GCM)**: Provides both confidentiality and authenticity, detecting any tampering with encrypted data
@@ -54,7 +54,7 @@ Insightful AI uses **AES-256-GCM (Advanced Encryption Standard with Galois/Count
 
 ### Automatic PII Redaction
 
-Insightful AI automatically detects and protects sensitive information:
+SoulSanctuary AI automatically detects and protects sensitive information:
 
 | Data Type | Protection Method |
 |-----------|------------------|
@@ -74,7 +74,7 @@ Every data access and modification is tracked with cryptographic verification:
 
 ### GDPR Compliance
 
-Insightful AI is fully compliant with the General Data Protection Regulation:
+SoulSanctuary AI is fully compliant with the General Data Protection Regulation:
 
 #### Data Subject Rights
 - **Right to Access**: One-click export of all your data in JSON format
@@ -145,9 +145,9 @@ A comprehensive privacy center accessible from the chat interface:
 
 ---
 
-## Why Choose Insightful AI?
+## Why Choose SoulSanctuary AI?
 
-| Feature | Insightful AI | Typical AI Chatbots |
+| Feature | SoulSanctuary AI | Typical AI Chatbots |
 |---------|----------|---------------------|
 | End-to-end encryption | AES-256-GCM | Rarely offered |
 | PII auto-redaction | Yes | No |
@@ -163,6 +163,6 @@ A comprehensive privacy center accessible from the chat interface:
 
 ## Summary
 
-Insightful AI represents a new standard in AI companion applications, where your privacy isn't an afterthought—it's the foundation. By combining military-grade encryption, comprehensive privacy controls, and evidence-based therapeutic tools, Insightful AI provides a safe space for personal growth and support.
+SoulSanctuary AI represents a new standard in AI companion applications, where your privacy isn't an afterthought—it's the foundation. By combining military-grade encryption, comprehensive privacy controls, and evidence-based therapeutic tools, SoulSanctuary AI provides a safe space for personal growth and support.
 
 **Your thoughts. Your data. Your control.**

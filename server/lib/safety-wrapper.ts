@@ -103,11 +103,11 @@ export function wrapResponseWithSafety(
 
 export function generateDisclaimer(): string {
   return `---
-*Insightful AI is designed to provide emotional support and evidence-based therapeutic exercises. It is not a substitute for professional mental health care or emergency services. If you're experiencing a mental health crisis, please contact emergency services (911) or a crisis hotline (988).*`;
+*SoulSanctuary AI is designed to provide emotional support and evidence-based therapeutic exercises. It is not a substitute for professional mental health care or emergency services. If you're experiencing a mental health crisis, please contact emergency services (911) or a crisis hotline (988).*`;
 }
 
 export function generateConsentText(): string {
-  return `**Welcome to Insightful AI Therapy Mode**
+  return `**Welcome to SoulSanctuary AI Therapy Mode**
 
 Before we begin, I want to be clear about what I can and cannot do:
 
