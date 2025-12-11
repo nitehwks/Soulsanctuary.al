@@ -15,6 +15,9 @@ import {
   generatePsychologicalProfile
 } from "./lib/coaching-analyzer";
 import { logConsentChange, logDataExport, logDataModification } from "./lib/audit-logger";
+import { detectCrisis, detectTherapyTrigger, formatCrisisResources, CrisisAssessment } from "./lib/crisis-detection";
+import { selectTherapyModule, formatTherapyExercise, THERAPY_EXERCISES } from "./lib/therapy-modules";
+import { wrapResponseWithSafety, generateDisclaimer, generateConsentText } from "./lib/safety-wrapper";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import OpenAI from "openai";
 
@@ -282,14 +285,15 @@ export async function registerRoutes(
 
   app.post("/api/chat", async (req, res) => {
     try {
-      const { conversationId, content, userId = "anonymous" } = req.body;
+      const { conversationId, content, userId = "anonymous", mode } = req.body;
 
       if (!conversationId || !content) {
         return res.status(400).json({ error: "conversationId and content are required" });
       }
 
       const userPrefs = await storage.getUserPreferences(userId);
-      let therapistMode = userPrefs?.therapistModeEnabled ?? false;
+      // Enable therapist mode if explicitly requested via mode parameter or user preferences
+      let therapistMode = mode === "therapist" || (userPrefs?.therapistModeEnabled ?? false);
       
       // Auto-coaching: Check if we know enough about the user to automatically enable coaching mode
       if (!therapistMode && userPrefs?.autoCoachingEnabled !== false) {
@@ -328,6 +332,24 @@ export async function registerRoutes(
       });
 
       await extractFactsFromMessage(content, userId, sentimentResult.sentiment, redactionResult.extractedPII);
+
+      // Crisis detection and therapy module selection
+      const crisisAssessment = detectCrisis(content, sentimentResult.score);
+      let therapyTrigger: string | null = null;
+      let selectedExercise = null;
+      
+      // Only detect therapy triggers if in therapist mode and no critical crisis
+      if (therapistMode && crisisAssessment.severity !== "critical") {
+        therapyTrigger = detectTherapyTrigger(content);
+        if (therapyTrigger) {
+          selectedExercise = selectTherapyModule(therapyTrigger);
+        }
+      }
+      
+      // Log crisis events for audit
+      if (crisisAssessment.isCrisis) {
+        console.log(`Crisis detected for user ${userId}: severity=${crisisAssessment.severity}, triggers=${crisisAssessment.triggers.join(', ')}`);
+      }
 
       if (therapistMode) {
         const moodAnalysis = analyzeMoodFromMessage(content, sentimentResult.sentiment, sentimentResult.score);
@@ -447,7 +469,30 @@ Guidelines:
         throw new Error("All AI models are currently busy. Please wait a moment and try again.");
       }
 
-      const aiContent = completion.choices[0]?.message?.content || "I'm sorry, I couldn't generate a response.";
+      let aiContent = completion.choices[0]?.message?.content || "I'm sorry, I couldn't generate a response.";
+
+      // Apply safety wrapper for any non-"continue" recommendation (moderate, high, critical)
+      let safetyResult = null;
+      const needsSafetyWrapper = crisisAssessment.recommendedAction !== "continue";
+      
+      if (therapistMode) {
+        safetyResult = wrapResponseWithSafety(aiContent, crisisAssessment, selectedExercise);
+        aiContent = safetyResult.modifiedContent;
+        
+        // Add disclaimer for therapist mode if crisis resources were added
+        if (safetyResult.addedResources) {
+          aiContent += "\n\n" + generateDisclaimer();
+        }
+      } else if (needsSafetyWrapper) {
+        // In chat mode, add crisis resources for moderate/high/critical situations
+        safetyResult = wrapResponseWithSafety(aiContent, crisisAssessment, null);
+        aiContent = safetyResult.modifiedContent;
+        
+        // Add disclaimer when resources are added in chat mode too
+        if (safetyResult?.addedResources) {
+          aiContent += "\n\n" + generateDisclaimer();
+        }
+      }
 
       const aiMessage = await storage.createMessage({
         conversationId,
@@ -465,11 +510,52 @@ Guidelines:
       res.json({
         userMessage,
         aiMessage,
-        wasRedacted: redactionResult.wasRedacted
+        wasRedacted: redactionResult.wasRedacted,
+        crisisSeverity: crisisAssessment.severity !== "none" ? crisisAssessment.severity : undefined,
+        therapyExercise: selectedExercise ? selectedExercise.name : undefined
       });
 
     } catch (error: any) {
       console.error("Chat error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Therapy module endpoints
+  app.get("/api/therapy/exercises", async (req, res) => {
+    try {
+      const exercises = Object.entries(THERAPY_EXERCISES).map(([id, exercise]) => ({
+        id,
+        name: exercise.name,
+        type: exercise.type,
+        duration: exercise.duration
+      }));
+      res.json(exercises);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/therapy/exercise/:id", async (req, res) => {
+    try {
+      const exerciseId = req.params.id;
+      const exercise = THERAPY_EXERCISES[exerciseId];
+      if (!exercise) {
+        return res.status(404).json({ error: "Exercise not found" });
+      }
+      res.json(exercise);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/therapy/consent", async (req, res) => {
+    try {
+      res.json({
+        consentText: generateConsentText(),
+        disclaimer: generateDisclaimer()
+      });
+    } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
   });
