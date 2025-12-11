@@ -116,9 +116,9 @@ The AI exists to:
 Preferred communication style: Simple, everyday language.
 
 ### User Identity Protocol
-- **Name Source**: User's name comes from their Replit Auth sign-up (firstName field)
+- **Name Source**: User's name comes from their account registration (firstName field)
 - **Owner Exception**: Joe Abbott (joe_abbott@me.com) is always addressed as "Joe"
-- **All Other Users**: Use the name they provided during sign up
+- **All Other Users**: Use the name they provided during registration
 - **Name Change Trigger**: Only "My name is [X]" updates the name in conversation
 - **"I am" Statements**: Never interpreted as name changes (e.g., "I am tired" does not change name)
 

@@ -29,7 +29,7 @@ import {
 import { generateSmartReplies, type SmartReply } from "./lib/smart-replies";
 import { createAndStoreInsight, getAggregatedInsights } from "./lib/psychological-analyzer";
 import { updateUserProfile, getProfileSummary, generateCoachingPlan } from "./lib/profile-aggregator";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupAuth, isAuthenticated } from "./auth";
 import OpenAI from "openai";
 
 const openai = new OpenAI({
@@ -207,17 +207,6 @@ export async function registerRoutes(
 ): Promise<Server> {
   
   await setupAuth(app);
-
-  app.get("/api/auth/user", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      res.json(user);
-    } catch (error: any) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
-    }
-  });
   
   app.get("/api/users", async (req, res) => {
     try {

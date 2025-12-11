@@ -155,11 +155,11 @@ A comprehensive privacy center accessible from the chat interface:
 
 ## Authentication & Access Control
 
-### Secure OAuth Authentication
-- Sign in with Google, Apple, GitHub, X, or email/password
-- Powered by industry-standard OpenID Connect (OIDC)
-- Secure session management with automatic token refresh
-- No passwords stored - authentication delegated to trusted providers
+### Secure Email/Password Authentication
+- Create an account with email and password
+- Secure password hashing with bcrypt
+- Session-based authentication with PostgreSQL session store
+- Secure session management
 
 ### Guest Mode
 - Try the full experience without creating an account
