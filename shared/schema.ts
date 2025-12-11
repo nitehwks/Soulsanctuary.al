@@ -45,7 +45,24 @@ export const messages = pgTable("messages", {
   sentiment: text("sentiment"),
   sentimentScore: integer("sentiment_score"),
   keyPhrases: text("key_phrases").array(),
+  hasAttachment: boolean("has_attachment").default(false),
+  attachmentType: text("attachment_type"),
   timestamp: timestamp("timestamp").defaultNow().notNull(),
+});
+
+export const attachments = pgTable("attachments", {
+  id: serial("id").primaryKey(),
+  messageId: integer("message_id").references(() => messages.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull().default("anonymous"),
+  type: text("type").notNull(),
+  fileName: text("file_name"),
+  mimeType: text("mime_type"),
+  fileSize: integer("file_size"),
+  content: text("content"),
+  extractedText: text("extracted_text"),
+  analysisResult: text("analysis_result"),
+  keyInsights: text("key_insights").array(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const userContext = pgTable("user_context", {
@@ -266,6 +283,14 @@ export const insertMessageSchema = createInsertSchema(messages).omit({
   id: true,
   timestamp: true,
 });
+
+export const insertAttachmentSchema = createInsertSchema(attachments).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type Attachment = typeof attachments.$inferSelect;
+export type InsertAttachment = z.infer<typeof insertAttachmentSchema>;
 
 export const insertUserContextSchema = createInsertSchema(userContext).omit({
   id: true,

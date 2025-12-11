@@ -326,10 +326,21 @@ export async function registerRoutes(
 
   app.post("/api/chat", async (req, res) => {
     try {
-      const { conversationId, content, userId = "anonymous", mode } = req.body;
+      const { conversationId, content, userId = "anonymous", mode, attachment } = req.body;
 
-      if (!conversationId || !content) {
-        return res.status(400).json({ error: "conversationId and content are required" });
+      // Allow empty content if there's an attachment
+      if (!conversationId || (!content && !attachment)) {
+        return res.status(400).json({ error: "conversationId and content (or attachment) are required" });
+      }
+
+      // Build message content including attachment context
+      let messageContent = content || "";
+      let attachmentContext = "";
+      if (attachment && attachment.analysisResult) {
+        attachmentContext = `\n\n[Image Analysis: ${attachment.analysisResult}]`;
+        if (!messageContent) {
+          messageContent = `[Shared an image]`;
+        }
       }
 
       const userPrefs = await storage.getUserPreferences(userId);
@@ -357,22 +368,28 @@ export async function registerRoutes(
         }
       }
 
-      const redactionResult = redactPII(content);
-      const sentimentResult = analyzeSentiment(content);
-      const keyPhrases = extractKeyPhrases(content);
+      const fullContent = messageContent + attachmentContext;
+      const redactionResult = redactPII(fullContent);
+      const sentimentResult = analyzeSentiment(fullContent);
+      const keyPhrases = extractKeyPhrases(fullContent);
       
       const userMessage = await storage.createMessage({
         conversationId,
         role: "user",
         content: redactionResult.redactedContent,
-        originalContent: redactionResult.wasRedacted ? content : null,
+        originalContent: redactionResult.wasRedacted ? fullContent : null,
         wasObfuscated: redactionResult.wasRedacted,
         sentiment: sentimentResult.sentiment,
         sentimentScore: sentimentResult.score,
         keyPhrases: keyPhrases,
       });
 
-      await extractFactsFromMessage(content, userId, sentimentResult.sentiment, redactionResult.extractedPII);
+      // Link attachment to the created message if one was provided
+      if (attachment && attachment.id) {
+        await storage.linkAttachmentToMessage(attachment.id, userMessage.id);
+      }
+
+      await extractFactsFromMessage(fullContent, userId, sentimentResult.sentiment, redactionResult.extractedPII);
 
       // Store psychological insight for every user message (immutable ledger)
       try {
@@ -1336,6 +1353,112 @@ Guidelines:
       const limit = parseInt(req.query.limit as string) || 50;
       const insights = await storage.getMessageInsights(userId, limit);
       res.json(insights);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Attachment upload and vision analysis endpoint
+  app.post("/api/attachments/upload", async (req, res) => {
+    try {
+      const { userId, fileName, fileType, fileSize, fileData } = req.body;
+
+      if (!userId || !fileName || !fileType || !fileData) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      // Determine type category
+      let attachmentType = "document";
+      if (fileType.startsWith('image/')) {
+        attachmentType = "image";
+      } else if (fileType.startsWith('audio/')) {
+        attachmentType = "voice";
+      }
+
+      // Create attachment record (without messageId yet - will be linked when message is created)
+      const attachment = await storage.createAttachment({
+        userId,
+        fileName,
+        type: attachmentType,
+        mimeType: fileType,
+        fileSize: fileSize || 0,
+        content: fileData, // Base64 data
+      });
+
+      // Analyze the attachment if it's an image
+      let analysisResult = "";
+      let keyInsights: string[] = [];
+
+      if (attachmentType === 'image') {
+        try {
+          // Use vision-capable model to analyze the image
+          const visionResponse = await openai.chat.completions.create({
+            model: "google/gemini-2.0-flash-001",
+            messages: [
+              {
+                role: "user",
+                content: [
+                  {
+                    type: "text",
+                    text: `You are a caring, insightful companion. Analyze this image and describe what you see. 
+                    Focus on:
+                    1. Main subject or content
+                    2. Emotional tone or mood
+                    3. Any meaningful details that might be relevant for understanding the person sharing it
+                    4. Key insights that could be useful for a supportive conversation
+                    
+                    Be warm and observant. Format as a brief description followed by bullet points of key insights.`
+                  },
+                  {
+                    type: "image_url",
+                    image_url: {
+                      url: fileData // Base64 image data
+                    }
+                  }
+                ]
+              }
+            ],
+            max_tokens: 500
+          });
+
+          analysisResult = visionResponse.choices[0]?.message?.content || "";
+          
+          // Extract key insights from the analysis
+          const insightMatches = analysisResult.match(/[-•]\s*([^\n]+)/g);
+          if (insightMatches) {
+            keyInsights = insightMatches.map(m => m.replace(/^[-•]\s*/, '').trim()).slice(0, 5);
+          }
+
+          // Update attachment with analysis
+          await storage.updateAttachmentAnalysis(attachment.id, analysisResult, keyInsights);
+        } catch (visionError) {
+          console.error('Vision analysis error:', visionError);
+          analysisResult = "Image received but analysis unavailable";
+        }
+      } else if (fileType.includes('text') || fileType.includes('pdf') || fileType.includes('document')) {
+        analysisResult = `Document received: ${fileName}`;
+        keyInsights = ["Document shared for reference"];
+      }
+
+      res.json({
+        id: attachment.id,
+        fileName,
+        fileType,
+        analysisResult,
+        keyInsights
+      });
+    } catch (error: any) {
+      console.error('Attachment upload error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get attachments for a user
+  app.get("/api/attachments/:userId", async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const attachments = await storage.getAttachmentsByUser(userId);
+      res.json(attachments);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

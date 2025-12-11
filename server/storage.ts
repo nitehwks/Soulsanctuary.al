@@ -42,6 +42,8 @@ import {
   type InsertCoachingPlanStep,
   type ProgressReflection,
   type InsertProgressReflection,
+  type Attachment,
+  type InsertAttachment,
   users,
   conversations,
   messages,
@@ -62,7 +64,8 @@ import {
   messageInsights,
   coachingPlans,
   coachingPlanSteps,
-  progressReflections
+  progressReflections,
+  attachments
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "../db/index";
@@ -170,6 +173,14 @@ export interface IStorage {
   // Progress Reflections methods
   createProgressReflection(reflection: InsertProgressReflection): Promise<ProgressReflection>;
   getProgressReflections(userId: string, limit?: number): Promise<ProgressReflection[]>;
+  
+  // Attachment methods
+  createAttachment(attachment: InsertAttachment): Promise<Attachment>;
+  getAttachment(id: number): Promise<Attachment | undefined>;
+  getAttachmentsByMessage(messageId: number): Promise<Attachment[]>;
+  getAttachmentsByUser(userId: string): Promise<Attachment[]>;
+  updateAttachmentAnalysis(id: number, analysisResult: string, keyInsights: string[]): Promise<Attachment | undefined>;
+  linkAttachmentToMessage(attachmentId: number, messageId: number): Promise<Attachment | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -749,6 +760,45 @@ export class DatabaseStorage implements IStorage {
       .where(eq(progressReflections.userId, userId))
       .orderBy(desc(progressReflections.createdAt))
       .limit(limit);
+  }
+
+  // Attachment methods
+  async createAttachment(attachment: InsertAttachment): Promise<Attachment> {
+    const [created] = await db.insert(attachments).values(attachment).returning();
+    return created;
+  }
+
+  async getAttachment(id: number): Promise<Attachment | undefined> {
+    const [attachment] = await db.select().from(attachments).where(eq(attachments.id, id));
+    return attachment;
+  }
+
+  async getAttachmentsByMessage(messageId: number): Promise<Attachment[]> {
+    return await db.select().from(attachments)
+      .where(eq(attachments.messageId, messageId))
+      .orderBy(desc(attachments.createdAt));
+  }
+
+  async getAttachmentsByUser(userId: string): Promise<Attachment[]> {
+    return await db.select().from(attachments)
+      .where(eq(attachments.userId, userId))
+      .orderBy(desc(attachments.createdAt));
+  }
+
+  async updateAttachmentAnalysis(id: number, analysisResult: string, keyInsights: string[]): Promise<Attachment | undefined> {
+    const [updated] = await db.update(attachments)
+      .set({ analysisResult, keyInsights })
+      .where(eq(attachments.id, id))
+      .returning();
+    return updated;
+  }
+
+  async linkAttachmentToMessage(attachmentId: number, messageId: number): Promise<Attachment | undefined> {
+    const [updated] = await db.update(attachments)
+      .set({ messageId })
+      .where(eq(attachments.id, attachmentId))
+      .returning();
+    return updated;
   }
 }
 

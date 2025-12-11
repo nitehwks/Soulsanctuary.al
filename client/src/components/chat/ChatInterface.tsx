@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Send, Mic, MicOff, PanelLeftClose, PanelLeft, Heart, Shield, Target, Brain } from "lucide-react";
+import { Send, Mic, MicOff, PanelLeftClose, PanelLeft, Heart, Shield, Target, Brain, Paperclip, Camera, X, FileText, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -53,8 +53,12 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
   const [profileLoading, setProfileLoading] = useState(false);
   const [coachingEligible, setCoachingEligible] = useState(false);
   const [smartReplies, setSmartReplies] = useState<SmartReply[]>([]);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [filePreview, setFilePreview] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { user, isLoading: isUserLoading } = useAuth();
   const userId = user?.id;
@@ -238,29 +242,123 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
     scrollToBottom();
   }, [messages]);
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (e) => setFilePreview(e.target?.result as string);
+        reader.readAsDataURL(file);
+      } else {
+        setFilePreview(null);
+      }
+      toast({
+        title: "File attached",
+        description: `${file.name} ready to send`,
+      });
+    }
+  };
+
+  const handleCameraCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      const reader = new FileReader();
+      reader.onload = (e) => setFilePreview(e.target?.result as string);
+      reader.readAsDataURL(file);
+      toast({
+        title: "Photo captured",
+        description: "Photo ready to send",
+      });
+    }
+  };
+
+  const clearSelectedFile = () => {
+    setSelectedFile(null);
+    setFilePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (cameraInputRef.current) cameraInputRef.current.value = '';
+  };
+
   const handleSend = async () => {
-    if (!input.trim() || !conversationId || !userId) return;
+    if ((!input.trim() && !selectedFile) || !conversationId || !userId) return;
+
+    const fileToSend = selectedFile;
+    const filePreviewToSend = filePreview;
+    const messageContent = selectedFile 
+      ? `${input || ""}${input ? "\n\n" : ""}[Attached: ${selectedFile.name}]`
+      : input;
 
     const optimisticUserMessage: Message = {
       id: Date.now(),
       role: "user",
-      content: input,
+      content: messageContent,
       timestamp: new Date().toISOString(),
     };
 
     setMessages(prev => [...prev, optimisticUserMessage]);
     const currentInput = input;
     setInput("");
+    clearSelectedFile();
     setIsProcessing(true);
 
     try {
+      let attachmentData = null;
+      
+      // If there's a file, upload it first (preview may be null for non-image files)
+      if (fileToSend) {
+        try {
+          // For non-image files without preview, read as base64
+          let fileData = filePreviewToSend;
+          if (!fileData) {
+            const reader = new FileReader();
+            fileData = await new Promise<string>((resolve, reject) => {
+              reader.onload = (e) => resolve(e.target?.result as string);
+              reader.onerror = reject;
+              reader.readAsDataURL(fileToSend);
+            });
+          }
+
+          const uploadResponse = await fetch('/api/attachments/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId,
+              fileName: fileToSend.name,
+              fileType: fileToSend.type,
+              fileSize: fileToSend.size,
+              fileData,
+            })
+          });
+
+          if (uploadResponse.ok) {
+            attachmentData = await uploadResponse.json();
+          } else {
+            toast({
+              title: "Upload failed",
+              description: "Could not upload the file",
+              variant: "destructive"
+            });
+          }
+        } catch (uploadError) {
+          console.error('File upload error:', uploadError);
+          toast({
+            title: "Upload error",
+            description: "Failed to process the file",
+            variant: "destructive"
+          });
+        }
+      }
+
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           conversationId,
           content: currentInput,
-          userId
+          userId,
+          attachment: attachmentData
         })
       });
 
@@ -547,15 +645,88 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
               )}
             </AnimatePresence>
 
+            {/* File Preview */}
+            {selectedFile && (
+              <div className="mb-2 p-2 bg-muted/50 rounded-lg flex items-center gap-2">
+                {filePreview ? (
+                  <img src={filePreview} alt="Preview" className="h-12 w-12 object-cover rounded" />
+                ) : (
+                  <div className="h-12 w-12 bg-muted rounded flex items-center justify-center">
+                    <FileText className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{selectedFile.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {(selectedFile.size / 1024).toFixed(1)} KB
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 rounded-full"
+                  onClick={clearSelectedFile}
+                  data-testid="button-clear-file"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+
             <form 
               onSubmit={(e) => { e.preventDefault(); handleSend(); }}
               className="flex gap-2 items-center bg-card border border-input rounded-full px-2 py-2 shadow-sm focus-within:ring-2 focus-within:ring-ring"
             >
-               <Button 
+              {/* Hidden file inputs */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.doc,.docx,.txt,.md,image/*"
+                onChange={handleFileSelect}
+                className="hidden"
+                data-testid="input-file"
+              />
+              <input
+                ref={cameraInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={handleCameraCapture}
+                className="hidden"
+                data-testid="input-camera"
+              />
+
+              {/* File upload button */}
+              <Button 
                 type="button" 
                 variant="ghost" 
                 size="icon" 
-                className={cn("rounded-full h-8 w-8 ml-1", isListening && "text-red-500 animate-pulse bg-red-500/10")}
+                className="rounded-full h-8 w-8 ml-1 hover:bg-blue-500/10 hover:text-blue-500"
+                onClick={() => fileInputRef.current?.click()}
+                data-testid="button-attach"
+              >
+                <Paperclip className="h-4 w-4" />
+              </Button>
+
+              {/* Camera button */}
+              <Button 
+                type="button" 
+                variant="ghost" 
+                size="icon" 
+                className="rounded-full h-8 w-8 hover:bg-purple-500/10 hover:text-purple-500"
+                onClick={() => cameraInputRef.current?.click()}
+                data-testid="button-camera"
+              >
+                <Camera className="h-4 w-4" />
+              </Button>
+
+              {/* Voice button */}
+              <Button 
+                type="button" 
+                variant="ghost" 
+                size="icon" 
+                className={cn("rounded-full h-8 w-8", isListening && "text-red-500 animate-pulse bg-red-500/10")}
                 onClick={toggleListening}
                 data-testid="button-voice"
               >
@@ -568,7 +739,7 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
                   setInput(e.target.value);
                   if (e.target.value.length > 0) setSmartReplies([]);
                 }}
-                placeholder="Ask anything..."
+                placeholder={selectedFile ? "Add a message about this file..." : "Ask anything..."}
                 className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent shadow-none px-2 font-medium"
                 data-testid="input-message"
               />
@@ -576,7 +747,7 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
               <Button 
                 type="submit" 
                 size="icon" 
-                disabled={!input.trim() || isProcessing} 
+                disabled={(!input.trim() && !selectedFile) || isProcessing} 
                 className="rounded-full h-8 w-8 mr-1 bg-primary hover:bg-primary/90 shrink-0"
                 data-testid="button-send"
               >
