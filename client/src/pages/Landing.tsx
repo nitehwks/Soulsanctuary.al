@@ -4,7 +4,11 @@ import { Shield, Brain, Heart, Lock, MessageSquare, Sparkles } from "lucide-reac
 import { motion } from "framer-motion";
 
 export default function Landing() {
-  const handleGetStarted = () => {
+  const handleLogin = () => {
+    window.location.href = "/api/login";
+  };
+
+  const handleGuestAccess = () => {
     localStorage.setItem('guestMode', 'true');
     localStorage.setItem('guestUserId', 'guest-' + Date.now());
     window.location.reload();
@@ -18,8 +22,8 @@ export default function Landing() {
             <Shield className="h-6 w-6 text-primary" />
             <span className="font-heading font-bold text-xl">SoulSanctuary</span>
           </div>
-          <Button onClick={handleGetStarted} data-testid="button-get-started-header">
-            Get Started
+          <Button onClick={handleLogin} data-testid="button-login-header">
+            Sign In
           </Button>
         </div>
       </header>
@@ -41,11 +45,11 @@ export default function Landing() {
               what matters to you.
             </p>
             <div className="flex gap-4 justify-center">
-              <Button size="lg" onClick={handleGetStarted} data-testid="button-get-started-hero">
-                Get Started Free
+              <Button size="lg" onClick={handleLogin} data-testid="button-login-hero">
+                Get Started
               </Button>
-              <Button size="lg" variant="outline">
-                Learn More
+              <Button size="lg" variant="outline" onClick={handleGuestAccess} data-testid="button-guest-hero">
+                Try as Guest
               </Button>
             </div>
           </motion.div>
@@ -154,8 +158,11 @@ export default function Landing() {
             Start your journey to inner peace
           </p>
           <div className="flex gap-4 justify-center">
-            <Button size="lg" onClick={handleGetStarted} data-testid="button-get-started-bottom">
-              Begin Your Sanctuary
+            <Button size="lg" onClick={handleLogin} data-testid="button-login-bottom">
+              Sign In to Begin
+            </Button>
+            <Button size="lg" variant="outline" onClick={handleGuestAccess} data-testid="button-guest-bottom">
+              Try as Guest
             </Button>
           </div>
         </div>
