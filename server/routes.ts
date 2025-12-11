@@ -26,6 +26,7 @@ import {
   assessUserEngagement,
   type UserProbingState as ProbingState
 } from "./lib/probing-questions";
+import { generateSmartReplies, type SmartReply } from "./lib/smart-replies";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import OpenAI from "openai";
 
@@ -615,12 +616,22 @@ Guidelines:
         await storage.updateConversationTitle(conversationId, title);
       }
 
+      // Generate smart reply suggestions
+      const smartReplies = generateSmartReplies({
+        aiResponse: aiContent,
+        userMessage: content,
+        sentiment: sentimentResult.sentiment,
+        therapistMode,
+        crisisDetected: crisisAssessment.severity !== "none" && crisisAssessment.severity !== "low"
+      });
+
       res.json({
         userMessage,
         aiMessage,
         wasRedacted: redactionResult.wasRedacted,
         crisisSeverity: crisisAssessment.severity !== "none" ? crisisAssessment.severity : undefined,
-        therapyExercise: selectedExercise ? selectedExercise.name : undefined
+        therapyExercise: selectedExercise ? selectedExercise.name : undefined,
+        smartReplies
       });
 
     } catch (error: any) {

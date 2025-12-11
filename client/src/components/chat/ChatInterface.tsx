@@ -27,6 +27,12 @@ interface Message {
   wasObfuscated?: boolean;
 }
 
+interface SmartReply {
+  id: string;
+  text: string;
+  type: 'affirmative' | 'negative' | 'question' | 'emotional' | 'action' | 'continue';
+}
+
 interface ChatInterfaceProps {
   mode?: "chat" | "therapist";
 }
@@ -45,6 +51,7 @@ export function ChatInterface({ mode = "chat" }: ChatInterfaceProps) {
   const [profileData, setProfileData] = useState<any>(null);
   const [profileLoading, setProfileLoading] = useState(false);
   const [coachingEligible, setCoachingEligible] = useState(false);
+  const [smartReplies, setSmartReplies] = useState<SmartReply[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   const { toast } = useToast();
@@ -267,6 +274,13 @@ export function ChatInterface({ mode = "chat" }: ChatInterfaceProps) {
         return [...withoutOptimistic, data.userMessage, data.aiMessage];
       });
 
+      // Store smart replies for display
+      if (data.smartReplies && data.smartReplies.length > 0) {
+        setSmartReplies(data.smartReplies);
+      } else {
+        setSmartReplies([]);
+      }
+
       if (data.wasRedacted) {
         toast({
           title: "Privacy Protection Active",
@@ -288,6 +302,11 @@ export function ChatInterface({ mode = "chat" }: ChatInterfaceProps) {
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const handleSmartReplyClick = (reply: SmartReply) => {
+    setInput(reply.text);
+    setSmartReplies([]);
   };
 
   return (
@@ -489,6 +508,39 @@ export function ChatInterface({ mode = "chat" }: ChatInterfaceProps) {
 
         <div className="p-4 bg-background/80 backdrop-blur-sm sticky bottom-0 z-10 border-t border-border/40">
           <div className="max-w-3xl mx-auto">
+            {/* Smart Reply Suggestions */}
+            <AnimatePresence>
+              {smartReplies.length > 0 && !isProcessing && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  className="flex flex-wrap gap-2 mb-3 justify-center"
+                >
+                  {smartReplies.map((reply) => (
+                    <Button
+                      key={reply.id}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleSmartReplyClick(reply)}
+                      className={cn(
+                        "rounded-full text-xs font-medium transition-all hover:scale-105",
+                        reply.type === 'affirmative' && "border-green-500/50 hover:bg-green-500/10 hover:text-green-600",
+                        reply.type === 'negative' && "border-orange-500/50 hover:bg-orange-500/10 hover:text-orange-600",
+                        reply.type === 'question' && "border-blue-500/50 hover:bg-blue-500/10 hover:text-blue-600",
+                        reply.type === 'emotional' && "border-purple-500/50 hover:bg-purple-500/10 hover:text-purple-600",
+                        reply.type === 'action' && "border-emerald-500/50 hover:bg-emerald-500/10 hover:text-emerald-600",
+                        reply.type === 'continue' && "border-gray-500/50 hover:bg-gray-500/10"
+                      )}
+                      data-testid={`smart-reply-${reply.id}`}
+                    >
+                      {reply.text}
+                    </Button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             <form 
               onSubmit={(e) => { e.preventDefault(); handleSend(); }}
               className="flex gap-2 items-center bg-card border border-input rounded-full px-2 py-2 shadow-sm focus-within:ring-2 focus-within:ring-ring"
@@ -506,7 +558,10 @@ export function ChatInterface({ mode = "chat" }: ChatInterfaceProps) {
               
               <Input 
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={(e) => {
+                  setInput(e.target.value);
+                  if (e.target.value.length > 0) setSmartReplies([]);
+                }}
                 placeholder="Ask anything..."
                 className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent shadow-none px-2 font-medium"
                 data-testid="input-message"
