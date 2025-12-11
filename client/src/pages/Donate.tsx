@@ -190,7 +190,7 @@ export default function Donate() {
                 All donations support our mission to provide faith-based healing and hope.
               </p>
               <p className="text-xs text-muted-foreground mt-2">
-                Contact: techsupport@creativelovechurch.com
+                Contact: joe_abbott@me.com
               </p>
             </CardContent>
           </Card>

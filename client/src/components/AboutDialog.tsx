@@ -155,11 +155,11 @@ export function AboutDialog({ trigger }: AboutDialogProps) {
                 <p className="flex items-center gap-2">
                   <Mail className="h-4 w-4" />
                   <a 
-                    href="mailto:techsupport@creativelovechurch.com" 
+                    href="mailto:joe_abbott@me.com" 
                     className="text-primary hover:underline"
                     data-testid="link-contact-email"
                   >
-                    techsupport@creativelovechurch.com
+                    joe_abbott@me.com
                   </a>
                 </p>
                 <p>

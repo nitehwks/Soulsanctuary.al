@@ -117,7 +117,7 @@ Preferred communication style: Simple, everyday language.
 
 ### User Identity Protocol
 - **Name Source**: User's name comes from their Replit Auth sign-up (firstName field)
-- **Owner Exception**: Joe Abbott (techsupport@creativelovechurch.com) is always addressed as "Joe"
+- **Owner Exception**: Joe Abbott (joe_abbott@me.com) is always addressed as "Joe"
 - **All Other Users**: Use the name they provided during sign up
 - **Name Change Trigger**: Only "My name is [X]" updates the name in conversation
 - **"I am" Statements**: Never interpreted as name changes (e.g., "I am tired" does not change name)

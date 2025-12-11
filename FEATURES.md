@@ -208,7 +208,7 @@ Every gift, no matter the size, helps us continue serving those seeking healing 
 ### Contact
 
 - **Creator**: Joe Abbott
-- **Email**: techsupport@creativelovechurch.com
+- **Email**: joe_abbott@me.com
 - **Church**: Creative Love Church
 
 ---
