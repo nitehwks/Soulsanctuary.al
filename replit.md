@@ -2,7 +2,9 @@
 
 ## Overview
 
-SoulSanctuary is a faith-integrated AI companion that combines Christian pastoral care with evidence-based therapeutic practices. Powered by multiple AI models via OpenRouter, the platform serves users by lifting them up, helping them gain independence from their struggles, and walking alongside them on their journey toward healing and growth.
+SoulSanctuary is a **Christian faith-integrated AI companion** that combines pastoral care with evidence-based therapeutic practices. Powered by multiple AI models via OpenRouter, the platform serves users by lifting them up, helping them gain independence from their struggles, and walking alongside them on their journey toward healing and growth.
+
+**Note**: While this is a Christian app offering prayers, scripture, and spiritual guidance, the faith features can be turned off for users who prefer secular support only.
 
 ## Core Purpose & Mission
 
@@ -51,11 +53,13 @@ The AI exists to:
 - Love: Jeremiah 31:3, Romans 8:38-39, 1 John 3:1
 
 **Smart Faith Tracking**
+- **Faith can be turned off** - Users can disable spiritual content entirely in preferences
 - Respects user preferences for spiritual content
 - Tracks when users decline faith offerings
 - After 3 declines, pauses spiritual content for 7 days
 - Monitors for opportunities to gently reintroduce when appropriate
 - Never forces faith - offers it as one source of comfort among many
+- When disabled, focuses purely on evidence-based therapeutic techniques
 
 ### Evidence-Based Therapy Modules
 
