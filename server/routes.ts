@@ -409,12 +409,12 @@ Guidelines:
         }))
       ];
 
-      // Models to try in order (fallback chain for rate limiting)
+      // Uncensored models to try in order (fallback chain for rate limiting)
       const models = [
+        "venice/uncensored:free",
+        "nousresearch/hermes-3-llama-3.1-405b:free",
         "meta-llama/llama-3.3-70b-instruct:free",
-        "qwen/qwen-2.5-72b-instruct:free",
-        "mistralai/mistral-nemo:free",
-        "microsoft/phi-3-medium-128k-instruct:free"
+        "qwen/qwen-2.5-72b-instruct:free"
       ];
       
       let completion = null;
