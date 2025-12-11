@@ -539,3 +539,226 @@ export type InsertCopingStrategy = z.infer<typeof insertCopingStrategySchema>;
 
 export type UserFavoriteStrategy = typeof userFavoriteStrategies.$inferSelect;
 export type InsertUserFavoriteStrategy = z.infer<typeof insertUserFavoriteStrategySchema>;
+
+// Comprehensive User Profile - Cumulative psychological profile
+export const userProfiles = pgTable("user_profiles", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull().unique(),
+  
+  // Core Identity
+  displayName: text("display_name"),
+  communicationStyle: text("communication_style"), // 'direct', 'reflective', 'analytical', 'expressive'
+  primaryMotivators: text("primary_motivators").array(),
+  coreValues: text("core_values").array(),
+  
+  // Personality Dimensions (0-100 scale)
+  opennessScore: integer("openness_score").default(50),
+  conscientiousnessScore: integer("conscientiousness_score").default(50),
+  extraversionScore: integer("extraversion_score").default(50),
+  agreeablenessScore: integer("agreeableness_score").default(50),
+  neuroticismScore: integer("neuroticism_score").default(50),
+  
+  // Psychodynamic Patterns
+  attachmentStyle: text("attachment_style"), // 'secure', 'anxious', 'avoidant', 'disorganized'
+  defenseMechanisms: text("defense_mechanisms").array(),
+  coreBeliefs: text("core_beliefs").array(),
+  cognitiveDistortions: text("cognitive_distortions").array(),
+  
+  // Strengths & Growth Areas
+  identifiedStrengths: text("identified_strengths").array(),
+  growthAreas: text("growth_areas").array(),
+  copingPatterns: text("coping_patterns").array(),
+  stressTriggers: text("stress_triggers").array(),
+  
+  // Relationship Dynamics
+  relationshipPatterns: text("relationship_patterns").array(),
+  communicationNeeds: text("communication_needs").array(),
+  
+  // Life Context
+  lifeStage: text("life_stage"),
+  currentChallenges: text("current_challenges").array(),
+  supportSystems: text("support_systems").array(),
+  
+  // Aggregate Metrics
+  totalMessagesAnalyzed: integer("total_messages_analyzed").default(0),
+  lastInsightUpdate: timestamp("last_insight_update"),
+  profileConfidence: integer("profile_confidence").default(0), // 0-100 based on data quantity
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Message-Level Psychological Insights - Immutable ledger
+export const messageInsights = pgTable("message_insights", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  messageId: integer("message_id").references(() => messages.id, { onDelete: "cascade" }),
+  conversationId: integer("conversation_id").references(() => conversations.id, { onDelete: "cascade" }),
+  
+  // Emotional Analysis
+  primaryEmotion: text("primary_emotion"),
+  secondaryEmotions: text("secondary_emotions").array(),
+  emotionalIntensity: integer("emotional_intensity"), // 1-10
+  
+  // Psychological Signals
+  needsExpressed: text("needs_expressed").array(), // 'validation', 'guidance', 'support', 'autonomy'
+  defenseMechanismsObserved: text("defense_mechanisms_observed").array(),
+  cognitivePatterns: text("cognitive_patterns").array(),
+  attachmentSignals: text("attachment_signals").array(),
+  
+  // Content Analysis
+  topicsDiscussed: text("topics_discussed").array(),
+  valuesRevealed: text("values_revealed").array(),
+  goalsImplied: text("goals_implied").array(),
+  concernsRaised: text("concerns_raised").array(),
+  
+  // Risk Assessment
+  riskFlags: text("risk_flags").array(),
+  wellnessIndicators: text("wellness_indicators").array(),
+  
+  // Relationship Mentions
+  relationshipsMentioned: jsonb("relationships_mentioned"), // [{name, relation, sentiment}]
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Coaching Plans - Personalized development plans
+export const coachingPlans = pgTable("coaching_plans", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  
+  // Plan Overview
+  title: text("title").notNull(),
+  focus: text("focus").notNull(), // 'personal_growth', 'career', 'relationships', 'wellness', 'habits'
+  status: text("status").default("active"), // 'active', 'completed', 'paused'
+  priority: integer("priority").default(5), // 1-10
+  
+  // Psychoanalytic Foundation
+  underlyingPatterns: text("underlying_patterns").array(),
+  rootCauses: text("root_causes").array(),
+  unconsciousDrivers: text("unconscious_drivers").array(),
+  
+  // Goals & Outcomes
+  shortTermGoals: text("short_term_goals").array(),
+  longTermGoals: text("long_term_goals").array(),
+  successIndicators: text("success_indicators").array(),
+  
+  // Intervention Strategy
+  therapeuticApproaches: text("therapeutic_approaches").array(), // 'CBT', 'DBT', 'ACT', 'psychodynamic'
+  recommendedExercises: text("recommended_exercises").array(),
+  weeklyActions: text("weekly_actions").array(),
+  
+  // Progress Tracking
+  currentPhase: text("current_phase").default("discovery"), // 'discovery', 'action', 'integration', 'maintenance'
+  progressPercentage: integer("progress_percentage").default(0),
+  lastReviewedAt: timestamp("last_reviewed_at"),
+  
+  // Evidence & Insights
+  evidenceNotes: text("evidence_notes").array(),
+  breakhroughs: text("breakthroughs").array(),
+  setbacks: text("setbacks").array(),
+  
+  startedAt: timestamp("started_at").defaultNow().notNull(),
+  targetCompletionDate: timestamp("target_completion_date"),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Coaching Plan Steps - Actionable items within a plan
+export const coachingPlanSteps = pgTable("coaching_plan_steps", {
+  id: serial("id").primaryKey(),
+  planId: integer("plan_id").notNull().references(() => coachingPlans.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull(),
+  
+  title: text("title").notNull(),
+  description: text("description"),
+  actionType: text("action_type").notNull(), // 'reflection', 'exercise', 'habit', 'conversation', 'skill_practice'
+  
+  // Scheduling
+  frequency: text("frequency"), // 'daily', 'weekly', 'as_needed'
+  dueDate: timestamp("due_date"),
+  reminderEnabled: boolean("reminder_enabled").default(false),
+  
+  // Progress
+  status: text("status").default("pending"), // 'pending', 'in_progress', 'completed', 'skipped'
+  completedAt: timestamp("completed_at"),
+  reflectionNotes: text("reflection_notes"),
+  effectivenessRating: integer("effectiveness_rating"), // 1-5
+  
+  order: integer("order").default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Progress Reflections - User's journey documentation
+export const progressReflections = pgTable("progress_reflections", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  planId: integer("plan_id").references(() => coachingPlans.id, { onDelete: "set null" }),
+  
+  reflectionType: text("reflection_type").notNull(), // 'weekly', 'milestone', 'breakthrough', 'setback'
+  content: text("content").notNull(),
+  
+  // What was learned
+  insights: text("insights").array(),
+  patternsNoticed: text("patterns_noticed").array(),
+  emotionsExperienced: text("emotions_experienced").array(),
+  
+  // Forward looking
+  nextFocus: text("next_focus"),
+  adjustmentsNeeded: text("adjustments_needed").array(),
+  
+  moodRating: integer("mood_rating"), // 1-10
+  progressRating: integer("progress_rating"), // 1-10
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Insert schemas
+export const insertUserProfileSchema = createInsertSchema(userProfiles).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertMessageInsightSchema = createInsertSchema(messageInsights).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertCoachingPlanSchema = createInsertSchema(coachingPlans).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  startedAt: true,
+  completedAt: true,
+});
+
+export const insertCoachingPlanStepSchema = createInsertSchema(coachingPlanSteps).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  completedAt: true,
+});
+
+export const insertProgressReflectionSchema = createInsertSchema(progressReflections).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Types
+export type UserProfile = typeof userProfiles.$inferSelect;
+export type InsertUserProfile = z.infer<typeof insertUserProfileSchema>;
+
+export type MessageInsight = typeof messageInsights.$inferSelect;
+export type InsertMessageInsight = z.infer<typeof insertMessageInsightSchema>;
+
+export type CoachingPlan = typeof coachingPlans.$inferSelect;
+export type InsertCoachingPlan = z.infer<typeof insertCoachingPlanSchema>;
+
+export type CoachingPlanStep = typeof coachingPlanSteps.$inferSelect;
+export type InsertCoachingPlanStep = z.infer<typeof insertCoachingPlanStepSchema>;
+
+export type ProgressReflection = typeof progressReflections.$inferSelect;
+export type InsertProgressReflection = z.infer<typeof insertProgressReflectionSchema>;
