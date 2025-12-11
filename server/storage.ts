@@ -32,6 +32,16 @@ import {
   type InsertCoachingSession,
   type UserProbingState,
   type InsertUserProbingState,
+  type UserProfile,
+  type InsertUserProfile,
+  type MessageInsight,
+  type InsertMessageInsight,
+  type CoachingPlan,
+  type InsertCoachingPlan,
+  type CoachingPlanStep,
+  type InsertCoachingPlanStep,
+  type ProgressReflection,
+  type InsertProgressReflection,
   users,
   conversations,
   messages,
@@ -47,7 +57,12 @@ import {
   personalityInsights,
   motivationPatterns,
   coachingSessions,
-  userProbingState
+  userProbingState,
+  userProfiles,
+  messageInsights,
+  coachingPlans,
+  coachingPlanSteps,
+  progressReflections
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "../db/index";
@@ -130,6 +145,31 @@ export interface IStorage {
   getUserProbingState(userId: string): Promise<UserProbingState | undefined>;
   upsertUserProbingState(state: InsertUserProbingState): Promise<UserProbingState>;
   updateUserProbingState(userId: string, updates: Partial<UserProbingState>): Promise<UserProbingState | undefined>;
+  
+  // User Profile methods
+  getUserProfile(userId: string): Promise<UserProfile | undefined>;
+  upsertUserProfile(profile: InsertUserProfile): Promise<UserProfile>;
+  updateUserProfile(userId: string, updates: Partial<UserProfile>): Promise<UserProfile | undefined>;
+  
+  // Message Insights methods
+  createMessageInsight(insight: InsertMessageInsight): Promise<MessageInsight>;
+  getMessageInsights(userId: string, limit?: number): Promise<MessageInsight[]>;
+  getMessageInsightsByConversation(conversationId: number): Promise<MessageInsight[]>;
+  
+  // Coaching Plan methods
+  createCoachingPlan(plan: InsertCoachingPlan): Promise<CoachingPlan>;
+  getCoachingPlans(userId: string): Promise<CoachingPlan[]>;
+  getActiveCoachingPlan(userId: string): Promise<CoachingPlan | undefined>;
+  updateCoachingPlan(id: number, updates: Partial<CoachingPlan>): Promise<CoachingPlan | undefined>;
+  
+  // Coaching Plan Steps methods
+  createCoachingPlanStep(step: InsertCoachingPlanStep): Promise<CoachingPlanStep>;
+  getCoachingPlanSteps(planId: number): Promise<CoachingPlanStep[]>;
+  updateCoachingPlanStep(id: number, updates: Partial<CoachingPlanStep>): Promise<CoachingPlanStep | undefined>;
+  
+  // Progress Reflections methods
+  createProgressReflection(reflection: InsertProgressReflection): Promise<ProgressReflection>;
+  getProgressReflections(userId: string, limit?: number): Promise<ProgressReflection[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -601,6 +641,114 @@ export class DatabaseStorage implements IStorage {
       .where(eq(userProbingState.userId, userId))
       .returning();
     return updated;
+  }
+
+  // User Profile methods
+  async getUserProfile(userId: string): Promise<UserProfile | undefined> {
+    const [profile] = await db.select().from(userProfiles)
+      .where(eq(userProfiles.userId, userId));
+    return profile;
+  }
+
+  async upsertUserProfile(profile: InsertUserProfile): Promise<UserProfile> {
+    const existing = await this.getUserProfile(profile.userId);
+    if (existing) {
+      const [updated] = await db.update(userProfiles)
+        .set({ ...profile, updatedAt: new Date() })
+        .where(eq(userProfiles.userId, profile.userId))
+        .returning();
+      return updated;
+    }
+    const [created] = await db.insert(userProfiles).values(profile).returning();
+    return created;
+  }
+
+  async updateUserProfile(userId: string, updates: Partial<UserProfile>): Promise<UserProfile | undefined> {
+    const [updated] = await db.update(userProfiles)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(userProfiles.userId, userId))
+      .returning();
+    return updated;
+  }
+
+  // Message Insights methods
+  async createMessageInsight(insight: InsertMessageInsight): Promise<MessageInsight> {
+    const [created] = await db.insert(messageInsights).values(insight).returning();
+    return created;
+  }
+
+  async getMessageInsights(userId: string, limit: number = 100): Promise<MessageInsight[]> {
+    return await db.select().from(messageInsights)
+      .where(eq(messageInsights.userId, userId))
+      .orderBy(desc(messageInsights.createdAt))
+      .limit(limit);
+  }
+
+  async getMessageInsightsByConversation(conversationId: number): Promise<MessageInsight[]> {
+    return await db.select().from(messageInsights)
+      .where(eq(messageInsights.conversationId, conversationId))
+      .orderBy(desc(messageInsights.createdAt));
+  }
+
+  // Coaching Plan methods
+  async createCoachingPlan(plan: InsertCoachingPlan): Promise<CoachingPlan> {
+    const [created] = await db.insert(coachingPlans).values(plan).returning();
+    return created;
+  }
+
+  async getCoachingPlans(userId: string): Promise<CoachingPlan[]> {
+    return await db.select().from(coachingPlans)
+      .where(eq(coachingPlans.userId, userId))
+      .orderBy(desc(coachingPlans.priority));
+  }
+
+  async getActiveCoachingPlan(userId: string): Promise<CoachingPlan | undefined> {
+    const [plan] = await db.select().from(coachingPlans)
+      .where(and(eq(coachingPlans.userId, userId), eq(coachingPlans.status, 'active')))
+      .orderBy(desc(coachingPlans.priority))
+      .limit(1);
+    return plan;
+  }
+
+  async updateCoachingPlan(id: number, updates: Partial<CoachingPlan>): Promise<CoachingPlan | undefined> {
+    const [updated] = await db.update(coachingPlans)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(coachingPlans.id, id))
+      .returning();
+    return updated;
+  }
+
+  // Coaching Plan Steps methods
+  async createCoachingPlanStep(step: InsertCoachingPlanStep): Promise<CoachingPlanStep> {
+    const [created] = await db.insert(coachingPlanSteps).values(step).returning();
+    return created;
+  }
+
+  async getCoachingPlanSteps(planId: number): Promise<CoachingPlanStep[]> {
+    return await db.select().from(coachingPlanSteps)
+      .where(eq(coachingPlanSteps.planId, planId))
+      .orderBy(coachingPlanSteps.order);
+  }
+
+  async updateCoachingPlanStep(id: number, updates: Partial<CoachingPlanStep>): Promise<CoachingPlanStep | undefined> {
+    const [updated] = await db.update(coachingPlanSteps)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(coachingPlanSteps.id, id))
+      .returning();
+    return updated;
+  }
+
+  // Progress Reflections methods
+  async createProgressReflection(reflection: InsertProgressReflection): Promise<ProgressReflection> {
+    const [created] = await db.insert(progressReflections).values(reflection).returning();
+    return created;
+  }
+
+  async getProgressReflections(userId: string, limit: number = 20): Promise<ProgressReflection[]> {
+    return await db.select().from(progressReflections)
+      .where(eq(progressReflections.userId, userId))
+      .orderBy(desc(progressReflections.createdAt))
+      .limit(limit);
   }
 }
 
