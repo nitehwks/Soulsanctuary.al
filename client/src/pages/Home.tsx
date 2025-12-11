@@ -56,21 +56,21 @@ export default function Home() {
                   </h1>
                   
                   <Tabs value={mode} onValueChange={(v) => setMode(v as ChatMode)} className="ml-4">
-                    <TabsList className="h-8">
+                    <TabsList className="h-10 bg-primary/10 border-2 border-primary/20 p-1">
                       <TabsTrigger 
                         value="chat" 
-                        className="text-xs px-3 gap-1.5"
+                        className="text-sm px-4 py-2 gap-2 font-semibold data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-md transition-all"
                         data-testid="tab-chat-mode"
                       >
-                        <MessageSquare className="h-3.5 w-3.5" />
+                        <MessageSquare className="h-4 w-4" />
                         Chat
                       </TabsTrigger>
                       <TabsTrigger 
                         value="therapist" 
-                        className="text-xs px-3 gap-1.5"
+                        className="text-sm px-4 py-2 gap-2 font-semibold data-[state=active]:bg-rose-500 data-[state=active]:text-white data-[state=active]:shadow-md transition-all"
                         data-testid="tab-therapist-mode"
                       >
-                        <Heart className="h-3.5 w-3.5" />
+                        <Heart className="h-4 w-4" />
                         Therapist
                       </TabsTrigger>
                     </TabsList>
