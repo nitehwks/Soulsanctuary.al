@@ -81,9 +81,9 @@ export default function Landing() {
               <div className="p-3 bg-blue-500/10 rounded-lg w-fit mb-4">
                 <Brain className="h-6 w-6 text-blue-500" />
               </div>
-              <h3 className="font-heading font-semibold text-lg mb-2">Smart Memory</h3>
+              <h3 className="font-heading font-semibold text-lg mb-2">I Cherish Your Story</h3>
               <p className="text-muted-foreground text-sm">
-                I remember your preferences, contacts, and important facts across all our conversations.
+                Every detail you share matters. I treasure your journey, remembering what's important so you always feel known and valued.
               </p>
             </Card>
           </motion.div>

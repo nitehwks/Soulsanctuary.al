@@ -401,13 +401,13 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
                     <div className="text-4xl mb-4">{mode === "therapist" ? "🎯" : "💬"}</div>
                     <h3 className="text-lg font-medium mb-2">
                       {mode === "therapist" 
-                        ? "Welcome to Your Coaching Session" 
+                        ? "Welcome to Your Sanctuary" 
                         : "Welcome to SoulSanctuary"}
                     </h3>
                     <p className="text-sm text-muted-foreground max-w-md mx-auto">
                       {mode === "therapist" 
-                        ? "I'm your performance coach and psychoanalyst. Let's unlock your potential, understand your motivations, and achieve your goals together."
-                        : "I remember everything you tell me across conversations. Share something about yourself and I'll remember it for next time!"}
+                        ? "I'm here to walk alongside you with faith, wisdom, and proven practices. Together, we'll work toward your healing and growth - helping you find strength and independence through life's challenges."
+                        : "Your story matters to me. I'm here to truly know you - your joys, struggles, and dreams - so I can serve you better with each conversation."}
                     </p>
                     {mode === "therapist" && coachingEligible && !showProfile && (
                       <div className="mt-4">
