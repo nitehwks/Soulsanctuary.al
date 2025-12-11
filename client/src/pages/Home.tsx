@@ -24,6 +24,7 @@ export default function Home() {
   const [showKnowledge, setShowKnowledge] = useState(false);
   const [mode, setMode] = useState<ChatMode>("chat");
   const [dbStatus, setDbStatus] = useState<"connected" | "disconnected" | "checking">("checking");
+  const [activeModels, setActiveModels] = useState<string[]>([]);
   const { user, isGuest, logout } = useAuth();
 
   useEffect(() => {
@@ -159,7 +160,7 @@ export default function Home() {
               </div>
             )}
             
-            <ChatInterface mode={mode} />
+            <ChatInterface mode={mode} onModelsUsed={setActiveModels} />
         </div>
 
         <motion.div 
@@ -192,12 +193,27 @@ export default function Home() {
                               )}
                             </div>
                         </div>
-                        <div className="p-3 bg-background border border-border rounded-lg flex items-center justify-between">
-                             <div className="flex items-center gap-2">
-                                <Activity className="w-4 h-4 text-blue-500" />
-                                <span className="text-sm font-medium">Dolphin AI</span>
+                        <div className="p-3 bg-background border border-border rounded-lg">
+                             <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                  <Activity className="w-4 h-4 text-blue-500" />
+                                  <span className="text-sm font-medium">AI Models</span>
+                                </div>
+                                <span className="text-[10px] bg-green-500/10 text-green-500 px-2 py-0.5 rounded">
+                                  {activeModels.length > 0 ? 'Active' : 'Ready'}
+                                </span>
                             </div>
-                            <span className="text-[10px] bg-green-500/10 text-green-500 px-2 py-0.5 rounded">Active</span>
+                            {activeModels.length > 0 ? (
+                              <div className="flex flex-wrap gap-1">
+                                {activeModels.map((model, i) => (
+                                  <span key={i} className="text-[9px] bg-blue-500/10 text-blue-600 px-1.5 py-0.5 rounded font-mono">
+                                    {model}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-[10px] text-muted-foreground">Dual-model system ready</span>
+                            )}
                         </div>
                         <div className="p-3 bg-background border border-border rounded-lg flex items-center justify-between">
                             <div className="flex items-center gap-2">

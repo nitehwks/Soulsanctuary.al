@@ -510,45 +510,75 @@ Guidelines:
         }))
       ];
 
-      // Models to try in order - free first, then very cheap paid as fallback
-      const models = [
-        // Free uncensored models (try first)
-        "venice/uncensored:free",
-        "nousresearch/hermes-3-llama-3.1-405b:free",
-        "meta-llama/llama-3.3-70b-instruct:free",
-        "google/gemini-2.0-flash-exp:free",
-        // Very cheap paid fallbacks (~$0.0001-0.001 per message)
+      // Dual-model approach: Query 2 models in parallel, combine best responses
+      const primaryModels = [
         "deepseek/deepseek-chat",
-        "mistralai/mistral-nemo",
-        "meta-llama/llama-3.1-8b-instruct"
+        "meta-llama/llama-3.3-70b-instruct:free",
+        "google/gemini-2.0-flash-exp:free"
       ];
       
-      let completion = null;
-      let lastError = null;
-      
-      for (const model of models) {
-        try {
-          completion = await openai.chat.completions.create({
-            model,
-            messages: openaiMessages,
-          });
-          break; // Success, exit loop
-        } catch (err: any) {
-          lastError = err;
-          if (err.status === 429 || err.status === 404 || err.status === 503) {
-            console.log(`Model ${model} unavailable (${err.status}), trying next model...`);
-            continue; // Try next model
+      const secondaryModels = [
+        "anthropic/claude-3.5-haiku",
+        "mistralai/mistral-nemo",
+        "nousresearch/hermes-3-llama-3.1-405b:free"
+      ];
+
+      const queryModelWithFallback = async (modelList: string[], messages: any[]): Promise<{ content: string; model: string } | null> => {
+        for (const model of modelList) {
+          try {
+            const completion = await openai.chat.completions.create({
+              model,
+              messages,
+            });
+            return {
+              content: completion.choices[0]?.message?.content || "",
+              model: model.split('/').pop()?.replace(':free', '') || model
+            };
+          } catch (err: any) {
+            if (err.status === 429 || err.status === 404 || err.status === 503) {
+              console.log(`Model ${model} unavailable (${err.status}), trying next...`);
+              continue;
+            }
+            console.error(`Model ${model} error:`, err.message);
+            continue;
           }
-          throw err; // Other error, throw immediately
         }
-      }
-      
-      if (!completion) {
-        console.error("All models failed. Last error:", lastError);
+        return null;
+      };
+
+      // Query both model groups in parallel
+      const [primaryResult, secondaryResult] = await Promise.all([
+        queryModelWithFallback(primaryModels, openaiMessages),
+        queryModelWithFallback(secondaryModels, openaiMessages)
+      ]);
+
+      let aiContent = "";
+      let modelsUsed: string[] = [];
+
+      if (primaryResult && secondaryResult) {
+        // Both succeeded - combine insights by using the longer/more detailed response
+        // and noting both models contributed
+        const primary = primaryResult.content;
+        const secondary = secondaryResult.content;
+        
+        // Use the more comprehensive response (longer usually means more thorough)
+        aiContent = primary.length >= secondary.length ? primary : secondary;
+        modelsUsed = [primaryResult.model, secondaryResult.model];
+        console.log(`Dual-model success: ${modelsUsed.join(' + ')}`);
+      } else if (primaryResult) {
+        aiContent = primaryResult.content;
+        modelsUsed = [primaryResult.model];
+      } else if (secondaryResult) {
+        aiContent = secondaryResult.content;
+        modelsUsed = [secondaryResult.model];
+      } else {
+        console.error("All models failed");
         throw new Error("All AI models are currently busy. Please wait a moment and try again.");
       }
 
-      let aiContent = completion.choices[0]?.message?.content || "I'm sorry, I couldn't generate a response.";
+      if (!aiContent) {
+        aiContent = "I'm sorry, I couldn't generate a response.";
+      }
 
       // Apply safety wrapper for any non-"continue" recommendation (moderate, high, critical)
       let safetyResult = null;
@@ -671,7 +701,8 @@ Guidelines:
         wasRedacted: redactionResult.wasRedacted,
         crisisSeverity: crisisAssessment.severity !== "none" ? crisisAssessment.severity : undefined,
         therapyExercise: selectedExercise ? selectedExercise.name : undefined,
-        smartReplies
+        smartReplies,
+        modelsUsed
       });
 
     } catch (error: any) {

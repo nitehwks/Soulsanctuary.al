@@ -35,9 +35,10 @@ interface SmartReply {
 
 interface ChatInterfaceProps {
   mode?: "chat" | "therapist";
+  onModelsUsed?: (models: string[]) => void;
 }
 
-export function ChatInterface({ mode = "chat" }: ChatInterfaceProps) {
+export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProps) {
   const [input, setInput] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -281,6 +282,11 @@ export function ChatInterface({ mode = "chat" }: ChatInterfaceProps) {
         setSmartReplies([]);
       }
 
+      // Report models used to parent
+      if (data.modelsUsed && onModelsUsed) {
+        onModelsUsed(data.modelsUsed);
+      }
+
       if (data.wasRedacted) {
         toast({
           title: "Privacy Protection Active",
@@ -494,7 +500,7 @@ export function ChatInterface({ mode = "chat" }: ChatInterfaceProps) {
                >
                  <div className="flex items-center gap-2 text-xs text-primary font-mono bg-primary/5 px-2 py-1 rounded border border-primary/10">
                     <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse"></span>
-                    Processing with Venice AI...
+                    Processing with AI...
                  </div>
                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
                    <span className="w-1.5 h-1.5 bg-primary/50 rounded-full animate-bounce"></span>
