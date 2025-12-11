@@ -155,11 +155,11 @@ A comprehensive privacy center accessible from the chat interface:
 
 ## Authentication & Access Control
 
-### Secure Email/Password Authentication
-- Create an account with email and password
-- Secure password hashing with bcrypt
-- Session-based authentication with PostgreSQL session store
-- Secure session management
+### Secure OAuth Authentication
+- Sign in with your Replit account
+- Powered by industry-standard OpenID Connect (OIDC)
+- Secure session management with automatic token refresh
+- No passwords stored - authentication delegated to Replit
 
 ### Guest Mode
 - Try the full experience without creating an account

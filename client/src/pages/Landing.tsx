@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 
 export default function Landing() {
   const handleLogin = () => {
-    window.location.href = "/auth";
+    window.location.href = "/api/login";
   };
 
   const handleGuestAccess = () => {

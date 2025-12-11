@@ -49,19 +49,13 @@ export function useAuth() {
   const user: User | null = authUser || guestUser || null;
   const isLoading = !guestUser && isAuthLoading;
 
-  const logout = async () => {
+  const logout = () => {
     if (guestUser) {
       localStorage.removeItem('guestMode');
       localStorage.removeItem('guestUserId');
       window.location.reload();
     } else {
-      try {
-        await fetch("/api/auth/logout", { method: "POST" });
-        window.location.href = "/";
-      } catch (error) {
-        console.error("Logout error:", error);
-        window.location.href = "/";
-      }
+      window.location.href = "/api/logout";
     }
   };
 
