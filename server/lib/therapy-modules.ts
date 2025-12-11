@@ -141,23 +141,165 @@ export const THERAPY_EXERCISES: Record<string, TherapyExercise> = {
   },
 
   spiritual_centering: {
-    name: "Centering Prayer / Spiritual Grounding",
+    name: "Centering Prayer",
     type: "prayer",
     duration: "5-10 minutes",
     steps: [
-      "Find a quiet space. This is your time for connection.",
+      "Find a quiet space. This is your time for connection with God.",
       "If it feels right, place your hand over your heart.",
-      "Take three deep breaths, releasing the weight of the day.",
-      "If you pray, offer your current struggle to your Higher Power. Release the need to control the outcome.",
-      "If you meditate, simply rest in the awareness of something greater than yourself.",
-      "Repeat a word or phrase that brings you peace: 'Let go', 'Peace', 'I am held', or whatever resonates.",
-      "Sit in this stillness for a few moments. You don't need to do anything.",
-      "When thoughts arise, gently return to your word or phrase.",
-      "Close with gratitude for this moment of connection."
+      "Take three deep breaths, releasing the weight of the day into His hands.",
+      "Offer your current struggle to God. Release the need to control the outcome.",
+      "*\"Cast all your anxiety on Him because He cares for you.\"* — 1 Peter 5:7",
+      "Choose a sacred word that expresses your intention: 'Jesus', 'Peace', 'Abba', 'Love', or whatever draws you closer.",
+      "Sit in this stillness for a few moments. Simply rest in God's presence.",
+      "When thoughts arise, gently return to your sacred word.",
+      "Close with gratitude: *\"Thank you, Lord, for this moment of peace.\"*"
     ],
-    completionPrompt: "What arose during your time of centering? Sometimes silence speaks loudest."
+    completionPrompt: "What arose during your time of prayer? Sometimes God speaks in the silence."
+  },
+
+  scripture_meditation: {
+    name: "Scripture Meditation & Lectio Divina",
+    type: "prayer",
+    duration: "10-15 minutes",
+    steps: [
+      "Let's meditate on God's Word together. Find a comfortable, quiet position.",
+      "Take a few deep breaths and invite the Holy Spirit to guide you.",
+      "Here is today's verse to meditate on:",
+      "*\"Come to me, all you who are weary and burdened, and I will give you rest. Take my yoke upon you and learn from me, for I am gentle and humble in heart, and you will find rest for your souls.\"* — Matthew 11:28-29",
+      "**Read**: Read the passage slowly, letting each word sink in.",
+      "**Reflect**: What word or phrase catches your attention? Sit with it.",
+      "**Respond**: Talk to God about what this verse means for your situation right now.",
+      "**Rest**: Simply be still in God's presence. Let His peace wash over you.",
+      "When you're ready, thank God for speaking to you through His Word."
+    ],
+    completionPrompt: "What word or phrase spoke to your heart? What is God saying to you today?"
+  },
+
+  serenity_prayer: {
+    name: "The Serenity Prayer Practice",
+    type: "prayer",
+    duration: "5 minutes",
+    steps: [
+      "This prayer has brought comfort to millions. Let's pray it together with intention.",
+      "Close your eyes and take a deep breath.",
+      "Pray slowly, pausing to reflect on each line:",
+      "*\"God, grant me the serenity to accept the things I cannot change...\"*",
+      "What in your life right now do you need to accept? Name it silently.",
+      "*\"The courage to change the things I can...\"*",
+      "What is one small step you could take today? What action is within your power?",
+      "*\"And the wisdom to know the difference.\"*",
+      "Ask God to show you clearly what's yours to carry and what's His.",
+      "Sit quietly for a moment, releasing control to God."
+    ],
+    completionPrompt: "What felt most meaningful as you prayed? What do you feel led to accept or change?"
+  },
+
+  gratitude_blessing: {
+    name: "Gratitude & Blessing Practice",
+    type: "prayer",
+    duration: "5 minutes",
+    steps: [
+      "*\"Give thanks in all circumstances; for this is God's will for you in Christ Jesus.\"* — 1 Thessalonians 5:18",
+      "Even in difficulty, gratitude shifts our perspective toward hope.",
+      "Name **3 things** you're grateful for today, no matter how small.",
+      "For each one, say: *\"Thank you, Lord, for...\"*",
+      "Now think of someone who has blessed your life recently.",
+      "Silently pray a blessing over them: *\"Lord, bless [their name] with Your peace and love.\"*",
+      "Finally, receive God's blessing for yourself:",
+      "*\"The Lord bless you and keep you; the Lord make His face shine on you and be gracious to you; the Lord turn His face toward you and give you peace.\"* — Numbers 6:24-26"
+    ],
+    completionPrompt: "How did it feel to give thanks and bless others? What gratitude arose in your heart?"
+  },
+
+  psalm_comfort: {
+    name: "Psalms of Comfort",
+    type: "prayer",
+    duration: "5-10 minutes",
+    steps: [
+      "The Psalms have been a source of comfort for God's people for thousands of years.",
+      "Let these ancient words speak to your heart today:",
+      "*\"The Lord is my shepherd, I lack nothing. He makes me lie down in green pastures, He leads me beside quiet waters, He refreshes my soul.\"* — Psalm 23:1-3",
+      "Pause. Picture yourself in those green pastures. Feel God's peace.",
+      "*\"Even though I walk through the darkest valley, I will fear no evil, for You are with me; Your rod and Your staff, they comfort me.\"* — Psalm 23:4",
+      "Whatever valley you're walking through, you are not alone. God is with you.",
+      "*\"Surely Your goodness and love will follow me all the days of my life, and I will dwell in the house of the Lord forever.\"* — Psalm 23:6",
+      "Rest in the promise that His goodness follows you, even when you can't see it."
+    ],
+    completionPrompt: "Which verse brought you the most comfort? What did you sense God saying to you?"
+  },
+
+  faith_affirmations: {
+    name: "Faith-Based Affirmations",
+    type: "prayer",
+    duration: "3-5 minutes",
+    steps: [
+      "Let's replace anxious thoughts with God's truth. Repeat each affirmation slowly:",
+      "*\"I am fearfully and wonderfully made.\"* — Psalm 139:14",
+      "*\"I can do all things through Christ who strengthens me.\"* — Philippians 4:13",
+      "*\"God has not given me a spirit of fear, but of power, love, and a sound mind.\"* — 2 Timothy 1:7",
+      "*\"I am loved with an everlasting love.\"* — Jeremiah 31:3",
+      "*\"Nothing can separate me from the love of God.\"* — Romans 8:38-39",
+      "*\"The Lord is my light and my salvation—whom shall I fear?\"* — Psalm 27:1",
+      "Which of these truths do you most need to hear today? Say it again, letting it sink deep into your heart."
+    ],
+    completionPrompt: "Which truth resonated most deeply with you? How might you carry it with you today?"
   }
 };
+
+export const SCRIPTURE_VERSES = {
+  anxiety: [
+    { verse: "Cast all your anxiety on Him because He cares for you.", reference: "1 Peter 5:7" },
+    { verse: "Do not be anxious about anything, but in every situation, by prayer and petition, with thanksgiving, present your requests to God.", reference: "Philippians 4:6" },
+    { verse: "When anxiety was great within me, Your consolation brought me joy.", reference: "Psalm 94:19" }
+  ],
+  depression: [
+    { verse: "The Lord is close to the brokenhearted and saves those who are crushed in spirit.", reference: "Psalm 34:18" },
+    { verse: "He heals the brokenhearted and binds up their wounds.", reference: "Psalm 147:3" },
+    { verse: "Weeping may stay for the night, but rejoicing comes in the morning.", reference: "Psalm 30:5" }
+  ],
+  fear: [
+    { verse: "For God has not given us a spirit of fear, but of power and of love and of a sound mind.", reference: "2 Timothy 1:7" },
+    { verse: "The Lord is my light and my salvation—whom shall I fear?", reference: "Psalm 27:1" },
+    { verse: "Fear not, for I am with you; be not dismayed, for I am your God.", reference: "Isaiah 41:10" }
+  ],
+  strength: [
+    { verse: "I can do all things through Christ who strengthens me.", reference: "Philippians 4:13" },
+    { verse: "But those who hope in the Lord will renew their strength.", reference: "Isaiah 40:31" },
+    { verse: "The Lord is my strength and my shield; my heart trusts in Him, and He helps me.", reference: "Psalm 28:7" }
+  ],
+  peace: [
+    { verse: "Peace I leave with you; my peace I give you.", reference: "John 14:27" },
+    { verse: "And the peace of God, which transcends all understanding, will guard your hearts and minds.", reference: "Philippians 4:7" },
+    { verse: "You will keep in perfect peace those whose minds are steadfast, because they trust in You.", reference: "Isaiah 26:3" }
+  ],
+  hope: [
+    { verse: "For I know the plans I have for you, declares the Lord, plans to prosper you and not to harm you, plans to give you hope and a future.", reference: "Jeremiah 29:11" },
+    { verse: "May the God of hope fill you with all joy and peace as you trust in Him.", reference: "Romans 15:13" },
+    { verse: "We have this hope as an anchor for the soul, firm and secure.", reference: "Hebrews 6:19" }
+  ],
+  comfort: [
+    { verse: "Come to me, all you who are weary and burdened, and I will give you rest.", reference: "Matthew 11:28" },
+    { verse: "Blessed are those who mourn, for they will be comforted.", reference: "Matthew 5:4" },
+    { verse: "The Lord is my shepherd, I lack nothing.", reference: "Psalm 23:1" }
+  ],
+  love: [
+    { verse: "I have loved you with an everlasting love; I have drawn you with unfailing kindness.", reference: "Jeremiah 31:3" },
+    { verse: "Neither death nor life, neither angels nor demons, can separate us from the love of God.", reference: "Romans 8:38-39" },
+    { verse: "See what great love the Father has lavished on us, that we should be called children of God!", reference: "1 John 3:1" }
+  ]
+};
+
+export function getRelevantScripture(emotion: string): { verse: string; reference: string } | null {
+  const category = emotion.toLowerCase();
+  const verses = SCRIPTURE_VERSES[category as keyof typeof SCRIPTURE_VERSES];
+  if (!verses || verses.length === 0) {
+    // Default to comfort verses
+    const comfortVerses = SCRIPTURE_VERSES.comfort;
+    return comfortVerses[Math.floor(Math.random() * comfortVerses.length)];
+  }
+  return verses[Math.floor(Math.random() * verses.length)];
+}
 
 export function selectTherapyModule(trigger: string, userPreferences?: string[]): TherapyExercise | null {
   const moduleMap: Record<string, string[]> = {
@@ -166,7 +308,10 @@ export function selectTherapyModule(trigger: string, userPreferences?: string[])
     cbt_thoughts: ["cbt_thought_record", "cbt_cognitive_distortions"],
     mindfulness: ["mindfulness_body_scan"],
     breathing: ["box_breathing"],
-    spiritual: ["spiritual_centering"],
+    spiritual: ["spiritual_centering", "scripture_meditation", "serenity_prayer", "gratitude_blessing", "psalm_comfort", "faith_affirmations"],
+    prayer: ["spiritual_centering", "scripture_meditation", "serenity_prayer"],
+    scripture: ["scripture_meditation", "psalm_comfort", "faith_affirmations"],
+    comfort: ["psalm_comfort", "gratitude_blessing"],
     act: ["act_values_clarification"]
   };
 

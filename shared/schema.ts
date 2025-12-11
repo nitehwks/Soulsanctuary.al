@@ -67,6 +67,9 @@ export const userPreferences = pgTable("user_preferences", {
   privacyLevel: text("privacy_level").default("balanced"),
   therapistModeEnabled: boolean("therapist_mode_enabled").default(false),
   autoCoachingEnabled: boolean("auto_coaching_enabled").default(true),
+  faithSupportEnabled: boolean("faith_support_enabled").default(true),
+  faithOfferDeclines: integer("faith_offer_declines").default(0),
+  lastFaithDeclineAt: timestamp("last_faith_decline_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

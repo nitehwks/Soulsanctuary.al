@@ -152,10 +152,11 @@ export default function Home() {
             </div>
             
             {mode === "therapist" && (
-              <div className="bg-gradient-to-r from-rose-500/10 to-purple-500/10 border-b border-rose-500/20 px-6 py-2">
-                <div className="flex items-center gap-2 text-xs text-rose-600 dark:text-rose-400">
+              <div className="bg-gradient-to-r from-amber-500/10 via-rose-500/10 to-purple-500/10 border-b border-amber-500/20 px-6 py-2">
+                <div className="flex items-center gap-2 text-xs text-amber-700 dark:text-amber-400">
                   <Heart className="h-3.5 w-3.5" />
-                  <span>Therapist mode active - I'll track emotional patterns and provide supportive responses</span>
+                  <span>Pastoral Care Mode - Combining faith, therapy, and coaching to support your journey</span>
+                  <span className="ml-auto text-[10px] opacity-70 italic">"Come to me, all you who are weary..." - Matthew 11:28</span>
                 </div>
               </div>
             )}

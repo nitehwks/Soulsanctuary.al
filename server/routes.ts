@@ -16,7 +16,7 @@ import {
 } from "./lib/coaching-analyzer";
 import { logConsentChange, logDataExport, logDataModification } from "./lib/audit-logger";
 import { detectCrisis, detectTherapyTrigger, formatCrisisResources, CrisisAssessment } from "./lib/crisis-detection";
-import { selectTherapyModule, formatTherapyExercise, THERAPY_EXERCISES } from "./lib/therapy-modules";
+import { selectTherapyModule, formatTherapyExercise, THERAPY_EXERCISES, getRelevantScripture } from "./lib/therapy-modules";
 import { wrapResponseWithSafety, generateDisclaimer, generateConsentText } from "./lib/safety-wrapper";
 import { 
   shouldAskProbingQuestion, 
@@ -476,15 +476,40 @@ Use these insights to ask penetrating questions, identify patterns, and coach ef
         }
       }
 
+      // Faith support context based on user preferences
+      const faithDeclines = userPrefs?.faithOfferDeclines ?? 0;
+      const faithEnabled = userPrefs?.faithSupportEnabled ?? true;
+      const lastDecline = userPrefs?.lastFaithDeclineAt;
+      const daysSinceDecline = lastDecline ? Math.floor((Date.now() - new Date(lastDecline).getTime()) / (1000 * 60 * 60 * 24)) : 999;
+      
+      // Determine faith offering level
+      let faithGuidance = "";
+      if (!faithEnabled) {
+        faithGuidance = "\n\n**IMPORTANT: This user has opted out of faith-based content. Focus only on evidence-based therapeutic techniques. Do not mention God, prayer, scripture, or faith.**";
+      } else if (faithDeclines >= 3 && daysSinceDecline < 7) {
+        faithGuidance = "\n\n**FAITH GUIDANCE: User has declined spiritual offers 3+ times recently. Pause offering faith content for now. Focus on therapeutic techniques, but remain gently aware - if they mention faith, church, prayer, or spirituality themselves, you may carefully re-engage.**";
+      } else if (faithDeclines >= 1) {
+        faithGuidance = "\n\n**FAITH GUIDANCE: User has previously declined spiritual content. Be more subtle - weave in gentle hope and comfort without explicit religious language unless they seem open to it.**";
+      } else {
+        faithGuidance = "\n\n**FAITH GUIDANCE: User is open to spiritual support. Feel free to offer prayers, scripture verses, and faith-based encouragement when appropriate.**";
+      }
+
       const basePrompt = therapistMode 
-        ? `You are SoulSanctuary AI, a world-class performance coach and psychoanalyst. Your role is to help users achieve their goals by deeply understanding their personality, motivation patterns, and psychological drivers. You combine:
+        ? `You are SoulSanctuary AI, a compassionate pastoral counselor, performance coach, and spiritual guide. Like a caring pastor who also has training in psychology and coaching, you help people find peace, purpose, and growth. You combine:
 
+- PASTORAL WARMTH: You speak with the gentle, encouraging voice of a loving pastor. You make people feel seen, valued, and never judged.
+- SPIRITUAL WISDOM: You offer prayers, scripture verses, and faith-based encouragement when appropriate. You gently share God's love without being pushy.
 - PSYCHOANALYTIC INSIGHT: You notice patterns, defenses, and unconscious motivations
-- COACHING EXCELLENCE: You ask powerful questions and hold users accountable to their goals  
-- MOTIVATIONAL MASTERY: You understand what drives each person and use it strategically
-- EMPATHETIC PRESENCE: You create a safe space for honest self-exploration
+- COACHING EXCELLENCE: You ask powerful questions and help people grow toward their God-given potential
+- THERAPEUTIC SKILL: You use evidence-based techniques (CBT, DBT, ACT, Mindfulness) alongside spiritual practices
 
-You are NOT just a therapist focused on problems - you are a high-performance coach focused on RESULTS and GROWTH. You help people become their best selves by leveraging their unique psychology.`
+Your approach is like a progressive, modern church - welcoming, non-judgmental, focused on love and grace. You might say things like:
+- "Would you like to pray about this together?"
+- "There's a verse that comes to mind that might bring comfort..."
+- "God meets us right where we are, even in our struggles."
+- "You are fearfully and wonderfully made."
+
+If someone declines spiritual content, respect that graciously - say something like "Of course, that's perfectly okay" and focus purely on therapeutic techniques. Track their response and be more careful next time.${faithGuidance}`
         : `You are SoulSanctuary AI, a helpful assistant with comprehensive memory capabilities. You remember everything the user shares including contact information, preferences, issues they've faced, and the emotional context of conversations.`;
 
       const systemMessage = {
@@ -851,16 +876,50 @@ Guidelines:
   app.put("/api/preferences/:userId", async (req, res) => {
     try {
       const userId = req.params.userId;
-      const { therapistModeEnabled, storeContactInfo, privacyLevel } = req.body;
+      const { therapistModeEnabled, storeContactInfo, privacyLevel, faithSupportEnabled } = req.body;
       const prefs = await storage.upsertUserPreferences({ 
         userId, 
         therapistModeEnabled: therapistModeEnabled ?? false,
         storeContactInfo: storeContactInfo ?? true,
-        privacyLevel: privacyLevel ?? 'balanced'
+        privacyLevel: privacyLevel ?? 'balanced',
+        faithSupportEnabled: faithSupportEnabled ?? true
       });
       res.json(prefs);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/preferences/:userId/faith-decline", async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const currentPrefs = await storage.getUserPreferences(userId);
+      const currentDeclines = currentPrefs?.faithOfferDeclines ?? 0;
+      
+      const prefs = await storage.upsertUserPreferences({
+        userId,
+        faithOfferDeclines: currentDeclines + 1,
+        lastFaithDeclineAt: new Date()
+      });
+      
+      console.log(`Faith decline tracked for ${userId}: ${currentDeclines + 1} total declines`);
+      res.json({ declines: prefs.faithOfferDeclines, message: "Faith decline recorded respectfully" });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/preferences/:userId/faith-reset", async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const prefs = await storage.upsertUserPreferences({
+        userId,
+        faithOfferDeclines: 0,
+        lastFaithDeclineAt: null
+      });
+      res.json({ message: "Faith preferences reset", prefs });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
     }
   });
 
