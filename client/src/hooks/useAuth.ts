@@ -50,13 +50,9 @@ export function useAuth() {
   const isLoading = !guestUser && isAuthLoading;
 
   const logout = () => {
-    if (guestUser) {
-      localStorage.removeItem('guestMode');
-      localStorage.removeItem('guestUserId');
-      window.location.reload();
-    } else {
-      window.location.href = "/api/logout";
-    }
+    localStorage.removeItem('guestMode');
+    localStorage.removeItem('guestUserId');
+    window.location.reload();
   };
 
   return {
