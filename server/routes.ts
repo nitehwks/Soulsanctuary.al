@@ -411,10 +411,10 @@ Guidelines:
 
       // Models to try in order (fallback chain for rate limiting)
       const models = [
-        "cognitivecomputations/dolphin-mistral-24b-venice-edition:free",
-        "meta-llama/llama-3.2-3b-instruct:free",
-        "google/gemma-2-9b-it:free",
-        "mistralai/mistral-7b-instruct:free"
+        "meta-llama/llama-3.3-70b-instruct:free",
+        "qwen/qwen-2.5-72b-instruct:free",
+        "mistralai/mistral-nemo:free",
+        "microsoft/phi-3-medium-128k-instruct:free"
       ];
       
       let completion = null;
@@ -429,11 +429,11 @@ Guidelines:
           break; // Success, exit loop
         } catch (err: any) {
           lastError = err;
-          if (err.status === 429) {
-            console.log(`Rate limited on ${model}, trying next model...`);
+          if (err.status === 429 || err.status === 404 || err.status === 503) {
+            console.log(`Model ${model} unavailable (${err.status}), trying next model...`);
             continue; // Try next model
           }
-          throw err; // Non-rate-limit error, throw immediately
+          throw err; // Other error, throw immediately
         }
       }
       
