@@ -27,6 +27,8 @@ import {
   type UserProbingState as ProbingState
 } from "./lib/probing-questions";
 import { generateSmartReplies, type SmartReply } from "./lib/smart-replies";
+import { createAndStoreInsight, getAggregatedInsights } from "./lib/psychological-analyzer";
+import { updateUserProfile, getProfileSummary, generateCoachingPlan } from "./lib/profile-aggregator";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import OpenAI from "openai";
 
@@ -372,6 +374,19 @@ export async function registerRoutes(
 
       await extractFactsFromMessage(content, userId, sentimentResult.sentiment, redactionResult.extractedPII);
 
+      // Store psychological insight for every user message (immutable ledger)
+      try {
+        await createAndStoreInsight(userId, userMessage.id, conversationId, content);
+        // Update profile periodically (every 5 messages)
+        const totalMessages = await storage.getMessageInsights(userId, 1000);
+        if (totalMessages.length % 5 === 0) {
+          await updateUserProfile(userId);
+        }
+      } catch (insightError) {
+        console.error('Error storing psychological insight:', insightError);
+        // Don't fail the chat if insight storage fails
+      }
+
       // Crisis detection and therapy module selection
       const crisisAssessment = detectCrisis(content, sentimentResult.score);
       let therapyTrigger: string | null = null;
@@ -429,11 +444,36 @@ IMPORTANT: Some memories may be connected to difficult experiences. When referen
       }
 
       let coachingContext = "";
+      let psychProfileContext = "";
       if (therapistMode) {
         const recentMoods = await storage.getRecentMoodObservations(userId, 20);
         const latestAssessment = await storage.getLatestWellnessAssessment(userId);
         const userContextData = await storage.getUserContextByUser(userId);
         coachingContext = await buildCoachingContext(userId, recentMoods, latestAssessment, userContextData);
+        
+        // Add psychological profile context for deeper personalization
+        try {
+          const profileSummary = await getProfileSummary(userId);
+          const aggregatedInsights = await getAggregatedInsights(userId);
+          const activeCoachingPlan = await storage.getActiveCoachingPlan(userId);
+          
+          psychProfileContext = `
+
+## PSYCHOLOGICAL PROFILE
+${profileSummary}
+
+## OBSERVED PATTERNS
+- Top Needs: ${aggregatedInsights.topNeeds.join(', ') || 'Still observing'}
+- Common Defenses: ${aggregatedInsights.commonDefenses.join(', ') || 'Still observing'}  
+- Cognitive Patterns: ${aggregatedInsights.cognitivePatterns.join(', ') || 'Still observing'}
+- Core Values: ${aggregatedInsights.coreValues.join(', ') || 'Still observing'}
+- Wellness Trajectory: ${aggregatedInsights.wellnessTrajectory}
+${activeCoachingPlan ? `\n## CURRENT COACHING FOCUS\n- ${activeCoachingPlan.title}\n- Focus: ${activeCoachingPlan.focus}\n- Phase: ${activeCoachingPlan.currentPhase}` : ''}
+
+Use these insights to ask penetrating questions, identify patterns, and coach effectively.`;
+        } catch (profileError) {
+          console.error('Error building profile context:', profileError);
+        }
       }
 
       const basePrompt = therapistMode 
@@ -451,7 +491,7 @@ You are NOT just a therapist focused on problems - you are a high-performance co
         role: "system" as const,
         content: `${basePrompt}
 
-${memoryContext}${coachingContext}
+${memoryContext}${coachingContext}${psychProfileContext}
 
 Guidelines:
 - Reference relevant memories when appropriate, including contact details if they shared them
@@ -1068,6 +1108,113 @@ Guidelines:
           ? "You have enough data for personalized coaching! Would you like to see your psychological profile?"
           : `Keep chatting! You need ${Math.max(0, 10 - conversationCount)} more conversations and ${Math.max(0, 5 - userContext.length)} more context facts for auto-coaching.`
       });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Psychological Profile and Coaching Plan endpoints
+  app.get("/api/profile/:userId", async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const profile = await storage.getUserProfile(userId);
+      
+      if (!profile) {
+        // Generate initial profile if none exists
+        await updateUserProfile(userId);
+        const newProfile = await storage.getUserProfile(userId);
+        return res.json(newProfile || { message: "Profile building in progress" });
+      }
+      
+      res.json(profile);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/profile/:userId/summary", async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const summary = await getProfileSummary(userId);
+      res.json({ summary });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/profile/:userId/insights", async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const insights = await getAggregatedInsights(userId);
+      res.json(insights);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/profile/:userId/refresh", async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const profile = await updateUserProfile(userId);
+      res.json(profile);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/coaching/plan/:userId", async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const plan = await storage.getActiveCoachingPlan(userId);
+      
+      if (!plan) {
+        return res.json({ 
+          message: "No active coaching plan. Generate one to start your journey.",
+          hasActivePlan: false 
+        });
+      }
+      
+      const steps = await storage.getCoachingPlanSteps(plan.id);
+      res.json({ ...plan, steps, hasActivePlan: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/coaching/plan/:userId/generate", async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const plan = await generateCoachingPlan(userId);
+      const steps = await storage.getCoachingPlanSteps(plan.id);
+      res.json({ ...plan, steps });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.put("/api/coaching/plan/:planId/step/:stepId", async (req, res) => {
+    try {
+      const stepId = parseInt(req.params.stepId);
+      const { status, notes } = req.body;
+      
+      const updates: any = {};
+      if (status) updates.status = status;
+      if (status === 'completed') updates.completedAt = new Date();
+      if (notes) updates.notes = notes;
+      
+      const updatedStep = await storage.updateCoachingPlanStep(stepId, updates);
+      res.json(updatedStep);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/insights/:userId", async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const limit = parseInt(req.query.limit as string) || 50;
+      const insights = await storage.getMessageInsights(userId, limit);
+      res.json(insights);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
