@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { HelpCircle, Heart, BookOpen, Shield, Brain, Mail, Church, Sparkles } from "lucide-react";
+import { Link } from "wouter";
 
 interface AboutDialogProps {
   trigger?: React.ReactNode;
@@ -119,6 +120,25 @@ export function AboutDialog({ trigger }: AboutDialogProps) {
                 <li>• GDPR compliant - export or delete your data anytime</li>
                 <li>• Tamper-evident audit logging</li>
               </ul>
+            </section>
+
+            <Separator />
+
+            <section>
+              <h3 className="font-semibold text-lg flex items-center gap-2 mb-3">
+                <Heart className="h-5 w-5 text-accent" />
+                Support SoulSanctuary
+              </h3>
+              <p className="text-muted-foreground text-sm mb-3">
+                SoulSanctuary is currently in beta and offered freely as a ministry. 
+                Your donations help cover hosting, AI costs, and continued development.
+              </p>
+              <Link href="/donate">
+                <Button className="w-full gap-2" variant="default" data-testid="button-donate">
+                  <Heart className="h-4 w-4" />
+                  Donate to Support Our Mission
+                </Button>
+              </Link>
             </section>
 
             <Separator />

@@ -11,6 +11,7 @@ import SettingsPage from "@/pages/Settings";
 import Docs from "@/pages/Docs";
 import Landing from "@/pages/Landing";
 import PremiumAddons from "@/pages/PremiumAddons";
+import Donate from "@/pages/Donate";
 import { Loader2 } from "lucide-react";
 
 function AuthenticatedRouter() {
@@ -35,6 +36,7 @@ function AuthenticatedRouter() {
       <Route path="/settings" component={SettingsPage} />
       <Route path="/docs" component={Docs} />
       <Route path="/addons" component={PremiumAddons} />
+      <Route path="/donate" component={Donate} />
       <Route component={NotFound} />
     </Switch>
   );
