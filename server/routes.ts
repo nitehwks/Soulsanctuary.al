@@ -65,8 +65,10 @@ function generateConversationTitle(content: string): string {
 }
 
 async function extractFactsFromMessage(content: string, userId: string, sentiment: string, extractedPII: { emails: string[], phones: string[] }) {
+  // User Identity Protocol: ONLY "my name is [X]" triggers name extraction
+  // "I am" and "I'm" statements are NEVER interpreted as name changes
   const patterns = [
-    { regex: /(?:i am|i'm|my name is)\s+(\w+)/i, category: "Name" },
+    { regex: /my name is\s+(\w+)/i, category: "Name" },
     { regex: /(?:i work as|i'm a|my job is|i am a)\s+([^,.!?]+)/i, category: "Role" },
     { regex: /(?:i live in|i'm from|i'm in|located in)\s+([^,.!?]+)/i, category: "Location" },
     { regex: /(?:i like|i love|i enjoy|interested in)\s+([^,.!?]+)/i, category: "Interest" },

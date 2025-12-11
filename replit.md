@@ -8,6 +8,12 @@ Insightful AI is a privacy-focused AI companion powered by multiple AI models vi
 
 Preferred communication style: Simple, everyday language.
 
+### User Identity Protocol
+- **Current Name**: Joe (permanent unless explicitly overridden)
+- **Name Change Trigger**: Only "My name is [X]" updates the name
+- **"I am" Statements**: Never interpreted as name changes (e.g., "I am tired" does not change name)
+- **Strict Mode**: If user says "You changed my name again", revert to last confirmed name
+
 ## System Architecture
 
 ### Frontend Architecture
