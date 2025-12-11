@@ -396,7 +396,7 @@ export function ChatInterface({ mode = "chat" }: ChatInterfaceProps) {
                     <h3 className="text-lg font-medium mb-2">
                       {mode === "therapist" 
                         ? "Welcome to Your Coaching Session" 
-                        : "Welcome to Insightful AI"}
+                        : "Welcome to SoulSanctuary"}
                     </h3>
                     <p className="text-sm text-muted-foreground max-w-md mx-auto">
                       {mode === "therapist" 
@@ -578,7 +578,7 @@ export function ChatInterface({ mode = "chat" }: ChatInterfaceProps) {
               </Button>
             </form>
             <div className="text-center mt-2">
-              <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-medium">Insightful AI Secure Environment</span>
+              <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-medium">SoulSanctuary Secure Environment</span>
             </div>
           </div>
         </div>
