@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Send, Mic, MicOff, PanelLeftClose, PanelLeft, Heart, Shield, Target, Brain, Paperclip, Camera, X, FileText, Image as ImageIcon } from "lucide-react";
+import { Send, Mic, MicOff, PanelLeftClose, PanelLeft, Heart, Shield, Target, Brain, Paperclip, Camera, X, FileText, Image as ImageIcon, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -11,6 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { ConversationList } from "./ConversationList";
 import { WellnessPanel } from "./WellnessPanel";
 import { PrivacyDashboard } from "./PrivacyDashboard";
+import { AboutDialog } from "../AboutDialog";
 import { CoachingHighlights } from "./CoachingHighlights";
 import { PsychologicalProfileCard } from "./PsychologicalProfileCard";
 
@@ -477,6 +478,18 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
             >
               <Shield className={cn("h-4 w-4", showPrivacy && "text-emerald-400")} />
             </Button>
+            <AboutDialog 
+              trigger={
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  data-testid="button-about"
+                >
+                  <HelpCircle className="h-4 w-4" />
+                </Button>
+              }
+            />
           </div>
         </div>
 

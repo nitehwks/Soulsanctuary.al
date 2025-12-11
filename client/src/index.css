@@ -59,70 +59,79 @@
 }
 
 :root {
-  /* SoulSanctuary AI Theme - Privacy-First Design */
-  --background: 0 0% 98%;
-  --foreground: 240 10% 3.9%;
+  /* SoulSanctuary AI Theme - Progressive Modern Church */
+  /* Deep rich colors inspired by stained glass, warm wood, sacred spaces */
+  --background: 270 15% 97%;
+  --foreground: 270 25% 12%;
 
   --card: 0 0% 100%;
-  --card-foreground: 240 10% 3.9%;
+  --card-foreground: 270 25% 12%;
 
   --popover: 0 0% 100%;
-  --popover-foreground: 240 10% 3.9%;
+  --popover-foreground: 270 25% 12%;
 
-  --primary: 221 83% 53%; /* Trustworthy Blue */
-  --primary-foreground: 210 40% 98%;
+  --primary: 270 60% 45%; /* Deep Royal Purple - sanctuary, wisdom */
+  --primary-foreground: 45 100% 96%;
 
-  --secondary: 240 4.8% 95.9%;
-  --secondary-foreground: 240 5.9% 10%;
+  --secondary: 35 45% 92%; /* Warm cream - like candlelight */
+  --secondary-foreground: 270 25% 15%;
 
-  --muted: 240 4.8% 95.9%;
-  --muted-foreground: 240 3.8% 46.1%;
+  --muted: 270 10% 94%;
+  --muted-foreground: 270 10% 45%;
 
-  --accent: 240 4.8% 95.9%;
-  --accent-foreground: 240 5.9% 10%;
+  --accent: 45 80% 55%; /* Gold - divine, sacred, uplifting */
+  --accent-foreground: 270 30% 15%;
 
-  --destructive: 0 84.2% 60.2%;
+  --destructive: 0 72% 51%;
   --destructive-foreground: 0 0% 98%;
 
-  --border: 240 5.9% 90%;
-  --input: 240 5.9% 90%;
-  --ring: 221 83% 53%;
+  --border: 270 15% 88%;
+  --input: 270 15% 90%;
+  --ring: 270 60% 45%;
 
-  --radius: 0.5rem;
+  --radius: 0.625rem;
 
-  --sidebar: 240 5.9% 10%;
-  --sidebar-foreground: 240 4.8% 95.9%;
-  --sidebar-primary: 224 76% 48%;
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 240 3.7% 15.9%;
-  --sidebar-accent-foreground: 240 4.8% 95.9%;
-  --sidebar-border: 240 3.7% 15.9%;
-  --sidebar-ring: 217 91% 60%;
+  --sidebar: 270 35% 15%; /* Deep purple-gray like church shadows */
+  --sidebar-foreground: 45 30% 95%;
+  --sidebar-primary: 45 80% 55%; /* Gold accent */
+  --sidebar-primary-foreground: 270 30% 12%;
+  --sidebar-accent: 270 25% 22%;
+  --sidebar-accent-foreground: 45 30% 95%;
+  --sidebar-border: 270 20% 25%;
+  --sidebar-ring: 45 80% 55%;
+
+  /* Chart colors - stained glass inspired */
+  --chart-1: 270 60% 50%; /* Purple */
+  --chart-2: 45 80% 55%; /* Gold */
+  --chart-3: 200 70% 45%; /* Deep blue */
+  --chart-4: 340 65% 55%; /* Rose/burgundy */
+  --chart-5: 160 50% 40%; /* Deep teal */
 }
 
 .dark {
-  --background: 240 10% 3.9%;
-  --foreground: 0 0% 98%;
+  /* Dark mode - Evening sanctuary, candlelit warmth */
+  --background: 270 25% 8%;
+  --foreground: 45 20% 95%;
 
-  --card: 240 10% 3.9%;
-  --card-foreground: 0 0% 98%;
+  --card: 270 20% 12%;
+  --card-foreground: 45 20% 95%;
 
-  --popover: 240 10% 3.9%;
-  --popover-foreground: 0 0% 98%;
+  --popover: 270 20% 12%;
+  --popover-foreground: 45 20% 95%;
 
-  --primary: 221 83% 53%;
-  --primary-foreground: 210 40% 98%;
+  --primary: 270 55% 55%; /* Lighter purple for dark mode */
+  --primary-foreground: 270 25% 8%;
 
-  --secondary: 240 3.7% 15.9%;
-  --secondary-foreground: 0 0% 98%;
+  --secondary: 270 15% 18%;
+  --secondary-foreground: 45 20% 95%;
 
-  --muted: 240 3.7% 15.9%;
-  --muted-foreground: 240 5% 64.9%;
+  --muted: 270 15% 18%;
+  --muted-foreground: 270 10% 60%;
 
-  --accent: 240 3.7% 15.9%;
-  --accent-foreground: 0 0% 98%;
+  --accent: 45 75% 50%; /* Warm gold glow */
+  --accent-foreground: 270 25% 8%;
 
-  --destructive: 0 62.8% 30.6%;
+  --destructive: 0 55% 45%;
   --destructive-foreground: 0 0% 98%;
 
   --border: 240 3.7% 15.9%;
