@@ -218,6 +218,19 @@ export const coachingSessions = pgTable("coaching_sessions", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const userProbingState = pgTable("user_probing_state", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull().unique(),
+  lastAskedAt: timestamp("last_asked_at"),
+  currentDepth: integer("current_depth").default(0),
+  questionsAsked: text("questions_asked").array().default([]),
+  topicsExplored: text("topics_explored").array().default([]),
+  totalQuestionsAnswered: integer("total_questions_answered").default(0),
+  engagementLevel: text("engagement_level").default("medium"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -374,6 +387,15 @@ export type InsertMotivationPattern = z.infer<typeof insertMotivationPatternSche
 
 export type CoachingSession = typeof coachingSessions.$inferSelect;
 export type InsertCoachingSession = z.infer<typeof insertCoachingSessionSchema>;
+
+export const insertUserProbingStateSchema = createInsertSchema(userProbingState).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type UserProbingState = typeof userProbingState.$inferSelect;
+export type InsertUserProbingState = z.infer<typeof insertUserProbingStateSchema>;
 
 // Premium Therapy Modules
 export const therapyModules = pgTable("therapy_modules", {

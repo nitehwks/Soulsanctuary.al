@@ -18,6 +18,14 @@ import { logConsentChange, logDataExport, logDataModification } from "./lib/audi
 import { detectCrisis, detectTherapyTrigger, formatCrisisResources, CrisisAssessment } from "./lib/crisis-detection";
 import { selectTherapyModule, formatTherapyExercise, THERAPY_EXERCISES } from "./lib/therapy-modules";
 import { wrapResponseWithSafety, generateDisclaimer, generateConsentText } from "./lib/safety-wrapper";
+import { 
+  shouldAskProbingQuestion, 
+  selectProbingQuestion, 
+  formatProbingQuestionForPrompt,
+  calculateNextDepth,
+  assessUserEngagement,
+  type UserProbingState as ProbingState
+} from "./lib/probing-questions";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import OpenAI from "openai";
 
@@ -65,10 +73,31 @@ function generateConversationTitle(content: string): string {
 }
 
 async function extractFactsFromMessage(content: string, userId: string, sentiment: string, extractedPII: { emails: string[], phones: string[] }) {
-  // User Identity Protocol: ONLY "my name is [X]" triggers name extraction
-  // "I am" and "I'm" statements are NEVER interpreted as name changes
+  // User Identity Protocol: Extract names from natural phrases but NEVER from "I am" statements
+  // Valid: "my name is X", "call me X", "it's X", "X here", "everyone calls me X", "friends call me X"
+  // Invalid: "I am X", "I'm X" (these are treated as states/feelings, not names)
+  
+  // Common words that should never be treated as names
+  const nonNameWords = new Set([
+    'here', 'there', 'fine', 'good', 'great', 'okay', 'ok', 'well', 'bad', 'tired', 
+    'happy', 'sad', 'angry', 'excited', 'nervous', 'anxious', 'stressed', 'worried',
+    'testing', 'having', 'going', 'doing', 'being', 'feeling', 'thinking', 'wondering',
+    'sorry', 'glad', 'sure', 'certain', 'confused', 'lost', 'stuck', 'ready', 'done',
+    'back', 'home', 'new', 'old', 'just', 'not', 'now', 'today', 'still', 'always'
+  ]);
+  
   const patterns = [
-    { regex: /my name is\s+(\w+)/i, category: "Name" },
+    // Primary name patterns (high confidence)
+    { regex: /my name is\s+(\w+)/i, category: "Name", confidence: 95 },
+    { regex: /(?:call me|everyone calls me|friends call me|people call me)\s+(\w+)/i, category: "Name", confidence: 90 },
+    { regex: /(?:it's|its|this is)\s+(\w+)\s+(?:here|speaking)/i, category: "Name", confidence: 85 },
+    { regex: /^(\w+)\s+here[.!,]?\s*$/i, category: "Name", confidence: 80 },
+    // Relationship-based name mentions (extract the relationship, not just name)
+    { regex: /(?:my (?:wife|husband|partner|girlfriend|boyfriend|spouse)(?:'s name is|,?\s+)\s*)(\w+)/i, category: "Partner", confidence: 85 },
+    { regex: /(?:my (?:mom|mother|dad|father|parent)(?:'s name is|,?\s+)\s*)(\w+)/i, category: "Parent", confidence: 85 },
+    { regex: /(?:my (?:son|daughter|child|kid)(?:'s name is|,?\s+)\s*)(\w+)/i, category: "Child", confidence: 85 },
+    { regex: /(?:my (?:brother|sister|sibling)(?:'s name is|,?\s+)\s*)(\w+)/i, category: "Sibling", confidence: 85 },
+    { regex: /(?:my (?:friend|best friend|buddy)(?:'s name is|,?\s+)\s*)(\w+)/i, category: "Friend", confidence: 80 },
     { regex: /(?:i work as|i'm a|my job is|i am a)\s+([^,.!?]+)/i, category: "Role" },
     { regex: /(?:i live in|i'm from|i'm in|located in)\s+([^,.!?]+)/i, category: "Location" },
     { regex: /(?:i like|i love|i enjoy|interested in)\s+([^,.!?]+)/i, category: "Interest" },
@@ -83,12 +112,19 @@ async function extractFactsFromMessage(content: string, userId: string, sentimen
 
   const sourceContext = content.substring(0, 200);
 
-  for (const { regex, category } of patterns) {
-    const match = content.match(regex);
+  for (const pattern of patterns) {
+    const match = content.match(pattern.regex);
     if (match && match[1]) {
       const value = match[1].trim();
+      
+      // Filter out non-name words for Name category
+      if (pattern.category === "Name" && nonNameWords.has(value.toLowerCase())) {
+        continue;
+      }
+      
       if (value.length > 2 && value.length < 100) {
-        await storage.upsertUserContextWithSentiment(userId, category, value, 85, sentiment, sourceContext);
+        const confidence = pattern.confidence || 85;
+        await storage.upsertUserContextWithSentiment(userId, pattern.category, value, confidence, sentiment, sourceContext);
       }
     }
   }
@@ -493,6 +529,75 @@ Guidelines:
         // Add disclaimer when resources are added in chat mode too
         if (safetyResult?.addedResources) {
           aiContent += "\n\n" + generateDisclaimer();
+        }
+      }
+
+      // Probing Questions: Ask deeper questions over time (48-hour cooldown)
+      let probingQuestionAsked: string | undefined;
+      if (!needsSafetyWrapper && crisisAssessment.severity === "none") {
+        try {
+          const conversationCount = await storage.getConversationCount(userId);
+          let probingState = await storage.getUserProbingState(userId);
+          
+          if (!probingState) {
+            probingState = await storage.upsertUserProbingState({
+              userId,
+              currentDepth: 0,
+              questionsAsked: [],
+              topicsExplored: [],
+              totalQuestionsAnswered: 0,
+              engagementLevel: "medium"
+            });
+          }
+          
+          const shouldProbe = shouldAskProbingQuestion(
+            { 
+              lastAskedAt: probingState.lastAskedAt, 
+              currentDepth: probingState.currentDepth || 0,
+              questionsAsked: probingState.questionsAsked || [],
+              topicsExplored: probingState.topicsExplored || []
+            }, 
+            conversationCount
+          );
+          
+          if (shouldProbe) {
+            const knownCategories = userContext.map(c => c.category.toLowerCase());
+            const recentTopics = content.toLowerCase().split(/\s+/).filter(w => w.length > 4).slice(0, 5);
+            
+            const question = selectProbingQuestion(
+              { 
+                lastAskedAt: probingState.lastAskedAt, 
+                currentDepth: probingState.currentDepth || 0,
+                questionsAsked: probingState.questionsAsked || [],
+                topicsExplored: probingState.topicsExplored || []
+              },
+              knownCategories,
+              recentTopics
+            );
+            
+            if (question) {
+              aiContent += formatProbingQuestionForPrompt(question);
+              probingQuestionAsked = question.id;
+              
+              // Update probing state
+              const updatedQuestionsAsked = [...(probingState.questionsAsked || []), question.id];
+              const updatedTopicsExplored = [...new Set([...(probingState.topicsExplored || []), question.category])];
+              
+              await storage.updateUserProbingState(userId, {
+                lastAskedAt: new Date(),
+                questionsAsked: updatedQuestionsAsked,
+                topicsExplored: updatedTopicsExplored,
+                totalQuestionsAnswered: (probingState.totalQuestionsAnswered || 0) + 1,
+                currentDepth: calculateNextDepth(
+                  probingState.currentDepth || 0,
+                  updatedQuestionsAsked.length,
+                  (probingState.engagementLevel as 'low' | 'medium' | 'high') || 'medium'
+                )
+              });
+            }
+          }
+        } catch (err) {
+          console.error("Probing question error (non-fatal):", err);
         }
       }
 

@@ -30,6 +30,8 @@ import {
   type InsertMotivationPattern,
   type CoachingSession,
   type InsertCoachingSession,
+  type UserProbingState,
+  type InsertUserProbingState,
   users,
   conversations,
   messages,
@@ -44,7 +46,8 @@ import {
   userGoals,
   personalityInsights,
   motivationPatterns,
-  coachingSessions
+  coachingSessions,
+  userProbingState
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "../db/index";
@@ -123,6 +126,10 @@ export interface IStorage {
   
   createCoachingSession(session: InsertCoachingSession): Promise<CoachingSession>;
   getCoachingSessions(userId: string, limit?: number): Promise<CoachingSession[]>;
+  
+  getUserProbingState(userId: string): Promise<UserProbingState | undefined>;
+  upsertUserProbingState(state: InsertUserProbingState): Promise<UserProbingState>;
+  updateUserProbingState(userId: string, updates: Partial<UserProbingState>): Promise<UserProbingState | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -567,6 +574,33 @@ export class DatabaseStorage implements IStorage {
       .where(eq(coachingSessions.userId, userId))
       .orderBy(desc(coachingSessions.createdAt))
       .limit(limit);
+  }
+
+  async getUserProbingState(userId: string): Promise<UserProbingState | undefined> {
+    const [state] = await db.select().from(userProbingState)
+      .where(eq(userProbingState.userId, userId));
+    return state;
+  }
+
+  async upsertUserProbingState(state: InsertUserProbingState): Promise<UserProbingState> {
+    const existing = await this.getUserProbingState(state.userId);
+    if (existing) {
+      const [updated] = await db.update(userProbingState)
+        .set({ ...state, updatedAt: new Date() })
+        .where(eq(userProbingState.userId, state.userId))
+        .returning();
+      return updated;
+    }
+    const [created] = await db.insert(userProbingState).values(state).returning();
+    return created;
+  }
+
+  async updateUserProbingState(userId: string, updates: Partial<UserProbingState>): Promise<UserProbingState | undefined> {
+    const [updated] = await db.update(userProbingState)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(userProbingState.userId, userId))
+      .returning();
+    return updated;
   }
 }
 
