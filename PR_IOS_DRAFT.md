@@ -6,21 +6,25 @@ This PR prepares the application for iOS by adding a Capacitor wrapper and multi
 
 What changed
 
-- Added `capacitor.config.json` and Capacitor dependencies (`@capacitor/core`, `@capacitor/cli`) and npm scripts for mobile workflows.
+- Added `capacitor.config.json` and Capacitor dependencies (`@capacitor/core`, `@capacitor/cli`, `@capacitor/camera`) and npm scripts for mobile workflows.
 - Added `client/public/manifest.json` (PWA manifest) and `apple-touch-icon` meta support.
 - Created `SafeAreaLayout` component and mobile-optimized UI helpers in `client/src/components/layout/SafeAreaLayout.tsx`.
 - Updated `client/index.html` with mobile viewport meta tags and app-capable flags.
 - Enhanced `client/src/index.css` with safe-area utilities, touch-friendly sizes, and input tweaks to prevent iOS auto-zoom.
 - Wrapped the app with `SafeAreaLayout` in `client/src/App.tsx`.
+- Added camera functionality with native Capacitor plugin and web fallback in `client/src/components/camera/CameraExample.tsx`.
+- Fixed TypeScript compilation errors: updated Capacitor imports for v6 compatibility and added conditional rendering for auth-dependent components.
 - Added `README_IOS.md` with macOS/Xcode build instructions and mobile notes.
-- Added `BUILD_TEST_RESULTS.md` summarizing Windows build and Capacitor verification.
+- Added `BUILD_TEST_RESULTS.md` summarizing Windows build, Capacitor verification, and TypeScript checks.
 
 Testing performed
 
 - `npm install` completed successfully on Windows (Node v24.11.1, npm v11.6.2).
 - `npm run build:web` produced `dist/public` with mobile meta tags and assets.
 - `npx cap copy` completed successfully locally, confirming Capacitor can sync web assets.
+- `npm run check` passed with 0 TypeScript errors after fixes.
 - Verified `capacitor.config.json` and `manifest.json` presence in build output.
+- Camera plugin imports and usage validated for Capacitor v6 compatibility.
 
 Notes and migration
 
@@ -40,8 +44,10 @@ Checklist
 - [x] Make app safe-area aware
 - [x] Add PWA manifest and icons
 - [x] Ensure build completes on Windows
+- [x] Fix TypeScript compilation errors
+- [x] Add camera plugin example
 - [ ] Test on macOS Xcode simulator/device
-- [ ] Add native plugin examples (Camera, Secure Storage)
+- [ ] Add native plugin examples (Secure Storage, Push)
 
 Files of interest
 
@@ -50,6 +56,7 @@ Files of interest
 - `client/index.html`
 - `client/public/manifest.json`
 - `client/src/components/layout/SafeAreaLayout.tsx`
+- `client/src/components/camera/CameraExample.tsx`
 - `client/src/index.css`
 - `client/src/App.tsx`
 - `README_IOS.md`
