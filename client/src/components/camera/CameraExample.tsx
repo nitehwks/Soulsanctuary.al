@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { isPlatform } from '@capacitor/core';
+import { Capacitor } from '@capacitor/core';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 
 // CameraExample component that uses the Capacitor Camera on native, and falls back to a file input on web.
@@ -35,7 +35,7 @@ export default function CameraExample() {
     inputRef.current?.click();
   };
 
-  const isNative = typeof (window as any).Capacitor !== 'undefined' && isPlatform('ios') || isPlatform('android');
+  const isNative = Capacitor.isNativePlatform();
 
   return (
     <div className="flex flex-col gap-2 items-start">

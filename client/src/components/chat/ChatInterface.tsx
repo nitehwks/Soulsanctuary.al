@@ -406,7 +406,7 @@ export function ChatInterface({ mode = "chat" }: ChatInterfaceProps) {
       </div>
 
       <AnimatePresence>
-        {showWellness && (
+        {showWellness && userId && (
           <WellnessPanel 
             isOpen={showWellness} 
             onClose={() => setShowWellness(false)} 
@@ -415,11 +415,13 @@ export function ChatInterface({ mode = "chat" }: ChatInterfaceProps) {
         )}
       </AnimatePresence>
 
-      <PrivacyDashboard
-        isOpen={showPrivacy}
-        onClose={() => setShowPrivacy(false)}
-        userId={userId}
-      />
+      {showPrivacy && userId && (
+        <PrivacyDashboard
+          isOpen={showPrivacy}
+          onClose={() => setShowPrivacy(false)}
+          userId={userId}
+        />
+      )}
     </div>
   );
 }
