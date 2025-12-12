@@ -1,0 +1,6 @@
+{
+  "appId": "com.insightfulai.trusthub",
+  "appName": "TrustHub",
+  "webDir": "dist/public",
+  "bundledWebRuntime": false
+}
