@@ -14,7 +14,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const storedUserId = localStorage.getItem("trusthub_user_id");
+    const storedUserId = localStorage.getItem("soulsanctuary_user_id");
     if (storedUserId) {
       fetch(`/api/users/${storedUserId}`)
         .then((res) => {
@@ -23,7 +23,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
         })
         .then((user) => setCurrentUser(user))
         .catch(() => {
-          localStorage.removeItem("trusthub_user_id");
+          localStorage.removeItem("soulsanctuary_user_id");
         })
         .finally(() => setIsLoading(false));
     } else {
@@ -34,9 +34,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const handleSetUser = (user: User | null) => {
     setCurrentUser(user);
     if (user) {
-      localStorage.setItem("trusthub_user_id", user.id);
+      localStorage.setItem("soulsanctuary_user_id", user.id);
     } else {
-      localStorage.removeItem("trusthub_user_id");
+      localStorage.removeItem("soulsanctuary_user_id");
     }
   };
 

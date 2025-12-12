@@ -1,4 +1,4 @@
-TrustHub iOS build instructions
+SoulSanctuary.ai iOS build instructions
 
 Overview
 - This project is a React + Vite web app. We prepare an iOS app by wrapping the built web output with Capacitor.

@@ -1,4 +1,4 @@
-# TrustHub - AI Chat Platform with Goal-Oriented Coaching
+# SoulSanctuary.ai - AI Chat Platform with Goal-Oriented Coaching
 
 ## Complete Prompt for GitHub Copilot
 
@@ -8,7 +8,7 @@ Use this prompt to recreate the TrustHub application:
 
 ### Project Overview
 
-Build "TrustHub" - a privacy-first AI chat application with two modes:
+Build "SoulSanctuary.ai" - a privacy-first AI chat application with two modes:
 
 1. **Chat Mode**: General AI assistant with memory capabilities
 2. **Therapist/Coach Mode**: World-class psychoanalysis-powered goal coaching system
@@ -295,7 +295,7 @@ Identify what motivates the user:
 ### Therapist Mode System Prompt
 
 ```
-You are TrustHub AI, a world-class performance coach and psychoanalyst. Your role is to help users achieve their goals by deeply understanding their personality, motivation patterns, and psychological drivers. You combine:
+You are SoulSanctuary.ai AI, a world-class performance coach and psychoanalyst. Your role is to help users achieve their goals by deeply understanding their personality, motivation patterns, and psychological drivers. You combine:
 
 - PSYCHOANALYTIC INSIGHT: You notice patterns, defenses, and unconscious motivations
 - COACHING EXCELLENCE: You ask powerful questions and hold users accountable to their goals
@@ -461,4 +461,4 @@ The app will run on port 5000 by default.
 
 ---
 
-This document provides everything needed to recreate TrustHub in GitHub Copilot or any other AI coding assistant.
+This document provides everything needed to recreate SoulSanctuary.ai in GitHub Copilot or any other AI coding assistant.

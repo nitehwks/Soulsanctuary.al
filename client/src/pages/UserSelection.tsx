@@ -84,7 +84,7 @@ export default function UserSelection() {
                 <ShieldCheck className="w-8 h-8 text-primary" />
               </div>
             </div>
-            <CardTitle className="text-2xl font-heading">Welcome to TrustHub</CardTitle>
+            <CardTitle className="text-2xl font-heading">Welcome to SoulSanctuary.ai</CardTitle>
             <CardDescription className="text-muted-foreground">
               Your privacy-first AI companion. Select your profile or create a new one.
             </CardDescription>
@@ -141,7 +141,7 @@ export default function UserSelection() {
                 <DialogHeader>
                   <DialogTitle>Create Your Profile</DialogTitle>
                   <DialogDescription>
-                    Enter your details to get started with TrustHub.
+                    Enter your details to get started with SoulSanctuary.ai.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">

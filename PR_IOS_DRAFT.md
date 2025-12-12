@@ -1,4 +1,4 @@
-Title: iOS: Add Capacitor wrapper, mobile UI optimizations, and build scripts
+Title: iOS: Add Capacitor wrapper, mobile UI optimizations, and build scripts for SoulSanctuary.ai
 
 Summary
 

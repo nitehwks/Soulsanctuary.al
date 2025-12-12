@@ -26,7 +26,7 @@ export default function Docs() {
                 <div className="border-b border-border pb-8">
                     <h1 className="text-4xl font-heading font-bold text-foreground mb-4">Technical Specifications</h1>
                     <p className="text-lg text-muted-foreground leading-relaxed">
-                        Comprehensive documentation for the TrustHub Secure AI Platform, including model parameters, infrastructure constraints, and security protocols.
+                        Comprehensive documentation for the SoulSanctuary.ai Secure AI Platform, including model parameters, infrastructure constraints, and security protocols.
                     </p>
                     <div className="flex gap-2 mt-4">
                         <Badge variant="outline" className="font-mono">v2.4.0-beta</Badge>

@@ -399,7 +399,7 @@ export function ChatInterface({ mode = "chat" }: ChatInterfaceProps) {
               </Button>
             </form>
             <div className="text-center mt-2">
-              <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-medium">TrustHub Secure Environment • Venice AI</span>
+              <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-medium">SoulSanctuary.ai Secure Environment • Venice AI</span>
             </div>
           </div>
         </div>

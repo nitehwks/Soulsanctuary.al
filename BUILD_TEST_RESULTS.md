@@ -1,7 +1,7 @@
 # Windows Build Test Results ✓
 
 ## Summary
-The TrustHub iOS-ready app has been successfully built and tested on Windows. All components, dependencies, and mobile optimizations are working correctly.
+The SoulSanctuary.ai iOS-ready app has been successfully built and tested on Windows. All components, dependencies, and mobile optimizations are working correctly.
 
 ## Build Environment
 - **OS**: Windows
