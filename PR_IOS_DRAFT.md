@@ -14,8 +14,7 @@ What changed
 - Wrapped the app with `SafeAreaLayout` in `client/src/App.tsx`.
 - Added camera functionality with native Capacitor plugin and web fallback in `client/src/components/camera/CameraExample.tsx`.
 - Fixed TypeScript compilation errors: updated Capacitor imports for v6 compatibility and added conditional rendering for auth-dependent components.
-- Added `README_IOS.md` with macOS/Xcode build instructions and mobile notes.
-- Added `BUILD_TEST_RESULTS.md` summarizing Windows build, Capacitor verification, and TypeScript checks.
+- Added `SOULSANCTUARY_FEATURES.md` with comprehensive documentation of all platform features, capabilities, security measures, and technical specifications.
 
 Testing performed
 
