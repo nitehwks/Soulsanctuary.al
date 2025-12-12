@@ -112,3 +112,20 @@ Next Steps to Enhance iOS App
 - Set up push notifications via Apple Push Notification service (APNs)
 - Test on real device and handle platform-specific edge cases
 - Build and archive for TestFlight or App Store submission
+
+Camera plugin notes
+- If you add camera support, you MUST include the `NSCameraUsageDescription` key in the iOS
+  `Info.plist` with a user-facing explanation, for example:
+
+  ```xml
+  <key>NSCameraUsageDescription</key>
+  <string>TrustHub uses the camera to let you take photos for your conversations and coaching activities.</string>
+  ```
+
+ - After adding `@capacitor/camera` and running `npx cap sync ios`, open the Xcode project and
+   confirm the Info.plist entry is present. Without this key, iOS will block camera access and
+   App Store may reject the app.
+
+Web fallback
+- The `CameraExample` component included in `client/src/components/camera/CameraExample.tsx`
+  will use the native Capacitor Camera on devices and fall back to a web file picker (`<input type="file">`) when run in a browser.
