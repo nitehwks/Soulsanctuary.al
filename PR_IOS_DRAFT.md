@@ -2,7 +2,7 @@ Title: iOS: Add Capacitor wrapper, mobile UI optimizations, and build scripts fo
 
 Summary
 
-This PR prepares the application for iOS by adding a Capacitor wrapper and multiple mobile-focused improvements. It preserves the web app functionality while making the UI safe-area aware, touch-friendly, and PWA-ready for native packaging.
+This PR prepares SoulSanctuary.ai for iOS by adding a Capacitor wrapper and multiple mobile-focused improvements. It preserves the web app functionality while making the UI safe-area aware, touch-friendly, and PWA-ready for native packaging.
 
 What changed
 
@@ -46,6 +46,7 @@ Checklist
 - [x] Ensure build completes on Windows
 - [x] Fix TypeScript compilation errors
 - [x] Add camera plugin example
+- [x] Update branding to SoulSanctuary.ai
 - [ ] Test on macOS Xcode simulator/device
 - [ ] Add native plugin examples (Secure Storage, Push)
 
