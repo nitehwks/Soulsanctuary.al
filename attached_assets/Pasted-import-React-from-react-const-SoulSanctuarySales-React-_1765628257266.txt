@@ -1,0 +1,171 @@
+import React from "react";
+
+const SoulSanctuarySales: React.FC = () => {
+  return (
+    <>
+      <style jsx global>{`
+        /* === ORIGINAL STYLES PRESERVED === */
+        :root {
+          --bg: #050712;
+          --bg-alt: #0c1022;
+          --accent: #8f5bff;
+          --accent-soft: rgba(143, 91, 255, 0.25);
+          --accent-strong: rgba(143, 91, 255, 0.55);
+          --text-main: #f5f5ff;
+          --text-soft: #c3c5ff;
+          --text-muted: #8f90b3;
+          --danger: #ff5c7a;
+          --success: #4fd1c5;
+          --border-subtle: rgba(255, 255, 255, 0.08);
+          --shadow-soft: 0 18px 45px rgba(0, 0, 0, 0.75);
+          --radius-lg: 22px;
+          --radius-pill: 999px;
+          --blur-bg: 26px;
+          --font-main: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+        }
+
+        * {
+          box-sizing: border-box;
+          margin: 0;
+          padding: 0;
+        }
+
+        body {
+          font-family: var(--font-main);
+          background: radial-gradient(circle at top, #151b3a 0, #050712 55%, #02030a 100%);
+          color: var(--text-main);
+          line-height: 1.6;
+          -webkit-font-smoothing: antialiased;
+          min-height: 100vh;
+        }
+
+        a {
+          color: var(--accent);
+          text-decoration: none;
+        }
+
+        a:hover {
+          text-decoration: underline;
+        }
+
+        /* --- rest of CSS unchanged --- */
+      `}</style>
+
+      <main className="page">
+        <header>
+          <div className="brand">
+            <div className="brand-logo" />
+            <div className="brand-text">
+              <div className="brand-text-title">SoulSanctuary</div>
+              <div className="brand-text-subtitle">
+                Faith-integrated AI therapy, encrypted.
+              </div>
+            </div>
+          </div>
+
+          <div className="nav-cta">
+            <span className="nav-badge">Free beta · Limited seats</span>
+            <span className="nav-link">
+              <span>Have a licensed therapist? Use both.</span>
+            </span>
+          </div>
+        </header>
+
+        <section className="hero">
+          <div className="hero-left">
+            <div className="eyebrow">
+              <div className="eyebrow-dot" />
+              <span>
+                Finally talk about what you really feel with God, without being “too much.”
+              </span>
+              <span className="eyebrow-tag">Faith + Psychology + AI</span>
+            </div>
+
+            <h1 className="hero-title">
+              Process the <span>heaviest emotions</span> with an AI companion that
+              remembers, prays with you, and never flinches.
+            </h1>
+
+            <p className="hero-subtitle">
+              SoulSanctuary is an always-on, faith-integrated AI therapy partner that lets
+              you pour out everything: trauma, triggers, intrusive thoughts, doubts about
+              God, and the stuff you never say out loud—even in counseling.
+            </p>
+
+            <p className="hero-subtitle hero-subtitle-italic">
+              No scripts. No fake “you’re fine.” Just psychologically-grounded support
+              that holds Scripture and nervous systems together.
+            </p>
+
+            <div className="hero-promise">
+              <strong>Radical safety promise:</strong>
+              <span>
+                Private, encrypted, and judgment-free—so you can finally stop editing
+                yourself.
+              </span>
+            </div>
+
+            <div className="hero-actions">
+              <a
+                className="btn-primary"
+                href="https://soulsanctuaryal--joeabbott2.replit.app"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <span>Start free beta session</span>
+                <span className="btn-primary-sub">
+                  Takes 60 seconds · No card
+                </span>
+              </a>
+
+              <a className="btn-outline" href="#how-it-works">
+                <span className="dot" />
+                <span>See how it processes trauma step-by-step</span>
+              </a>
+            </div>
+          </div>
+
+          <div className="hero-right">
+            <div className="panel">
+              <div className="glow-orb" />
+
+              <div className="panel-header">
+                <div className="panel-header-title">
+                  <div className="avatar" />
+                  <div className="panel-header-title-text">
+                    <strong>Your private SoulSanctuary space</strong>
+                    <span>Encrypted session · Only you see this</span>
+                  </div>
+                </div>
+                <div className="panel-tag">Real-time processing</div>
+              </div>
+
+              <div className="panel-body">
+                <div className="panel-rows">
+                  <div className="row-label">
+                    <span className="key">Today’s weight</span>
+                    <span>“I don’t know how much more I can hold.”</span>
+                  </div>
+                  <div className="slider">
+                    <div className="slider-fill" style={{ width: "88%" }} />
+                  </div>
+                </div>
+              </div>
+
+              <div className="panel-footer">
+                <span>
+                  Built for believers who want both real psychology and real faith.
+                </span>
+                <span className="panel-footer-pill">
+                  Faith-integrated · No spiritual bypassing
+                </span>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </>
+  );
+};
+
+export default SoulSanctuarySales;
