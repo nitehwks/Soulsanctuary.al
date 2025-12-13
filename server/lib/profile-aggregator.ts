@@ -1,6 +1,6 @@
 import { storage } from '../storage';
 import { getAggregatedInsights } from './psychological-analyzer';
-import type { UserProfile, InsertUserProfile, InsertCoachingPlan } from '@shared/schema';
+import type { UserProfile, InsertUserProfile, InsertCoachingPlan, Relationship, LifeEvent, EmotionalSnapshot } from '@shared/schema';
 
 interface ProfileUpdate {
   displayName?: string;
@@ -536,4 +536,252 @@ export async function getProfileSummary(userId: string): Promise<string> {
   }
   
   return parts.join(' ') || "I'm building your profile as we continue our conversations.";
+}
+
+export interface EnhancedProfileContext {
+  relationships: string;
+  lifeEvents: string;
+  emotionalTrends: string;
+  dispositionSummary: string;
+}
+
+export async function getEnhancedProfileContext(userId: string): Promise<EnhancedProfileContext> {
+  const [
+    relationships,
+    lifeEvents,
+    emotionalSnapshots,
+    psychProfile
+  ] = await Promise.all([
+    storage.getRelationshipsByUser(userId),
+    storage.getLifeEventsByUser(userId),
+    storage.getEmotionalSnapshotsByUser(userId, 30),
+    storage.getPsychologicalProfile(userId)
+  ]);
+
+  const relationshipsContext = buildRelationshipsContext(relationships);
+  const lifeEventsContext = buildLifeEventsContext(lifeEvents);
+  const emotionalTrendsContext = buildEmotionalTrendsContext(emotionalSnapshots);
+  const dispositionSummary = buildDispositionSummary(psychProfile, emotionalSnapshots);
+
+  return {
+    relationships: relationshipsContext,
+    lifeEvents: lifeEventsContext,
+    emotionalTrends: emotionalTrendsContext,
+    dispositionSummary
+  };
+}
+
+function buildRelationshipsContext(relationships: Relationship[]): string {
+  if (relationships.length === 0) {
+    return '';
+  }
+
+  const familyRels = relationships.filter(r => 
+    ['spouse', 'partner', 'child', 'parent', 'mother', 'father', 'sibling'].includes(r.relationship)
+  );
+  const friendRels = relationships.filter(r => r.relationship === 'friend');
+  const workRels = relationships.filter(r => 
+    ['boss', 'coworker', 'colleague'].includes(r.relationship)
+  );
+  const otherRels = relationships.filter(r => 
+    !['spouse', 'partner', 'child', 'parent', 'mother', 'father', 'sibling', 'friend', 'boss', 'coworker', 'colleague'].includes(r.relationship)
+  );
+
+  const parts: string[] = ['## IMPORTANT PEOPLE IN THEIR LIFE'];
+
+  if (familyRels.length > 0) {
+    parts.push('**Family:**');
+    for (const rel of familyRels.slice(0, 10)) {
+      const sentiment = rel.sentiment && rel.sentiment !== 'neutral' ? ` (${rel.sentiment} feelings)` : '';
+      parts.push(`- ${rel.name} (${rel.relationship})${sentiment}`);
+    }
+  }
+
+  if (friendRels.length > 0) {
+    parts.push('**Friends:**');
+    for (const rel of friendRels.slice(0, 5)) {
+      parts.push(`- ${rel.name}`);
+    }
+  }
+
+  if (workRels.length > 0) {
+    parts.push('**Work:**');
+    for (const rel of workRels.slice(0, 5)) {
+      parts.push(`- ${rel.name} (${rel.relationship})`);
+    }
+  }
+
+  if (otherRels.length > 0) {
+    parts.push('**Other:**');
+    for (const rel of otherRels.slice(0, 5)) {
+      parts.push(`- ${rel.name} (${rel.relationship})`);
+    }
+  }
+
+  parts.push('');
+  parts.push('Use their names naturally in conversation. Ask about these people when relevant.');
+
+  return parts.join('\n');
+}
+
+function buildLifeEventsContext(lifeEvents: LifeEvent[]): string {
+  if (lifeEvents.length === 0) {
+    return '';
+  }
+
+  const getEventDate = (e: LifeEvent): Date => {
+    if (e.eventDate) return new Date(e.eventDate);
+    if (e.createdAt) return new Date(e.createdAt);
+    return new Date();
+  };
+
+  const recentEvents = lifeEvents
+    .sort((a, b) => getEventDate(b).getTime() - getEventDate(a).getTime())
+    .slice(0, 10);
+
+  const ongoingEvents = recentEvents.filter(e => e.isOngoing);
+  const pastEvents = recentEvents.filter(e => !e.isOngoing);
+
+  const parts: string[] = ['## SIGNIFICANT LIFE EVENTS'];
+
+  if (ongoingEvents.length > 0) {
+    parts.push('**Currently dealing with:**');
+    for (const event of ongoingEvents) {
+      const impact = event.emotionalImpact === 'negative' ? ' [difficult]' : event.emotionalImpact === 'positive' ? ' [positive]' : '';
+      parts.push(`- ${formatEventType(event.eventType)}${impact}`);
+    }
+  }
+
+  if (pastEvents.length > 0) {
+    parts.push('**Recent life events:**');
+    for (const event of pastEvents.slice(0, 5)) {
+      const impact = event.emotionalImpact === 'negative' ? ' [difficult]' : event.emotionalImpact === 'positive' ? ' [positive]' : '';
+      parts.push(`- ${formatEventType(event.eventType)}${impact}`);
+    }
+  }
+
+  parts.push('');
+  parts.push('Be sensitive to ongoing challenges. Celebrate positive milestones.');
+
+  return parts.join('\n');
+}
+
+function formatEventType(eventType: string): string {
+  const labels: Record<string, string> = {
+    'marriage': 'Got married/engaged',
+    'pregnancy': 'Expecting a baby',
+    'new_child': 'Had a baby',
+    'new_job': 'Started new job',
+    'job_loss': 'Job change/loss',
+    'divorce': 'Going through divorce',
+    'breakup': 'Relationship ended',
+    'relocation': 'Moved/relocating',
+    'health_diagnosis': 'Health diagnosis',
+    'health_recovery': 'In recovery',
+    'loss_illness': 'Loss/illness in family',
+    'graduation': 'Graduated',
+    'promotion': 'Got promoted',
+    'retirement': 'Retiring',
+    'home_purchase': 'Bought a home',
+    'financial_stress': 'Financial challenges',
+    'addiction': 'Addiction recovery',
+    'mental_health': 'Mental health journey'
+  };
+  return labels[eventType] || eventType.replace(/_/g, ' ');
+}
+
+function buildEmotionalTrendsContext(snapshots: EmotionalSnapshot[]): string {
+  if (snapshots.length === 0) {
+    return '';
+  }
+
+  const emotionCounts: Record<string, number> = {};
+  const copingCounts: Record<string, number> = {};
+  const allTriggers: string[] = [];
+  let totalIntensity = 0;
+  let lowEnergyCount = 0;
+  let highEnergyCount = 0;
+
+  for (const snap of snapshots) {
+    emotionCounts[snap.primaryEmotion] = (emotionCounts[snap.primaryEmotion] || 0) + 1;
+    if (snap.copingObserved) {
+      copingCounts[snap.copingObserved] = (copingCounts[snap.copingObserved] || 0) + 1;
+    }
+    totalIntensity += snap.intensity || 5;
+    if (snap.energyLevel === 'low') lowEnergyCount++;
+    if (snap.energyLevel === 'high') highEnergyCount++;
+    if (snap.triggers) {
+      allTriggers.push(...snap.triggers);
+    }
+  }
+
+  const topEmotions = Object.entries(emotionCounts)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 3)
+    .map(([emotion]) => emotion);
+
+  const avgIntensity = totalIntensity / snapshots.length;
+  const energyTrend = lowEnergyCount > highEnergyCount ? 'low energy' : 
+                      highEnergyCount > lowEnergyCount ? 'high energy' : 'balanced energy';
+
+  const parts: string[] = ['## RECENT EMOTIONAL PATTERNS'];
+  
+  if (topEmotions.length > 0) {
+    parts.push(`**Predominant emotions:** ${topEmotions.join(', ')}`);
+  }
+  
+  parts.push(`**Emotional intensity:** ${avgIntensity > 7 ? 'High' : avgIntensity > 4 ? 'Moderate' : 'Low'}`);
+  parts.push(`**Energy pattern:** ${energyTrend}`);
+
+  const topCoping = Object.entries(copingCounts).sort(([, a], [, b]) => b - a)[0];
+  if (topCoping) {
+    const copingLabels: Record<string, string> = {
+      'healthy': 'Using healthy coping (prayer, exercise, talking)',
+      'avoidant': 'Tendency toward avoidance',
+      'maladaptive': 'Some maladaptive coping observed',
+      'support_seeking': 'Actively seeking support'
+    };
+    parts.push(`**Coping style:** ${copingLabels[topCoping[0]] || topCoping[0]}`);
+  }
+
+  const uniqueTriggers = [...new Set(allTriggers)].slice(0, 3);
+  if (uniqueTriggers.length > 0) {
+    parts.push(`**Common triggers:** ${uniqueTriggers.join('; ')}`);
+  }
+
+  return parts.join('\n');
+}
+
+function buildDispositionSummary(
+  psychProfile: any | null,
+  snapshots: EmotionalSnapshot[]
+): string {
+  const parts: string[] = [];
+
+  if (psychProfile) {
+    if (psychProfile.emotionalRegulation && psychProfile.emotionalRegulation !== 'developing') {
+      parts.push(`Emotional regulation: ${psychProfile.emotionalRegulation}`);
+    }
+    if (psychProfile.strengthsIdentified && psychProfile.strengthsIdentified.length > 0) {
+      parts.push(`Key strengths: ${psychProfile.strengthsIdentified.slice(0, 3).join(', ')}`);
+    }
+    if (psychProfile.growthEdges && psychProfile.growthEdges.length > 0) {
+      parts.push(`Growth areas: ${psychProfile.growthEdges.slice(0, 2).join(', ')}`);
+    }
+    if (psychProfile.supportNeeds && psychProfile.supportNeeds.length > 0) {
+      parts.push(`Support needs: ${psychProfile.supportNeeds.slice(0, 2).join(', ')}`);
+    }
+    if (psychProfile.resilienceFactors && psychProfile.resilienceFactors.length > 0) {
+      parts.push(`Resilience: ${psychProfile.resilienceFactors.slice(0, 2).join(', ')}`);
+    }
+    if (psychProfile.copingMechanisms && psychProfile.copingMechanisms.length > 0) {
+      parts.push(`Coping patterns: ${psychProfile.copingMechanisms.slice(0, 2).join(', ')}`);
+    }
+  }
+
+  if (parts.length === 0) {
+    return '';
+  }
+
+  return '## DISPOSITION ASSESSMENT\n' + parts.join('\n');
 }

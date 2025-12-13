@@ -28,7 +28,7 @@ import {
 } from "./lib/probing-questions";
 import { generateSmartReplies, type SmartReply } from "./lib/smart-replies";
 import { createAndStoreInsight, getAggregatedInsights } from "./lib/psychological-analyzer";
-import { updateUserProfile, getProfileSummary, generateCoachingPlan } from "./lib/profile-aggregator";
+import { updateUserProfile, getProfileSummary, generateCoachingPlan, getEnhancedProfileContext } from "./lib/profile-aggregator";
 import { processMessageForLearning } from "./lib/contextualLearning";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import OpenAI from "openai";
@@ -487,11 +487,20 @@ IMPORTANT: Some memories may be connected to difficult experiences. When referen
           const profileSummary = await getProfileSummary(userId);
           const aggregatedInsights = await getAggregatedInsights(userId);
           const activeCoachingPlan = await storage.getActiveCoachingPlan(userId);
+          const enhancedContext = await getEnhancedProfileContext(userId);
           
           psychProfileContext = `
 
 ## PSYCHOLOGICAL PROFILE
 ${profileSummary}
+
+${enhancedContext.relationships}
+
+${enhancedContext.lifeEvents}
+
+${enhancedContext.emotionalTrends}
+
+${enhancedContext.dispositionSummary}
 
 ## OBSERVED PATTERNS
 - Top Needs: ${aggregatedInsights.topNeeds.join(', ') || 'Still observing'}
@@ -501,7 +510,7 @@ ${profileSummary}
 - Wellness Trajectory: ${aggregatedInsights.wellnessTrajectory}
 ${activeCoachingPlan ? `\n## CURRENT COACHING FOCUS\n- ${activeCoachingPlan.title}\n- Focus: ${activeCoachingPlan.focus}\n- Phase: ${activeCoachingPlan.currentPhase}` : ''}
 
-Use these insights to ask penetrating questions, identify patterns, and coach effectively.`;
+Use these insights to ask penetrating questions, identify patterns, and coach effectively. Reference people by name, be aware of ongoing life events, and adapt to their emotional state.`;
         } catch (profileError) {
           console.error('Error building profile context:', profileError);
         }
