@@ -161,7 +161,7 @@ export default function ClinicianDashboard() {
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsNewSessionOpen(false)}>Cancel</Button>
+                  <Button variant="outline" onClick={() => setIsNewSessionOpen(false)} data-testid="button-cancel-session">Cancel</Button>
                   <Button 
                     onClick={() => createSessionMutation.mutate(newSession)}
                     disabled={!newSession.anonPatientHash || createSessionMutation.isPending}
