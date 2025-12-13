@@ -11,7 +11,8 @@ import SettingsPage from "@/pages/Settings";
 import Docs from "@/pages/Docs";
 import Landing from "@/pages/Landing";
 import PremiumAddons from "@/pages/PremiumAddons";
-import Donate from "@/pages/Donate";
+// BETA: Stripe payments disabled - using GoFundMe instead
+// import Donate from "@/pages/Donate";
 import Groups from "@/pages/Groups";
 import Analytics from "@/pages/Analytics";
 import ClinicianDashboard from "@/pages/ClinicianDashboard";
@@ -32,7 +33,8 @@ function AppRouter() {
   if (!isAuthenticated) {
     return (
       <Switch>
-        <Route path="/donate" component={Donate} />
+        {/* BETA: Stripe payments disabled - using GoFundMe instead */}
+        {/* <Route path="/donate" component={Donate} /> */}
         <Route component={Landing} />
       </Switch>
     );
@@ -45,7 +47,8 @@ function AppRouter() {
       <Route path="/settings" component={SettingsPage} />
       <Route path="/docs" component={Docs} />
       <Route path="/addons" component={PremiumAddons} />
-      <Route path="/donate" component={Donate} />
+      {/* BETA: Stripe payments disabled - using GoFundMe instead */}
+      {/* <Route path="/donate" component={Donate} /> */}
       <Route path="/groups" component={Groups} />
       <Route path="/analytics" component={Analytics} />
       <Route path="/clinician" component={ClinicianDashboard} />

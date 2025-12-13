@@ -1810,6 +1810,9 @@ Guidelines:
     }
   });
 
+  // BETA: Stripe payments disabled - using GoFundMe instead (https://gofund.me/7c08e69b)
+  // Uncomment after beta to enable Stripe donations
+  /*
   // Donation checkout endpoint
   app.post("/api/donate/checkout", async (req, res) => {
     try {
@@ -1859,6 +1862,7 @@ Guidelines:
       res.status(500).json({ error: error.message });
     }
   });
+  */
 
   // ============= ANALYTICS ROUTES =============
   
