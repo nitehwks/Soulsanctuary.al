@@ -374,6 +374,9 @@ export async function registerRoutes(
       const sentimentResult = analyzeSentiment(fullContent);
       const keyPhrases = extractKeyPhrases(fullContent);
       
+      // Check last message time BEFORE storing new message (for first-of-day detection)
+      const lastMessageTimeBeforeThis = await storage.getLastMessageTimeForUser(userId);
+      
       const userMessage = await storage.createMessage({
         conversationId,
         role: "user",
@@ -537,11 +540,10 @@ Use these insights to ask penetrating questions, identify patterns, and coach ef
       // Check if this is a new conversation (first user message)
       const isNewConversation = conversationHistory.length <= 1;
       
-      // Check if this is the first message of the day
-      const lastMessageTime = await storage.getLastMessageTimeForUser(userId);
+      // Check if this is the first message of the day (using time captured BEFORE storing new message)
       const now = new Date();
-      const isFirstMessageOfDay = !lastMessageTime || 
-        lastMessageTime.toDateString() !== now.toDateString();
+      const isFirstMessageOfDay = !lastMessageTimeBeforeThis || 
+        lastMessageTimeBeforeThis.toDateString() !== now.toDateString();
       
       // Determine faith engagement level:
       // - fullFaithOpen: faith enabled and NO recent declines - offer prayer opening
