@@ -1,4 +1,4 @@
-import { CrisisAssessment, formatCrisisResources } from './crisis-detection';
+import { CrisisAssessment, formatCrisisResources, PastoralGuidance } from './crisis-detection';
 import { TherapyExercise, formatTherapyExercise } from './therapy-modules';
 
 export interface SafetyWrapperResult {
@@ -6,7 +6,9 @@ export interface SafetyWrapperResult {
   wasModified: boolean;
   addedResources: boolean;
   addedTherapy: boolean;
+  addedScripture: boolean;
   safetyNote?: string;
+  pastoralGuidance?: PastoralGuidance;
 }
 
 const COMPASSIONATE_PREFIXES: Record<string, string[]> = {
@@ -41,13 +43,18 @@ const GENTLE_REDIRECTS: string[] = [
 export function wrapResponseWithSafety(
   aiResponse: string,
   crisisAssessment: CrisisAssessment,
-  therapyExercise?: TherapyExercise | null
+  therapyExercise?: TherapyExercise | null,
+  includeFaith: boolean = true
 ): SafetyWrapperResult {
   let modifiedContent = aiResponse;
   let wasModified = false;
   let addedResources = false;
   let addedTherapy = false;
+  let addedScripture = false;
   let safetyNote: string | undefined;
+
+  // Use pastoral guidance if available
+  const guidance = crisisAssessment.pastoralGuidance;
 
   if (crisisAssessment.severity !== "none" && crisisAssessment.severity !== "low") {
     const prefixes = COMPASSIONATE_PREFIXES[crisisAssessment.severity] || COMPASSIONATE_PREFIXES.low;
@@ -57,6 +64,17 @@ export function wrapResponseWithSafety(
         !aiResponse.toLowerCase().includes("support") &&
         !aiResponse.toLowerCase().includes("988")) {
       modifiedContent = selectedPrefix + "\n\n" + modifiedContent;
+      wasModified = true;
+    }
+  }
+
+  // Add scripture comfort for faith-enabled users in crisis situations
+  if (includeFaith && guidance && guidance.scriptures && guidance.scriptures.length > 0 && 
+      crisisAssessment.severity !== "none") {
+    const scripture = guidance.scriptures[Math.floor(Math.random() * guidance.scriptures.length)];
+    if (scripture && !modifiedContent.toLowerCase().includes(scripture.reference.toLowerCase())) {
+      modifiedContent += `\n\n*"${scripture.verse}"* — ${scripture.reference}`;
+      addedScripture = true;
       wasModified = true;
     }
   }
@@ -97,8 +115,24 @@ export function wrapResponseWithSafety(
     wasModified,
     addedResources,
     addedTherapy,
-    safetyNote
+    addedScripture,
+    safetyNote,
+    pastoralGuidance: guidance
   };
+}
+
+export function formatPastoralGuidanceContext(guidance: PastoralGuidance): string {
+  let context = `\n\n## PASTORAL GUIDANCE FOR THIS SITUATION\n`;
+  context += `**Root Issue to Address:** ${guidance.rootIssue}\n`;
+  context += `**Recommended Therapeutic Approach:** ${guidance.therapeuticApproach}\n`;
+  context += `**Gentle Redirect:** ${guidance.gentleRedirect}\n`;
+  if (guidance.scriptures && guidance.scriptures.length > 0) {
+    context += `**Relevant Scriptures:**\n`;
+    guidance.scriptures.forEach(s => {
+      context += `- "${s.verse}" — ${s.reference}\n`;
+    });
+  }
+  return context;
 }
 
 export function generateDisclaimer(): string {

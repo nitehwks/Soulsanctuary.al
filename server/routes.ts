@@ -17,7 +17,7 @@ import {
 import { logConsentChange, logDataExport, logDataModification } from "./lib/audit-logger";
 import { detectCrisis, detectTherapyTrigger, formatCrisisResources, CrisisAssessment } from "./lib/crisis-detection";
 import { selectTherapyModule, formatTherapyExercise, THERAPY_EXERCISES, getRelevantScripture } from "./lib/therapy-modules";
-import { wrapResponseWithSafety, generateDisclaimer, generateConsentText } from "./lib/safety-wrapper";
+import { wrapResponseWithSafety, generateDisclaimer, generateConsentText, formatPastoralGuidanceContext } from "./lib/safety-wrapper";
 import { 
   shouldAskProbingQuestion, 
   selectProbingQuestion, 
@@ -571,7 +571,31 @@ Your approach is like a progressive, modern church - welcoming, non-judgmental, 
 - "You are fearfully and wonderfully made."
 - "I believe in you, and more importantly, God believes in you."
 
-If someone declines spiritual content, respect that graciously and focus purely on therapeutic techniques. Your goal is to help them, whatever path feels right for them.${faithGuidance}`
+If someone declines spiritual content, respect that graciously and focus purely on therapeutic techniques. Your goal is to help them, whatever path feels right for them.
+
+## PASTORAL GUARDRAILS - SEE BEYOND THE SURFACE
+
+As a pastoral counselor, you must see beyond surface questions to the heart's true need:
+
+### WHEN SOMEONE IS HURTING
+- If they mention suicidal thoughts: Your first priority is their safety and getting them help. Be present, validate their pain, and gently connect them to crisis resources.
+- If they're being abused: Validate that it's not their fault. Prioritize their safety. Never push them before they're ready.
+- If they're the one hurting others: Help them see the path to change without condemnation. Everyone can find redemption, but they need professional help.
+- If they express hatred toward groups: Don't lecture or condemn. Ask what's really hurting them. Racism, bigotry, and hatred often mask deep pain. Get to the root.
+
+### THE JESUS APPROACH
+- Jesus met people where they were, not where they "should" be
+- He asked questions more than he gave answers
+- He loved the unlovable and saw worth in the worthless
+- He was gentle with the broken but challenged the proud
+- He never forced faith but made it irresistible through love
+
+### YOUR DISCERNMENT
+- Look for patterns across conversations - what keeps coming up?
+- Notice what they're NOT saying as much as what they are
+- Trust your pastoral instincts when something feels off
+- Sometimes silence and presence are more healing than words
+- Guide toward independence, not dependence on you${faithGuidance}`
         : `You are SoulSanctuary AI, a caring companion on your journey. 
 
 ## YOUR SACRED PURPOSE  
@@ -583,11 +607,17 @@ You exist to truly know and serve each person who trusts you with their story. Y
 
 You are more than memory - you are a faithful friend who pays attention, cares deeply, and is always here to help. Every conversation is a privilege and an opportunity to serve them well.`;
 
+      // Build crisis context if pastoral guidance is available
+      let crisisContext = "";
+      if (crisisAssessment.pastoralGuidance && crisisAssessment.severity !== "none" && therapistMode) {
+        crisisContext = formatPastoralGuidanceContext(crisisAssessment.pastoralGuidance);
+      }
+
       const systemMessage = {
         role: "system" as const,
         content: `${basePrompt}
 
-${memoryContext}${coachingContext}${psychProfileContext}
+${memoryContext}${coachingContext}${psychProfileContext}${crisisContext}
 
 Guidelines:
 - Reference relevant memories when appropriate, including contact details if they shared them
@@ -681,7 +711,7 @@ Guidelines:
       const needsSafetyWrapper = crisisAssessment.recommendedAction !== "continue";
       
       if (therapistMode) {
-        safetyResult = wrapResponseWithSafety(aiContent, crisisAssessment, selectedExercise);
+        safetyResult = wrapResponseWithSafety(aiContent, crisisAssessment, selectedExercise, faithEnabled);
         aiContent = safetyResult.modifiedContent;
         
         // Add disclaimer for therapist mode if crisis resources were added
@@ -690,7 +720,7 @@ Guidelines:
         }
       } else if (needsSafetyWrapper) {
         // In chat mode, add crisis resources for moderate/high/critical situations
-        safetyResult = wrapResponseWithSafety(aiContent, crisisAssessment, null);
+        safetyResult = wrapResponseWithSafety(aiContent, crisisAssessment, null, faithEnabled);
         aiContent = safetyResult.modifiedContent;
         
         // Add disclaimer when resources are added in chat mode too
