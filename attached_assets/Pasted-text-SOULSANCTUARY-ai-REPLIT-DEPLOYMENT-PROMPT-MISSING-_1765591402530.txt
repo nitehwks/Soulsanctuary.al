@@ -1,0 +1,233 @@
+text
+# SOULSANCTUARY.ai REPLIT DEPLOYMENT PROMPT - MISSING TECHNICAL FEATURES ONLY
+# Paste entire contents into Replit Shell → Generates COMPLETE production app
+# EXCLUDES faith/theme - PURE TECHNICAL IMPLEMENTATION FROM FEATURES.md + PDF
+
+🚀 REPLIT: Implement ALL MISSING TECHNICAL FEATURES from SOULSANCTUARY_FEATURES.md + PDF. React18/TS/Vite/Tailwind/shadcnui + Express/Drizzle/PostgreSQL. Mobile-first. Production-ready.
+
+## 📋 MISSING TECHNICAL FEATURES - IMPLEMENT IMMEDIATELY:
+
+### VOICE INTERFACES (Web Speech API)
+✅ Speech-to-text: Real-time chat transcription
+✅ Text-to-speech: Response audio playback
+✅ Offline voice fallback (local processing)
+✅ Voice message storage (encrypted blobs)
+
+text
+
+### GROUP FEATURES (Anonymous Peer Support)
+✅ Anonymous group chat rooms (hash-based membership)
+✅ Peer message moderation (AI + admin)
+✅ Group analytics (engagement without PII)
+✅ Opt-in group notifications
+
+text
+
+### PROFESSIONAL TOOLS (Clinician Dashboard)
+✅ Session management (scheduled + ad-hoc)
+✅ Patient progress overview (anonymized)
+✅ Intervention logging + outcome tracking
+✅ Exportable session reports (HIPAA format)
+
+text
+
+### ANALYTICS + MONITORING
+✅ Engagement metrics (DAU/MAU/funnel dropoff)
+✅ Feature adoption rates
+✅ Crisis detection accuracy (ROC curves)
+✅ Response time percentiles (P95 < 2s)
+✅ Model performance tracking
+
+text
+
+### INFRASTRUCTURE FEATURES
+✅ Redis caching (sessions + hot data)
+✅ Feature flags (LaunchDarkly simulation)
+✅ A/B testing framework
+✅ OpenAPI/Swagger documentation
+✅ CI/CD GitHub Actions
+✅ Multi-language i18n (Spanish/Portuguese)
+
+text
+
+## 🗄️ MISSING DATABASE SCHEMAS - REPLIT DB:
+
+// schemas/voiceMessages.ts
+export const voiceMessages = pgTable('voice_messages', {
+id: uuid('id').defaultRandom().primaryKey(),
+conversationId: uuid('conversation_id').references(() => conversations.id),
+audioBlobUrl: text('audio_blob_url'), // Encrypted S3/Replit storage
+transcript: text('transcript'),
+sentimentScore: decimal('sentiment_score', { precision: 3, scale: 2 }),
+createdAt: timestamp('created_at').defaultNow().index(),
+});
+
+// schemas/groupFeatures.ts
+export const groups = pgTable('groups', {
+id: uuid('id').defaultRandom().primaryKey(),
+groupHash: text('group_hash').unique().notNull(),
+memberCount: integer('member_count').default(0),
+messageCount: integer('message_count').default(0),
+isActive: boolean('is_active').default(true),
+});
+
+export const groupMessages = pgTable('group_messages', {
+id: uuid('id').defaultRandom().primaryKey(),
+groupId: uuid('group_id').references(() => groups.id),
+anonUserHash: text('anon_user_hash').notNull(),
+message: text('message'),
+moderated: boolean('moderated').default(false),
+});
+
+// schemas/professionalTools.ts
+export const clinicianSessions = pgTable('clinician_sessions', {
+id: uuid('id').defaultRandom().primaryKey(),
+clinicianId: uuid('clinician_id').references(() => users.id),
+anonPatientHash: text('anon_patient_hash').notNull(),
+sessionNotes: text('session_notes'),
+interventions: jsonb('interventions'),
+outcomes: jsonb('outcomes'),
+});
+
+text
+
+## 🔧 REPLIT-SPECIFIC IMPLEMENTATION:
+
+### 1. REPLIT DATABASE SETUP
+Replit Shell - Run immediately
+npm init -y
+npm i express drizzle-orm pg react react-dom @types/*
+npm i -D vite tailwindcss shadcn-ui typescript @types/node
+npx drizzle-kit generate:pg
+
+text
+
+### 2. REDIS CACHING (Replit Secrets)
+// services/redisCache.ts - Replit REDIS_URL secret
+import Redis from 'ioredis';
+const redis = new Redis(process.env.REDIS_URL);
+
+export const sessionCache = {
+get: async (key: string) => JSON.parse(await redis.get(key) || 'null'),
+set: async (key: string, data: any, ttl = 3600) => {
+await redis.setex(key, ttl, JSON.stringify(data));
+},
+};
+
+text
+
+### 3. VOICE INTERFACES (Web Speech API)
+// hooks/useVoiceChat.ts - Production ready
+export const useVoiceChat = () => {
+const recognition = useRef<SpeechRecognition | null>(null);
+const synthesis = useRef<SpeechSynthesis | null>(null);
+
+const startListening = () => {
+recognition.current = new (window.SpeechRecognition ||
+(window as any).webkitSpeechRecognition)();
+recognition.current.continuous = true;
+recognition.current.onresult = (e) => {
+const transcript = e.results[e.results.length-1].transcript;
+sendMessage(transcript);
+};
+};
+
+const speakResponse = (text: string) => {
+const utterance = new SpeechSynthesisUtterance(text);
+utterance.rate = 0.9;
+speechSynthesis.speak(utterance);
+};
+};
+
+text
+
+## 🚀 REPLIT DEPLOYMENT FILES - GENERATE NOW:
+
+CORE INFRASTRUCTURE:
+
+replit.nix - Complete Node/PostgreSQL/Redis stack
+
+.replit - Auto-run production server
+
+package.json - ALL deps + production scripts
+
+drizzle.config.ts - Replit PostgreSQL connection
+
+VOICE + GROUP FEATURES:
+5. src/hooks/useVoiceChat.ts - Web Speech API complete
+6. src/components/VoiceMessageRecorder.tsx - shadcnui UI
+7. src/components/GroupChatRoom.tsx - Anonymous peer support
+8. backend/routes/groups.ts - Group API endpoints
+
+PROFESSIONAL TOOLS:
+9. src/components/ClinicianDashboard.tsx - Session management
+10. backend/routes/clinicians.ts - Professional API
+
+ANALYTICS + MONITORING:
+11. src/services/AnalyticsService.ts - Engagement metrics
+12. src/components/AnalyticsDashboard.tsx - Real-time metrics
+
+REPLIT PRODUCTION:
+13. src/middleware/rateLimiter.ts - Abuse protection
+14. src/services/featureFlags.ts - LaunchDarkly simulation
+15. openapi.json - Complete API docs
+16. src/i18n/locales/es.json - Spanish support
+
+text
+
+## 🌐 REPLIT API ENDPOINTS (MISSING FROM CURRENT):
+
+POST /api/voice/transcribe - Speech-to-text processing
+POST /api/groups/join - Anonymous group membership
+POST /api/groups/message - Peer support messaging
+GET /api/clinicians/sessions - Session management
+GET /api/analytics/engagement - Usage metrics
+GET /api/feature-flags - Dynamic feature control
+
+text
+
+## ⚙️ REPLIT ENVIRONMENT SECRETS (Add immediately):
+DATABASE_URL=postgresql://user:pass@replitdb:5432/soulsanctuary
+REDIS_URL=redis://default:pass@redis.replit:6379
+OPENROUTER_API_KEY=sk-...
+JWT_SECRET=your-super-secret-key-here
+
+text
+
+## 🧪 AUTOMATED TESTING (Replit built-in):
+✅ Voice transcription accuracy (95%)
+✅ Group message anonymization
+✅ Clinician session encryption
+✅ Redis cache hit rate (80%+)
+✅ API response times (P95 < 2s)
+✅ Mobile responsive (iOS Safari)
+
+text
+
+## 📱 MOBILE PRODUCTION SPECS:
+✅ PWA installable (Replit hosting)
+✅ Offline voice processing fallback
+✅ Push notifications (group messages)
+✅ iOS safe areas + 44px touch targets
+✅ Dark mode system preference
+✅ WCAG 2.1 AA accessibility
+
+text
+
+**REPLIT EXECUTION:**
+Paste this prompt → Replit Shell → npm install
+
+npx create-vite@latest . --template react-ts
+
+Add ALL secrets (DATABASE_URL, REDIS_URL, JWT_SECRET)
+
+npm run dev → Production server starts
+
+Deploy → Custom domain + HTTPS automatic
+
+text
+
+**COPILOT/REPLIT AI: Generate ALL 16 files above with 100% imports, TypeScript types, shadcnui components, Tailwind responsive styling, Drizzle schemas, Express routes, Redis caching, Web Speech API voice interfaces, group chat, clinician dashboard, analytics. Production-ready Replit deployment.**
+
+SAVE AS `SOULSANCTUARY_REPLIT_MISSING_TECH_PROMPT.txt`
+Copy entire block above. Save as SOULSANCTUARY_REPLIT_MISSING_TECH_PROMPT.txt. Paste into Replit Shell or GitHub Copilot Chat. Deploys COMPLETE technical implementation missing from current config - voice interfaces, group features, clinician tools, Redis, analytics, i18n, feature flags, CI/CD, OpenAPI docs.​

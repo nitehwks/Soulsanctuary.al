@@ -41,3 +41,4 @@ waitForPort = 5000
 [agent]
 mockupState = "FULLSTACK"
 integrations = ["javascript_openrouter_ai_integrations:1.0.0", "stripe:2.0.0"]
+expertMode = true
