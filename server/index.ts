@@ -15,7 +15,9 @@ declare module "http" {
   }
 }
 
-// Initialize Stripe schema and sync data
+// BETA: Stripe initialization disabled - using GoFundMe instead
+// Uncomment after beta to enable Stripe payments
+/*
 async function initStripe() {
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) {
@@ -49,8 +51,11 @@ async function initStripe() {
 
 // Initialize Stripe on startup
 initStripe();
+*/
+console.log('BETA MODE: Stripe payments disabled - using GoFundMe for donations');
 
-// Register Stripe webhook route BEFORE express.json()
+// BETA: Stripe webhook disabled - uncomment after beta
+/*
 app.post(
   '/api/stripe/webhook/:uuid',
   express.raw({ type: 'application/json' }),
@@ -71,6 +76,7 @@ app.post(
     }
   }
 );
+*/
 
 // Now apply JSON middleware for all other routes
 app.use(
