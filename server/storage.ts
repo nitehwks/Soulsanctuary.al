@@ -58,6 +58,20 @@ import {
   type InsertClinicianSession,
   type FeatureFlag,
   type InsertFeatureFlag,
+  type Relationship,
+  type InsertRelationship,
+  type LifeEvent,
+  type InsertLifeEvent,
+  type EmotionalSnapshot,
+  type InsertEmotionalSnapshot,
+  type DispositionTrend,
+  type InsertDispositionTrend,
+  type PsychologicalProfile,
+  type InsertPsychologicalProfile,
+  type GoalProgress,
+  type InsertGoalProgress,
+  type LearningQueueItem,
+  type InsertLearningQueueItem,
   users,
   clinicianSessions,
   featureFlags,
@@ -86,7 +100,14 @@ import {
   groups,
   groupMembers,
   groupMessages,
-  analyticsEvents
+  analyticsEvents,
+  relationships,
+  lifeEvents,
+  emotionalSnapshots,
+  dispositionTrends,
+  psychologicalProfile,
+  goalProgress,
+  learningQueue
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "../db/index";
@@ -262,6 +283,44 @@ export interface IStorage {
   updateFeatureFlag(id: number, updates: Partial<InsertFeatureFlag>): Promise<FeatureFlag | undefined>;
   deleteFeatureFlag(id: number): Promise<boolean>;
   isFeatureEnabled(key: string, userId?: string): Promise<boolean>;
+  
+  // Contextual Learning - Relationships
+  createRelationship(rel: InsertRelationship): Promise<Relationship>;
+  getRelationshipsByUser(userId: string): Promise<Relationship[]>;
+  getRelationshipByName(userId: string, name: string): Promise<Relationship | undefined>;
+  updateRelationship(id: number, updates: Partial<Relationship>): Promise<Relationship | undefined>;
+  upsertRelationship(userId: string, name: string, relationship: string, updates?: Partial<InsertRelationship>): Promise<Relationship>;
+  
+  // Contextual Learning - Life Events
+  createLifeEvent(event: InsertLifeEvent): Promise<LifeEvent>;
+  getLifeEventsByUser(userId: string): Promise<LifeEvent[]>;
+  getOngoingLifeEvents(userId: string): Promise<LifeEvent[]>;
+  updateLifeEvent(id: number, updates: Partial<LifeEvent>): Promise<LifeEvent | undefined>;
+  
+  // Contextual Learning - Emotional Snapshots
+  createEmotionalSnapshot(snapshot: InsertEmotionalSnapshot): Promise<EmotionalSnapshot>;
+  getEmotionalSnapshotsByUser(userId: string, limit?: number): Promise<EmotionalSnapshot[]>;
+  getEmotionalSnapshotsByConversation(conversationId: number): Promise<EmotionalSnapshot[]>;
+  
+  // Contextual Learning - Disposition Trends
+  createDispositionTrend(trend: InsertDispositionTrend): Promise<DispositionTrend>;
+  getDispositionTrendsByUser(userId: string, limit?: number): Promise<DispositionTrend[]>;
+  getLatestDispositionTrend(userId: string): Promise<DispositionTrend | undefined>;
+  
+  // Contextual Learning - Psychological Profile
+  getPsychologicalProfile(userId: string): Promise<PsychologicalProfile | undefined>;
+  upsertPsychologicalProfile(profile: InsertPsychologicalProfile): Promise<PsychologicalProfile>;
+  
+  // Contextual Learning - Goal Progress
+  createGoalProgress(progress: InsertGoalProgress): Promise<GoalProgress>;
+  getGoalProgressByGoal(goalId: number): Promise<GoalProgress[]>;
+  getGoalProgressByUser(userId: string, limit?: number): Promise<GoalProgress[]>;
+  
+  // Contextual Learning - Learning Queue
+  createLearningQueueItem(item: InsertLearningQueueItem): Promise<LearningQueueItem>;
+  getPendingLearningItems(userId: string): Promise<LearningQueueItem[]>;
+  updateLearningQueueItem(id: number, updates: Partial<LearningQueueItem>): Promise<LearningQueueItem | undefined>;
+  verifyLearningItem(id: number): Promise<LearningQueueItem | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1201,6 +1260,180 @@ export class DatabaseStorage implements IStorage {
     }
     
     return flag.enabled;
+  }
+
+  // Contextual Learning - Relationships
+  async createRelationship(rel: InsertRelationship): Promise<Relationship> {
+    const [created] = await db.insert(relationships).values(rel).returning();
+    return created;
+  }
+
+  async getRelationshipsByUser(userId: string): Promise<Relationship[]> {
+    return await db.select().from(relationships)
+      .where(eq(relationships.userId, userId))
+      .orderBy(desc(relationships.importance));
+  }
+
+  async getRelationshipByName(userId: string, name: string): Promise<Relationship | undefined> {
+    const [rel] = await db.select().from(relationships)
+      .where(and(eq(relationships.userId, userId), ilike(relationships.name, name)));
+    return rel;
+  }
+
+  async updateRelationship(id: number, updates: Partial<Relationship>): Promise<Relationship | undefined> {
+    const [updated] = await db.update(relationships)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(relationships.id, id))
+      .returning();
+    return updated;
+  }
+
+  async upsertRelationship(userId: string, name: string, relationship: string, updates?: Partial<InsertRelationship>): Promise<Relationship> {
+    const existing = await this.getRelationshipByName(userId, name);
+    if (existing) {
+      const mentionCount = (existing.mentionCount || 0) + 1;
+      const [updated] = await db.update(relationships)
+        .set({ 
+          ...updates,
+          mentionCount,
+          lastMentioned: new Date(),
+          updatedAt: new Date()
+        })
+        .where(eq(relationships.id, existing.id))
+        .returning();
+      return updated;
+    }
+    return this.createRelationship({ userId, name, relationship, ...updates });
+  }
+
+  // Contextual Learning - Life Events
+  async createLifeEvent(event: InsertLifeEvent): Promise<LifeEvent> {
+    const [created] = await db.insert(lifeEvents).values(event).returning();
+    return created;
+  }
+
+  async getLifeEventsByUser(userId: string): Promise<LifeEvent[]> {
+    return await db.select().from(lifeEvents)
+      .where(eq(lifeEvents.userId, userId))
+      .orderBy(desc(lifeEvents.createdAt));
+  }
+
+  async getOngoingLifeEvents(userId: string): Promise<LifeEvent[]> {
+    return await db.select().from(lifeEvents)
+      .where(and(eq(lifeEvents.userId, userId), eq(lifeEvents.isOngoing, true)));
+  }
+
+  async updateLifeEvent(id: number, updates: Partial<LifeEvent>): Promise<LifeEvent | undefined> {
+    const [updated] = await db.update(lifeEvents)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(lifeEvents.id, id))
+      .returning();
+    return updated;
+  }
+
+  // Contextual Learning - Emotional Snapshots
+  async createEmotionalSnapshot(snapshot: InsertEmotionalSnapshot): Promise<EmotionalSnapshot> {
+    const [created] = await db.insert(emotionalSnapshots).values(snapshot).returning();
+    return created;
+  }
+
+  async getEmotionalSnapshotsByUser(userId: string, limit: number = 50): Promise<EmotionalSnapshot[]> {
+    return await db.select().from(emotionalSnapshots)
+      .where(eq(emotionalSnapshots.userId, userId))
+      .orderBy(desc(emotionalSnapshots.createdAt))
+      .limit(limit);
+  }
+
+  async getEmotionalSnapshotsByConversation(conversationId: number): Promise<EmotionalSnapshot[]> {
+    return await db.select().from(emotionalSnapshots)
+      .where(eq(emotionalSnapshots.conversationId, conversationId))
+      .orderBy(desc(emotionalSnapshots.createdAt));
+  }
+
+  // Contextual Learning - Disposition Trends
+  async createDispositionTrend(trend: InsertDispositionTrend): Promise<DispositionTrend> {
+    const [created] = await db.insert(dispositionTrends).values(trend).returning();
+    return created;
+  }
+
+  async getDispositionTrendsByUser(userId: string, limit: number = 10): Promise<DispositionTrend[]> {
+    return await db.select().from(dispositionTrends)
+      .where(eq(dispositionTrends.userId, userId))
+      .orderBy(desc(dispositionTrends.periodEnd))
+      .limit(limit);
+  }
+
+  async getLatestDispositionTrend(userId: string): Promise<DispositionTrend | undefined> {
+    const [trend] = await db.select().from(dispositionTrends)
+      .where(eq(dispositionTrends.userId, userId))
+      .orderBy(desc(dispositionTrends.periodEnd))
+      .limit(1);
+    return trend;
+  }
+
+  // Contextual Learning - Psychological Profile
+  async getPsychologicalProfile(userId: string): Promise<PsychologicalProfile | undefined> {
+    const [profile] = await db.select().from(psychologicalProfile)
+      .where(eq(psychologicalProfile.userId, userId));
+    return profile;
+  }
+
+  async upsertPsychologicalProfile(profile: InsertPsychologicalProfile): Promise<PsychologicalProfile> {
+    const [upserted] = await db.insert(psychologicalProfile)
+      .values(profile)
+      .onConflictDoUpdate({
+        target: psychologicalProfile.userId,
+        set: { ...profile, lastUpdated: new Date() }
+      })
+      .returning();
+    return upserted;
+  }
+
+  // Contextual Learning - Goal Progress
+  async createGoalProgress(progress: InsertGoalProgress): Promise<GoalProgress> {
+    const [created] = await db.insert(goalProgress).values(progress).returning();
+    return created;
+  }
+
+  async getGoalProgressByGoal(goalId: number): Promise<GoalProgress[]> {
+    return await db.select().from(goalProgress)
+      .where(eq(goalProgress.goalId, goalId))
+      .orderBy(desc(goalProgress.createdAt));
+  }
+
+  async getGoalProgressByUser(userId: string, limit: number = 20): Promise<GoalProgress[]> {
+    return await db.select().from(goalProgress)
+      .where(eq(goalProgress.userId, userId))
+      .orderBy(desc(goalProgress.createdAt))
+      .limit(limit);
+  }
+
+  // Contextual Learning - Learning Queue
+  async createLearningQueueItem(item: InsertLearningQueueItem): Promise<LearningQueueItem> {
+    const [created] = await db.insert(learningQueue).values(item).returning();
+    return created;
+  }
+
+  async getPendingLearningItems(userId: string): Promise<LearningQueueItem[]> {
+    return await db.select().from(learningQueue)
+      .where(and(eq(learningQueue.userId, userId), eq(learningQueue.status, 'pending')))
+      .orderBy(desc(learningQueue.createdAt));
+  }
+
+  async updateLearningQueueItem(id: number, updates: Partial<LearningQueueItem>): Promise<LearningQueueItem | undefined> {
+    const [updated] = await db.update(learningQueue)
+      .set(updates)
+      .where(eq(learningQueue.id, id))
+      .returning();
+    return updated;
+  }
+
+  async verifyLearningItem(id: number): Promise<LearningQueueItem | undefined> {
+    const [updated] = await db.update(learningQueue)
+      .set({ status: 'verified', verifiedAt: new Date() })
+      .where(eq(learningQueue.id, id))
+      .returning();
+    return updated;
   }
 }
 

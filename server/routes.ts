@@ -29,6 +29,7 @@ import {
 import { generateSmartReplies, type SmartReply } from "./lib/smart-replies";
 import { createAndStoreInsight, getAggregatedInsights } from "./lib/psychological-analyzer";
 import { updateUserProfile, getProfileSummary, generateCoachingPlan } from "./lib/profile-aggregator";
+import { processMessageForLearning } from "./lib/contextualLearning";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import OpenAI from "openai";
 
@@ -390,6 +391,19 @@ export async function registerRoutes(
       }
 
       await extractFactsFromMessage(fullContent, userId, sentimentResult.sentiment, redactionResult.extractedPII);
+
+      // Contextual learning: Extract relationships, emotional states, life events
+      try {
+        await processMessageForLearning(
+          fullContent,
+          conversationId,
+          userId,
+          sentimentResult.sentiment,
+          sentimentResult.score
+        );
+      } catch (learningError) {
+        console.error('Error in contextual learning:', learningError);
+      }
 
       // Store psychological insight for every user message (immutable ledger)
       try {

@@ -532,6 +532,65 @@ export const insertUserProbingStateSchema = createInsertSchema(userProbingState)
 export type UserProbingState = typeof userProbingState.$inferSelect;
 export type InsertUserProbingState = z.infer<typeof insertUserProbingStateSchema>;
 
+// Contextual Learning Schema - Relationships, Life Events, Emotional Snapshots
+export const insertRelationshipSchema = createInsertSchema(relationships).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertLifeEventSchema = createInsertSchema(lifeEvents).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertEmotionalSnapshotSchema = createInsertSchema(emotionalSnapshots).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertDispositionTrendSchema = createInsertSchema(dispositionTrends).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertPsychologicalProfileSchema = createInsertSchema(psychologicalProfile).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertGoalProgressSchema = createInsertSchema(goalProgress).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertLearningQueueSchema = createInsertSchema(learningQueue).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type Relationship = typeof relationships.$inferSelect;
+export type InsertRelationship = z.infer<typeof insertRelationshipSchema>;
+
+export type LifeEvent = typeof lifeEvents.$inferSelect;
+export type InsertLifeEvent = z.infer<typeof insertLifeEventSchema>;
+
+export type EmotionalSnapshot = typeof emotionalSnapshots.$inferSelect;
+export type InsertEmotionalSnapshot = z.infer<typeof insertEmotionalSnapshotSchema>;
+
+export type DispositionTrend = typeof dispositionTrends.$inferSelect;
+export type InsertDispositionTrend = z.infer<typeof insertDispositionTrendSchema>;
+
+export type PsychologicalProfile = typeof psychologicalProfile.$inferSelect;
+export type InsertPsychologicalProfile = z.infer<typeof insertPsychologicalProfileSchema>;
+
+export type GoalProgress = typeof goalProgress.$inferSelect;
+export type InsertGoalProgress = z.infer<typeof insertGoalProgressSchema>;
+
+export type LearningQueueItem = typeof learningQueue.$inferSelect;
+export type InsertLearningQueueItem = z.infer<typeof insertLearningQueueSchema>;
+
 // Voice Messages - Phase 1 Voice Interfaces
 export const voiceMessages = pgTable("voice_messages", {
   id: serial("id").primaryKey(),
