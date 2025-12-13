@@ -1,4 +1,4 @@
-import { Home, Shield, Settings, Activity, Users, BarChart3, Stethoscope, Flag } from "lucide-react";
+import { Home, Shield, Settings, Activity, Users, BarChart3, Stethoscope, Flag, Heart } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -51,7 +51,23 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="mt-auto p-2">
+      <div className="mt-auto space-y-3 flex flex-col items-center pb-4">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <a
+              href="https://gofund.me/7c08e69b"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-3 rounded-xl transition-all duration-200 flex items-center justify-center bg-gradient-to-tr from-pink-500 to-rose-500 text-white shadow-md hover:shadow-lg hover:scale-105"
+              data-testid="button-donate-gofundme"
+            >
+              <Heart className="h-5 w-5" />
+            </a>
+          </TooltipTrigger>
+          <TooltipContent side="right">
+            <p>Support the Cause</p>
+          </TooltipContent>
+        </Tooltip>
         <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-primary to-purple-500 flex items-center justify-center text-[10px] font-bold text-white cursor-pointer hover:opacity-90">
           TH
         </div>
