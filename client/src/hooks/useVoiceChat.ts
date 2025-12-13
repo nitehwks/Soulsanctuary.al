@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 
 interface IWindow extends Window {
   webkitSpeechRecognition: any;
@@ -42,6 +42,14 @@ export function useVoiceChat(options: UseVoiceChatOptions = {}) {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
+  const onTranscriptRef = useRef(onTranscript);
+  const onErrorRef = useRef(onError);
+  
+  useEffect(() => {
+    onTranscriptRef.current = onTranscript;
+    onErrorRef.current = onError;
+  });
+
   useEffect(() => {
     const win = window as unknown as IWindow;
     const SpeechRecognitionAPI = win.SpeechRecognition || win.webkitSpeechRecognition;
@@ -68,15 +76,15 @@ export function useVoiceChat(options: UseVoiceChatOptions = {}) {
         const currentTranscript = finalTranscript || interimTranscript;
         setState((prev) => ({ ...prev, transcript: currentTranscript }));
         
-        if (finalTranscript && onTranscript) {
-          onTranscript(finalTranscript);
+        if (finalTranscript && onTranscriptRef.current) {
+          onTranscriptRef.current(finalTranscript);
         }
       };
 
       recognitionRef.current.onerror = (event: any) => {
         const errorMessage = `Speech recognition error: ${event.error}`;
         setState((prev) => ({ ...prev, error: errorMessage, isListening: false }));
-        if (onError) onError(errorMessage);
+        if (onErrorRef.current) onErrorRef.current(errorMessage);
       };
 
       recognitionRef.current.onend = () => {
@@ -98,13 +106,13 @@ export function useVoiceChat(options: UseVoiceChatOptions = {}) {
         synthRef.current.cancel();
       }
     };
-  }, [continuous, language, onTranscript, onError]);
+  }, [continuous, language]);
 
   const startListening = useCallback(() => {
     if (!recognitionRef.current) {
       const error = "Speech recognition not supported";
       setState((prev) => ({ ...prev, error }));
-      if (onError) onError(error);
+      if (onErrorRef.current) onErrorRef.current(error);
       return;
     }
 
@@ -114,7 +122,7 @@ export function useVoiceChat(options: UseVoiceChatOptions = {}) {
     } catch (e) {
       console.error("Failed to start speech recognition:", e);
     }
-  }, [onError]);
+  }, []);
 
   const stopListening = useCallback(() => {
     if (recognitionRef.current) {
@@ -135,7 +143,7 @@ export function useVoiceChat(options: UseVoiceChatOptions = {}) {
     if (!synthRef.current) {
       const error = "Speech synthesis not supported";
       setState((prev) => ({ ...prev, error }));
-      if (onError) onError(error);
+      if (onErrorRef.current) onErrorRef.current(error);
       return;
     }
 
@@ -157,11 +165,11 @@ export function useVoiceChat(options: UseVoiceChatOptions = {}) {
     utteranceRef.current.onerror = (event) => {
       const errorMessage = `Speech synthesis error: ${event.error}`;
       setState((prev) => ({ ...prev, error: errorMessage, isSpeaking: false }));
-      if (onError) onError(errorMessage);
+      if (onErrorRef.current) onErrorRef.current(errorMessage);
     };
 
     synthRef.current.speak(utteranceRef.current);
-  }, [language, onError]);
+  }, [language]);
 
   const stopSpeaking = useCallback(() => {
     if (synthRef.current) {
@@ -186,9 +194,9 @@ export function useVoiceChat(options: UseVoiceChatOptions = {}) {
     } catch (e) {
       const error = "Failed to access microphone";
       setState((prev) => ({ ...prev, error }));
-      if (onError) onError(error);
+      if (onErrorRef.current) onErrorRef.current(error);
     }
-  }, [onError]);
+  }, []);
 
   const stopRecording = useCallback(async (): Promise<Blob | null> => {
     return new Promise((resolve) => {

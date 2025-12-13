@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Send, Mic, MicOff, PanelLeftClose, PanelLeft, Heart, Shield, Target, Brain, Paperclip, Camera, X, FileText, Image as ImageIcon, HelpCircle, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,14 +66,16 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
   const { user, isLoading: isUserLoading } = useAuth();
   const userId = user?.id;
 
+  const handleVoiceError = useCallback((error: string) => {
+    toast({
+      title: "Voice Error",
+      description: error,
+      variant: "destructive"
+    });
+  }, [toast]);
+
   const { speak, stopSpeaking, isSpeaking } = useVoiceChat({
-    onError: (error) => {
-      toast({
-        title: "Voice Error",
-        description: error,
-        variant: "destructive"
-      });
-    }
+    onError: handleVoiceError
   });
 
   const handleSpeakMessage = (messageId: number, content: string) => {
