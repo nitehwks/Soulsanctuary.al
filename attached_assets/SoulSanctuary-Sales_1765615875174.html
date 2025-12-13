@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SoulSanctuary - Private AI Therapy Chatbot</title>
+    <title>SoulSanctuary - Christian AI Companion | Faith + Therapy</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Georgia', 'Times New Roman', serif;
-            line-height: 1.7; color: #2c3e50; background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+            line-height: 1.7; color: #2c3e50; background: linear-gradient(135deg, #e8f4f8 0%, #f5f0ff 50%, #fff5f5 100%);
             min-height: 100vh;
         }
         .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
@@ -21,15 +21,16 @@
         }
         header::before {
             content: ''; position: absolute; top: 0; left: 0; right: 0; height: 6px;
-            background: linear-gradient(90deg, #4a90e2, #7b68ee, #50c878, #f0932b);
+            background: linear-gradient(90deg, #4a90e2, #7b68ee, #50c878, #c9a227);
         }
-        h1 { font-size: 3.5em; color: #1a365d; margin-bottom: 1rem; font-weight: 400; }
-        .tagline { font-size: 1.6em; color: #5a67d8; font-style: italic; margin-bottom: 2rem; }
+        h1 { font-size: 3.5em; color: #1a365d; margin-bottom: 0.5rem; font-weight: 400; }
+        .tagline { font-size: 1.6em; color: #5a67d8; font-style: italic; margin-bottom: 1.5rem; }
+        .scripture { font-size: 1.2em; color: #718096; font-style: italic; margin-bottom: 2rem; max-width: 700px; margin-left: auto; margin-right: auto; }
         .hero-text { font-size: 1.3em; max-width: 800px; margin: 0 auto 2.5rem; color: #4a5568; }
         .app-badge { 
             background: linear-gradient(135deg, #667eea, #764ba2); color: white; 
             padding: 0.8rem 2.2rem; border-radius: 30px; font-size: 1.1em; font-weight: 500;
-            display: inline-block; margin: 1rem 0; box-shadow: 0 5px 20px rgba(102,126,234,0.4);
+            display: inline-block; margin: 1rem 0.5rem; box-shadow: 0 5px 20px rgba(102,126,234,0.4);
         }
         .free-badge { 
             background: linear-gradient(135deg, #48bb78, #38a169); color: white; 
@@ -45,12 +46,14 @@
         }
         .highlight-card:nth-child(2n) { border-left-color: #7b68ee; }
         .highlight-card:nth-child(3n) { border-left-color: #50c878; }
-        .highlight-card:nth-child(4n) { border-left-color: #f0932b; }
-        .highlight-card:nth-child(5n) { border-left-color: #eb4d4b; }
+        .highlight-card:nth-child(4n) { border-left-color: #c9a227; }
+        .highlight-card:nth-child(5n) { border-left-color: #e85d75; }
         .highlight-card:nth-child(6n) { border-left-color: #6c5ce7; }
-        .highlight-card:nth-child(7n) { border-left-color: #fd79a8; }
+        .highlight-card:nth-child(7n) { border-left-color: #00b894; }
+        .highlight-card:nth-child(8n) { border-left-color: #0984e3; }
+        .highlight-card:nth-child(9n) { border-left-color: #a29bfe; }
         .highlight-card:hover { transform: translateY(-8px); box-shadow: 0 20px 50px rgba(0,0,0,0.15); }
-        .highlight-icon { font-size: 3.5em; margin-bottom: 1.5rem; opacity: 0.8; }
+        .highlight-icon { font-size: 3em; margin-bottom: 1.5rem; opacity: 0.85; }
         .highlight-h2 { color: #2d3748; margin-bottom: 1rem; font-size: 1.5em; }
         .trust-badge { 
             background: linear-gradient(135deg, #4a90e2, #7b68ee); color: white; 
@@ -72,7 +75,7 @@
         }
         .price-card.most-popular { border-color: #50c878; transform: scale(1.05); }
         .price-card.most-popular::before {
-            content: '⭐ MOST POPULAR'; position: absolute; top: -15px; left: 50%; transform: translateX(-50%);
+            content: 'MOST POPULAR'; position: absolute; top: -15px; left: 50%; transform: translateX(-50%);
             background: #50c878; color: white; padding: 0.3rem 1.5rem; border-radius: 20px; font-size: 0.8em; font-weight: 700;
         }
         .price-header { margin-bottom: 1.5rem; }
@@ -80,29 +83,28 @@
         .price-monthly { font-size: 2.5em; color: #50c878; font-weight: 700; margin: 0.5rem 0; }
         .price-annual { font-size: 1.3em; color: #718096; }
         .features-list { list-style: none; margin: 2rem 0; }
-        .features-list li { padding: 0.8rem 0; border-bottom: 1px solid #f7fafc; }
+        .features-list li { padding: 0.8rem 0; border-bottom: 1px solid #f7fafc; text-align: left; }
         .features-list li:last-child { border-bottom: none; }
-        .premium-badge { background: #f0932b; color: white; padding: 0.3rem 0.8rem; border-radius: 12px; font-size: 0.8em; font-weight: 600; }
+        .premium-badge { background: #c9a227; color: white; padding: 0.3rem 0.8rem; border-radius: 12px; font-size: 0.8em; font-weight: 600; }
         .free-faith-badge { background: #48bb78; color: white; padding: 0.3rem 0.8rem; border-radius: 12px; font-size: 0.8em; font-weight: 600; }
         
         /* CTA Section */
         .cta-section { text-align: center; padding: 4rem 2rem; background: rgba(255,255,255,0.8); border-radius: 25px; margin: 3rem 0; box-shadow: 0 15px 40px rgba(0,0,0,0.1); }
         .coming-soon { 
-            background: linear-gradient(135deg, #f0932b, #f6ad55); color: white; padding: 1.2rem 2.5rem; 
+            background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 1.2rem 2.5rem; 
             border-radius: 15px; font-size: 1.3em; font-weight: 600; margin: 2rem auto; 
-            text-align: center; max-width: 500px; box-shadow: 0 10px 30px rgba(240,147,43,0.4);
+            text-align: center; max-width: 600px; box-shadow: 0 10px 30px rgba(102,126,234,0.4);
         }
         .cta { 
             background: linear-gradient(45deg, #50c878, #48bb78); color: white; padding: 1.8rem 4rem; 
             border: none; border-radius: 50px; font-size: 1.4em; cursor: pointer; display: inline-block; 
             transition: all 0.3s; font-weight: 500; box-shadow: 0 12px 35px rgba(80,200,120,0.4); margin: 1rem;
+            text-decoration: none;
         }
         .cta:hover { transform: translateY(-4px); box-shadow: 0 18px 45px rgba(80,200,120,0.5); }
         
         /* Footer */
         footer { text-align: center; padding: 4rem 0 2rem; color: #718096; font-size: 1em; border-top: 1px solid rgba(255,255,255,0.3); }
-        .privacy-list { list-style: none; margin-top: 1rem; }
-        .privacy-list li { margin: 0.5rem 0; font-weight: 500; }
         
         @media (max-width: 768px) { 
             h1 { font-size: 2.8em; } .highlights, .pricing-table { grid-template-columns: 1fr; } 
@@ -112,64 +114,88 @@
 </head>
 <body>
     <div class="container">
-        <!-- Hero Header - ALL UPDATES -->
+        <!-- Hero Header -->
         <header>
             <h1>SoulSanctuary</h1>
-            <p class="tagline">Your Private AI Therapy Chatbot</p>
-            <p class="hero-text">Web • Android • iOS • Windows • Mac apps coming soon • Uncensored conversations • Grows smarter with every session • Login anywhere</p>
-            <div class="app-badge">🌐 Web App Friday</div>
-            <div class="free-badge">FREE During Beta Period</div>
+            <p class="tagline">Find Your Sanctuary Within</p>
+            <p class="scripture">"The Lord is close to the brokenhearted and saves those who are crushed in spirit." - Psalm 34:18</p>
+            <p class="hero-text">A Christian AI companion that combines pastoral care with evidence-based therapy. Be lifted up, find healing, and grow in faith and strength.</p>
+            <div class="app-badge">Pastor + Therapist AI</div>
+            <div class="app-badge">Faith Can Be Adjusted</div>
+            <br><br>
+            <div class="free-badge">FREE During Beta</div>
         </header>
 
-        <!-- Core Highlights - Therapy Setting -->
+        <!-- Core Features -->
         <section class="highlights">
             <div class="highlight-card">
-                <div class="highlight-icon">🗣️</div>
-                <h2 class="highlight-h2">Uncensored AI Chatbot</h2>
-                <p>Process <strong>any</strong> emotion, trauma, or trigger without filters or judgment. No topic is off-limits – get the support you truly need.</p>
-                <span class="trust-badge">Always listens, never judges</span>
+                <div class="highlight-icon">&#10013;</div>
+                <h2 class="highlight-h2">Pastor First</h2>
+                <p>A spiritual shepherd who speaks with <strong>pastoral warmth</strong>, offers prayers, and shares scripture. Faith-integrated care for heart and soul - as much like Jesus as possible.</p>
+                <span class="trust-badge">Spiritual Guide & Mentor</span>
             </div>
 
             <div class="highlight-card">
-                <div class="highlight-icon">🔒</div>
-                <h2 class="highlight-h2">Military-Grade Encryption</h2>
-                <p>All conversations stored <strong>encrypted centrally</strong> with end-to-end encryption. Only you can access your data – <strong>cannot be viewed by anyone</strong>.</p>
-                <span class="trust-badge">Bank-level security</span>
+                <div class="highlight-icon">&#128591;</div>
+                <h2 class="highlight-h2">Sessions Begin with Prayer</h2>
+                <p>Start conversations with an invitation for God's presence, <strong>openness, and honesty</strong>. Confession is good for the soul - a safe space to share your heart.</p>
+                <span class="trust-badge">Prayer for Healing</span>
             </div>
 
             <div class="highlight-card">
-                <div class="highlight-icon">🌐</div>
-                <h2 class="highlight-h2">Login Anywhere</h2>
-                <p>Securely access your encrypted sessions from any device, anywhere. Your therapy journey travels with you.</p>
-                <span class="trust-badge">Seamless multi-device</span>
+                <div class="highlight-icon">&#128214;</div>
+                <h2 class="highlight-h2">Scripture-Integrated</h2>
+                <p>Biblical wisdom woven naturally into guidance. <strong>Verses for anxiety, depression, fear, hope, comfort, and strength</strong> when you need them most.</p>
+                <span class="trust-badge">God's Word for Every Emotion</span>
             </div>
 
             <div class="highlight-card">
-                <div class="highlight-icon">🧠</div>
-                <h2 class="highlight-h2">Learns From You</h2>
-                <p>The more you use SoulSanctuary, the better it understands your patterns, triggers, and growth. Persistent memory across all sessions – it remembers everything.</p>
-                <span class="trust-badge">Smarter every conversation</span>
+                <div class="highlight-icon">&#128150;</div>
+                <h2 class="highlight-h2">Faith + Therapy Combined</h2>
+                <p>Evidence-based techniques (<strong>CBT, DBT, ACT, Mindfulness</strong>) alongside spiritual practices. Science and faith working together for complete healing.</p>
+                <span class="trust-badge">Best of Both Worlds</span>
             </div>
 
             <div class="highlight-card">
-                <div class="highlight-icon">🚫</div>
-                <h2 class="highlight-h2">Never Sell Your Data</h2>
-                <p><strong>Zero data sales, zero disclosure</strong> except legally required by court order. No tracking, no ads, no sharing – ever.</p>
-                <span class="trust-badge">Privacy promise guaranteed</span>
+                <div class="highlight-icon">&#129504;</div>
+                <h2 class="highlight-h2">Deep Personal Understanding</h2>
+                <p>Remembers your story, relationships, struggles, and victories. <strong>Truly knows you</strong> to provide personalized pastoral care that grows with you.</p>
+                <span class="trust-badge">Persistent Memory</span>
             </div>
 
             <div class="highlight-card">
-                <div class="highlight-icon">📱</div>
-                <h2 class="highlight-h2">All Platforms</h2>
-                <p>Web app Friday. Android, iOS, Windows, Mac apps coming soon. Therapy wherever you are.</p>
-                <span class="trust-badge">Universal access</span>
+                <div class="highlight-icon">&#128680;</div>
+                <h2 class="highlight-h2">Crisis Detection & Care</h2>
+                <p>Gentle, pastoral response to crisis moments including <strong>abuse, trauma, and harm</strong>. Safety resources wrapped in scripture and compassion.</p>
+                <span class="trust-badge">Always Watching Over You</span>
+            </div>
+
+            <div class="highlight-card">
+                <div class="highlight-icon">&#10024;</div>
+                <h2 class="highlight-h2">Respects Your Journey</h2>
+                <p>Faith features can be <strong>turned off entirely</strong> for those who prefer secular support. Your comfort, your pace, your path to healing.</p>
+                <span class="trust-badge">Faith Optional</span>
+            </div>
+
+            <div class="highlight-card">
+                <div class="highlight-icon">&#128274;</div>
+                <h2 class="highlight-h2">Privacy Protected</h2>
+                <p><strong>AES-256 encryption</strong>, automatic PII protection, and GDPR compliance. Your confessions stay between you, God, and your AI pastor.</p>
+                <span class="trust-badge">Bank-Level Security</span>
+            </div>
+
+            <div class="highlight-card">
+                <div class="highlight-icon">&#128737;</div>
+                <h2 class="highlight-h2">Pastoral Guardrails</h2>
+                <p>Sees <strong>beyond surface questions to the heart's true need</strong>. Detects harmful patterns and gently redirects with love and Biblical truth.</p>
+                <span class="trust-badge">Wisdom of a Shepherd</span>
             </div>
         </section>
 
         <!-- Competitive Pricing -->
         <section class="pricing-section">
-            <h2 style="font-size: 2.8em; color: #2d3748; margin-bottom: 1rem;">Simple Plans. Real Results.</h2>
-            <p style="font-size: 1.3em; color: #4a5568; margin-bottom: 3rem;">FREE Beta → Choose your plan after. Faith Integration FREE in all plans</p>
+            <h2 style="font-size: 2.8em; color: #2d3748; margin-bottom: 1rem;">Simple Plans. Real Healing.</h2>
+            <p style="font-size: 1.3em; color: #4a5568; margin-bottom: 3rem;">FREE Beta Access Now | Faith Integration FREE in All Plans</p>
             
             <div class="pricing-table">
                 <div class="price-card">
@@ -179,27 +205,28 @@
                         <div class="price-annual">$171/year (25% off)</div>
                     </div>
                     <ul class="features-list">
-                        <li>✅ Unlimited uncensored chat</li>
-                        <li>✅ Web app access</li>
-                        <li>✅ Basic pattern detection</li>
-                        <li>✅ Mood tracking</li>
-                        <li>✅ <span class="free-faith-badge">FREE Faith Integration</span></li>
+                        <li>Unlimited pastoral chat</li>
+                        <li>Prayer & Scripture integration</li>
+                        <li>Basic mood tracking</li>
+                        <li>Web app access</li>
+                        <li><span class="free-faith-badge">FREE Faith Features</span></li>
                     </ul>
                 </div>
 
                 <div class="price-card most-popular">
                     <div class="price-header">
-                        <div class="price-tier">Core ⭐</div>
+                        <div class="price-tier">Core</div>
                         <div class="price-monthly">$39<span style="font-size: 0.6em;">/mo</span></div>
                         <div class="price-annual">$351/year (25% off)</div>
                     </div>
                     <ul class="features-list">
-                        <li>✅ <span class="premium-badge">PREMIUM</span> All platforms</li>
-                        <li>✅ <span class="premium-badge">PREMIUM</span> Persistent memory</li>
-                        <li>✅ <span class="premium-badge">PREMIUM</span> Advanced triggers</li>
-                        <li>✅ Mood insights & reports</li>
-                        <li>✅ <span class="free-faith-badge">FREE Faith Integration</span></li>
-                        <li>✅ Priority support</li>
+                        <li><span class="premium-badge">PREMIUM</span> All platforms</li>
+                        <li><span class="premium-badge">PREMIUM</span> Persistent memory</li>
+                        <li><span class="premium-badge">PREMIUM</span> Therapy modules (CBT, DBT, ACT)</li>
+                        <li>Crisis detection & care</li>
+                        <li>Mood insights & reports</li>
+                        <li><span class="free-faith-badge">FREE Faith Features</span></li>
+                        <li>Priority support</li>
                     </ul>
                 </div>
 
@@ -210,12 +237,12 @@
                         <div class="price-annual">$621/year (25% off)</div>
                     </div>
                     <ul class="features-list">
-                        <li>✅ Everything in Core</li>
-                        <li>✅ <span class="premium-badge">PRO</span> Custom protocols</li>
-                        <li>✅ <span class="premium-badge">PRO</span> Exportable reports</li>
-                        <li>✅ <span class="premium-badge">PRO</span> Family sharing</li>
-                        <li>✅ <span class="premium-badge">PRO</span> Priority AI responses</li>
-                        <li>✅ <span class="free-faith-badge">FREE Faith Integration</span></li>
+                        <li>Everything in Core</li>
+                        <li><span class="premium-badge">PRO</span> Custom spiritual exercises</li>
+                        <li><span class="premium-badge">PRO</span> Exportable reports</li>
+                        <li><span class="premium-badge">PRO</span> Family sharing (up to 5)</li>
+                        <li><span class="premium-badge">PRO</span> Priority AI responses</li>
+                        <li><span class="free-faith-badge">FREE Faith Features</span></li>
                     </ul>
                 </div>
             </div>
@@ -226,8 +253,8 @@
                     <div style="background: #e8f5e8; padding: 1rem 1.5rem; border-radius: 20px; border-left: 4px solid #48bb78;">
                         Voice Sessions <strong>$9/mo</strong>
                     </div>
-                    <div style="background: #fed7d7; padding: 1rem 1.5rem; border-radius: 20px; border-left: 4px solid #f56565;">
-                        Crisis Export <strong>$3/mo</strong>
+                    <div style="background: #fef3cd; padding: 1rem 1.5rem; border-radius: 20px; border-left: 4px solid #c9a227;">
+                        Guided Prayer Audio <strong>$5/mo</strong>
                     </div>
                 </div>
             </div>
@@ -235,19 +262,21 @@
 
         <!-- CTA Section -->
         <section class="cta-section">
-            <h2 style="font-size: 2.5em; color: #2d3748; margin-bottom: 1rem;">Start Your Journey Today</h2>
+            <h2 style="font-size: 2.5em; color: #2d3748; margin-bottom: 1rem;">Begin Your Journey Today</h2>
+            <p style="font-size: 1.2em; color: #718096; font-style: italic; margin-bottom: 2rem;">"Come to me, all you who are weary and burdened, and I will give you rest." - Matthew 11:28</p>
             <div class="coming-soon">
-                🚀 Web App Friday • Native Apps Soon • <strong>FREE Beta Access – Limited Spots!</strong>
+                Available Now | FREE Beta Access | Native Apps Coming Soon
             </div>
             <div style="margin: 2rem 0;">
-                <button class="cta" onclick="alert('Beta launching Friday – Join the waitlist by emailing joe_abbott@me.com')">Get FREE Beta Access</button>
+                <a class="cta" href="https://soulsanctuaryal--joeabbott2.replit.app" target="_blank">Try SoulSanctuary Free</a>
             </div>
         </section>
     </div>
     
     <!-- Footer -->
     <footer>
-        <p>SoulSanctuary © 2025 | <strong>End-to-end encrypted • Centralized secure storage • Login anywhere • No data sales • Faith FREE</strong> | Helping you heal, privately [web:38][web:43][memory:10]</p>
+        <p>SoulSanctuary &copy; 2025 | <strong>Pastor + Therapist AI | Faith-Integrated Care | AES-256 Encrypted | GDPR Compliant</strong></p>
+        <p style="margin-top: 1rem; font-style: italic;">Find Your Sanctuary Within</p>
     </footer>
 </body>
 </html>
