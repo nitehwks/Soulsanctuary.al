@@ -202,10 +202,6 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
         if (response.ok) {
           const data = await response.json();
           setCoachingEligible(data.eligible);
-          if (data.eligible && messages.length === 0) {
-            setShowProfile(true);
-            fetchProfile();
-          }
         }
       } catch (error) {
         console.error('Failed to check coaching eligibility:', error);
@@ -213,7 +209,7 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
     };
     
     checkCoachingEligibility();
-  }, [userId, mode, messages.length]);
+  }, [userId, mode]);
 
   const fetchProfile = async () => {
     if (!userId) return;
