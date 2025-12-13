@@ -1810,60 +1810,6 @@ Guidelines:
     }
   });
 
-  // BETA: Stripe payments disabled - using GoFundMe instead (https://gofund.me/7c08e69b)
-  // Uncomment after beta to enable Stripe donations
-  /*
-  // Donation checkout endpoint
-  app.post("/api/donate/checkout", async (req, res) => {
-    try {
-      const { amount } = req.body; // Amount in cents
-
-      if (!amount || amount < 100) {
-        return res.status(400).json({ error: "Minimum donation is $1" });
-      }
-
-      const { getUncachableStripeClient } = await import('./stripeClient');
-      const stripe = await getUncachableStripeClient();
-
-      const session = await stripe.checkout.sessions.create({
-        payment_method_types: ['card'],
-        line_items: [
-          {
-            price_data: {
-              currency: 'usd',
-              product_data: {
-                name: 'Donation to SoulSanctuary',
-                description: 'Supporting faith-based healing and hope',
-              },
-              unit_amount: amount,
-            },
-            quantity: 1,
-          },
-        ],
-        mode: 'payment',
-        success_url: `https://${req.get('host')}/donate?success=true`,
-        cancel_url: `https://${req.get('host')}/donate?canceled=true`,
-      });
-
-      res.json({ url: session.url });
-    } catch (error: any) {
-      console.error('Donation checkout error:', error);
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  // Get Stripe publishable key for frontend
-  app.get("/api/stripe/publishable-key", async (req, res) => {
-    try {
-      const { getStripePublishableKey } = await import('./stripeClient');
-      const publishableKey = await getStripePublishableKey();
-      res.json({ publishableKey });
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-  */
-
   // ============= ANALYTICS ROUTES =============
   
   // Track analytics event
