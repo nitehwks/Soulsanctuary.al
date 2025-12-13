@@ -425,6 +425,157 @@ export const insertUserProbingStateSchema = createInsertSchema(userProbingState)
 export type UserProbingState = typeof userProbingState.$inferSelect;
 export type InsertUserProbingState = z.infer<typeof insertUserProbingStateSchema>;
 
+// Voice Messages - Phase 1 Voice Interfaces
+export const voiceMessages = pgTable("voice_messages", {
+  id: serial("id").primaryKey(),
+  conversationId: integer("conversation_id").references(() => conversations.id, { onDelete: "cascade" }),
+  messageId: integer("message_id").references(() => messages.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull(),
+  audioBlobUrl: text("audio_blob_url"),
+  audioData: text("audio_data"),
+  transcript: text("transcript"),
+  duration: integer("duration"),
+  sentimentScore: integer("sentiment_score"),
+  isProcessed: boolean("is_processed").default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertVoiceMessageSchema = createInsertSchema(voiceMessages).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type VoiceMessage = typeof voiceMessages.$inferSelect;
+export type InsertVoiceMessage = z.infer<typeof insertVoiceMessageSchema>;
+
+// Groups - Phase 2 Group Features
+export const groups = pgTable("groups", {
+  id: serial("id").primaryKey(),
+  groupHash: text("group_hash").unique().notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  category: text("category").default("general"),
+  memberCount: integer("member_count").default(0),
+  messageCount: integer("message_count").default(0),
+  isActive: boolean("is_active").default(true),
+  isPrivate: boolean("is_private").default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const groupMembers = pgTable("group_members", {
+  id: serial("id").primaryKey(),
+  groupId: integer("group_id").references(() => groups.id, { onDelete: "cascade" }),
+  anonUserHash: text("anon_user_hash").notNull(),
+  displayName: text("display_name"),
+  role: text("role").default("member"),
+  joinedAt: timestamp("joined_at").defaultNow().notNull(),
+  lastActiveAt: timestamp("last_active_at").defaultNow(),
+});
+
+export const groupMessages = pgTable("group_messages", {
+  id: serial("id").primaryKey(),
+  groupId: integer("group_id").references(() => groups.id, { onDelete: "cascade" }),
+  anonUserHash: text("anon_user_hash").notNull(),
+  message: text("message").notNull(),
+  moderated: boolean("moderated").default(false),
+  moderationReason: text("moderation_reason"),
+  replyToId: integer("reply_to_id"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertGroupSchema = createInsertSchema(groups).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertGroupMemberSchema = createInsertSchema(groupMembers).omit({
+  id: true,
+  joinedAt: true,
+});
+
+export const insertGroupMessageSchema = createInsertSchema(groupMessages).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type Group = typeof groups.$inferSelect;
+export type InsertGroup = z.infer<typeof insertGroupSchema>;
+
+export type GroupMember = typeof groupMembers.$inferSelect;
+export type InsertGroupMember = z.infer<typeof insertGroupMemberSchema>;
+
+export type GroupMessage = typeof groupMessages.$inferSelect;
+export type InsertGroupMessage = z.infer<typeof insertGroupMessageSchema>;
+
+// Clinician Sessions - Phase 3 Professional Tools
+export const clinicianSessions = pgTable("clinician_sessions", {
+  id: serial("id").primaryKey(),
+  clinicianId: text("clinician_id").notNull(),
+  anonPatientHash: text("anon_patient_hash").notNull(),
+  sessionType: text("session_type").default("ad_hoc"),
+  status: text("status").default("scheduled"),
+  scheduledAt: timestamp("scheduled_at"),
+  startedAt: timestamp("started_at"),
+  endedAt: timestamp("ended_at"),
+  sessionNotes: text("session_notes"),
+  interventions: jsonb("interventions"),
+  outcomes: jsonb("outcomes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertClinicianSessionSchema = createInsertSchema(clinicianSessions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type ClinicianSession = typeof clinicianSessions.$inferSelect;
+export type InsertClinicianSession = z.infer<typeof insertClinicianSessionSchema>;
+
+// Analytics Events - Phase 3 Analytics
+export const analyticsEvents = pgTable("analytics_events", {
+  id: serial("id").primaryKey(),
+  eventType: text("event_type").notNull(),
+  eventCategory: text("event_category").notNull(),
+  anonUserHash: text("anon_user_hash"),
+  metadata: jsonb("metadata"),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+});
+
+export const insertAnalyticsEventSchema = createInsertSchema(analyticsEvents).omit({
+  id: true,
+  timestamp: true,
+});
+
+export type AnalyticsEvent = typeof analyticsEvents.$inferSelect;
+export type InsertAnalyticsEvent = z.infer<typeof insertAnalyticsEventSchema>;
+
+// Feature Flags - Phase 4 Infrastructure
+export const featureFlags = pgTable("feature_flags", {
+  id: serial("id").primaryKey(),
+  key: text("key").unique().notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  enabled: boolean("enabled").default(false),
+  rolloutPercentage: integer("rollout_percentage").default(0),
+  userSegments: text("user_segments").array(),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertFeatureFlagSchema = createInsertSchema(featureFlags).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type FeatureFlag = typeof featureFlags.$inferSelect;
+export type InsertFeatureFlag = z.infer<typeof insertFeatureFlagSchema>;
+
 // Premium Therapy Modules
 export const therapyModules = pgTable("therapy_modules", {
   id: serial("id").primaryKey(),
