@@ -251,6 +251,113 @@ export const userProbingState = pgTable("user_probing_state", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const relationships = pgTable("relationships", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  name: text("name").notNull(),
+  relationship: text("relationship").notNull(),
+  nickname: text("nickname"),
+  notes: text("notes"),
+  sentiment: text("sentiment"),
+  importance: integer("importance").default(5),
+  lastMentioned: timestamp("last_mentioned"),
+  mentionCount: integer("mention_count").default(1),
+  confidence: integer("confidence").default(70),
+  verified: boolean("verified").default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const lifeEvents = pgTable("life_events", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  eventType: text("event_type").notNull(),
+  description: text("description").notNull(),
+  eventDate: timestamp("event_date"),
+  emotionalImpact: text("emotional_impact"),
+  impactScore: integer("impact_score").default(5),
+  isOngoing: boolean("is_ongoing").default(false),
+  relatedPeople: text("related_people").array(),
+  confidence: integer("confidence").default(70),
+  verified: boolean("verified").default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const emotionalSnapshots = pgTable("emotional_snapshots", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  conversationId: integer("conversation_id").references(() => conversations.id, { onDelete: "set null" }),
+  primaryEmotion: text("primary_emotion").notNull(),
+  secondaryEmotions: text("secondary_emotions").array(),
+  intensity: integer("intensity").default(5),
+  energyLevel: text("energy_level"),
+  triggers: text("triggers").array(),
+  copingObserved: text("coping_observed"),
+  aiAssessment: text("ai_assessment"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const dispositionTrends = pgTable("disposition_trends", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  periodStart: timestamp("period_start").notNull(),
+  periodEnd: timestamp("period_end").notNull(),
+  dominantMood: text("dominant_mood").notNull(),
+  averageEnergy: integer("average_energy").default(5),
+  optimismScore: integer("optimism_score").default(50),
+  stressIndicators: text("stress_indicators").array(),
+  growthAreas: text("growth_areas").array(),
+  patterns: text("patterns").array(),
+  recommendations: text("recommendations").array(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const psychologicalProfile = pgTable("psychological_profile", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull().unique(),
+  communicationStyle: text("communication_style"),
+  attachmentStyle: text("attachment_style"),
+  cognitivePatterns: text("cognitive_patterns").array(),
+  emotionalRegulation: text("emotional_regulation"),
+  copingMechanisms: text("coping_mechanisms").array(),
+  strengthsIdentified: text("strengths_identified").array(),
+  growthEdges: text("growth_edges").array(),
+  valuesPriorities: text("values_priorities").array(),
+  spiritualOrientation: text("spiritual_orientation"),
+  supportNeeds: text("support_needs").array(),
+  triggerPatterns: text("trigger_patterns").array(),
+  resilienceFactors: text("resilience_factors").array(),
+  lastUpdated: timestamp("last_updated").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const goalProgress = pgTable("goal_progress", {
+  id: serial("id").primaryKey(),
+  goalId: integer("goal_id").notNull().references(() => userGoals.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull(),
+  progressPercent: integer("progress_percent").default(0),
+  update: text("update").notNull(),
+  blockers: text("blockers").array(),
+  wins: text("wins").array(),
+  nextActions: text("next_actions").array(),
+  moodDuringUpdate: text("mood_during_update"),
+  aiEncouragement: text("ai_encouragement"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const learningQueue = pgTable("learning_queue", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  factType: text("fact_type").notNull(),
+  proposedValue: text("proposed_value").notNull(),
+  sourceMessage: text("source_message"),
+  confidence: integer("confidence").default(50),
+  status: text("status").default("pending"),
+  verifiedAt: timestamp("verified_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
