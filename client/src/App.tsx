@@ -15,6 +15,7 @@ import Donate from "@/pages/Donate";
 import Groups from "@/pages/Groups";
 import Analytics from "@/pages/Analytics";
 import ClinicianDashboard from "@/pages/ClinicianDashboard";
+import FeatureFlags from "@/pages/FeatureFlags";
 import { Loader2 } from "lucide-react";
 
 function AppRouter() {
@@ -48,6 +49,7 @@ function AppRouter() {
       <Route path="/groups" component={Groups} />
       <Route path="/analytics" component={Analytics} />
       <Route path="/clinician" component={ClinicianDashboard} />
+      <Route path="/feature-flags" component={FeatureFlags} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertConversationSchema, insertMessageSchema, insertUserContextSchema, insertUserPreferencesSchema, createUserSchema } from "@shared/schema";
+import { insertConversationSchema, insertMessageSchema, insertUserContextSchema, insertUserPreferencesSchema, createUserSchema, insertFeatureFlagSchema } from "@shared/schema";
 import { redactPII, analyzeSentiment, extractKeyPhrases } from "./lib/pii-redactor";
 import { analyzeMoodFromMessage, saveMoodObservations, generateWellnessAssessment, buildTherapistContext } from "./lib/wellness-analyzer";
 import { 
@@ -1963,6 +1963,115 @@ Guidelines:
       res.json(updated);
     } catch (error: any) {
       console.error("Update clinician session error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Feature Flags API Routes
+  app.get("/api/feature-flags", async (req, res) => {
+    try {
+      const flags = await storage.getAllFeatureFlags();
+      res.json(flags);
+    } catch (error: any) {
+      console.error("Get feature flags error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/feature-flags/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid flag ID" });
+      }
+      const flag = await storage.getFeatureFlag(id);
+      if (!flag) {
+        return res.status(404).json({ error: "Feature flag not found" });
+      }
+      res.json(flag);
+    } catch (error: any) {
+      console.error("Get feature flag error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/feature-flags/check/:key", async (req, res) => {
+    try {
+      const key = req.params.key;
+      const userId = req.query.userId as string | undefined;
+      const enabled = await storage.isFeatureEnabled(key, userId);
+      res.json({ key, enabled });
+    } catch (error: any) {
+      console.error("Check feature flag error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/feature-flags", isAuthenticated, async (req: any, res) => {
+    try {
+      const parseResult = insertFeatureFlagSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ error: "Invalid feature flag data", details: parseResult.error.errors });
+      }
+      
+      const data = parseResult.data;
+      
+      const existing = await storage.getFeatureFlagByKey(data.key);
+      if (existing) {
+        return res.status(400).json({ error: "A feature flag with this key already exists" });
+      }
+      
+      const flag = await storage.createFeatureFlag(data);
+      
+      res.json(flag);
+    } catch (error: any) {
+      console.error("Create feature flag error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/feature-flags/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid flag ID" });
+      }
+      
+      const existing = await storage.getFeatureFlag(id);
+      if (!existing) {
+        return res.status(404).json({ error: "Feature flag not found" });
+      }
+      
+      const partialSchema = insertFeatureFlagSchema.partial();
+      const parseResult = partialSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ error: "Invalid update data", details: parseResult.error.errors });
+      }
+      
+      const updated = await storage.updateFeatureFlag(id, parseResult.data);
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Update feature flag error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/feature-flags/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid flag ID" });
+      }
+      
+      const existing = await storage.getFeatureFlag(id);
+      if (!existing) {
+        return res.status(404).json({ error: "Feature flag not found" });
+      }
+      
+      await storage.deleteFeatureFlag(id);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Delete feature flag error:", error);
       res.status(500).json({ error: error.message });
     }
   });

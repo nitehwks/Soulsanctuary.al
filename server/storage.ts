@@ -56,8 +56,11 @@ import {
   type InsertAnalyticsEvent,
   type ClinicianSession,
   type InsertClinicianSession,
+  type FeatureFlag,
+  type InsertFeatureFlag,
   users,
   clinicianSessions,
+  featureFlags,
   conversations,
   messages,
   userContext,
@@ -250,6 +253,15 @@ export interface IStorage {
     completedSessions: number;
     patientCount: number;
   }>;
+  
+  // Feature Flag methods
+  createFeatureFlag(flag: InsertFeatureFlag): Promise<FeatureFlag>;
+  getFeatureFlag(id: number): Promise<FeatureFlag | undefined>;
+  getFeatureFlagByKey(key: string): Promise<FeatureFlag | undefined>;
+  getAllFeatureFlags(): Promise<FeatureFlag[]>;
+  updateFeatureFlag(id: number, updates: Partial<InsertFeatureFlag>): Promise<FeatureFlag | undefined>;
+  deleteFeatureFlag(id: number): Promise<boolean>;
+  isFeatureEnabled(key: string, userId?: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1141,6 +1153,54 @@ export class DatabaseStorage implements IStorage {
       completedSessions,
       patientCount: uniquePatients.size
     };
+  }
+
+  async createFeatureFlag(flag: InsertFeatureFlag): Promise<FeatureFlag> {
+    const [created] = await db.insert(featureFlags).values(flag).returning();
+    return created;
+  }
+
+  async getFeatureFlag(id: number): Promise<FeatureFlag | undefined> {
+    const [flag] = await db.select().from(featureFlags).where(eq(featureFlags.id, id));
+    return flag;
+  }
+
+  async getFeatureFlagByKey(key: string): Promise<FeatureFlag | undefined> {
+    const [flag] = await db.select().from(featureFlags).where(eq(featureFlags.key, key));
+    return flag;
+  }
+
+  async getAllFeatureFlags(): Promise<FeatureFlag[]> {
+    return await db.select().from(featureFlags).orderBy(desc(featureFlags.createdAt));
+  }
+
+  async updateFeatureFlag(id: number, updates: Partial<InsertFeatureFlag>): Promise<FeatureFlag | undefined> {
+    const [updated] = await db.update(featureFlags)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(featureFlags.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteFeatureFlag(id: number): Promise<boolean> {
+    const result = await db.delete(featureFlags).where(eq(featureFlags.id, id));
+    return true;
+  }
+
+  async isFeatureEnabled(key: string, userId?: string): Promise<boolean> {
+    const flag = await this.getFeatureFlagByKey(key);
+    if (!flag) return false;
+    if (!flag.enabled) return false;
+    
+    if (flag.rolloutPercentage === 100) return true;
+    if (flag.rolloutPercentage === 0) return false;
+    
+    if (userId && flag.rolloutPercentage && flag.rolloutPercentage > 0) {
+      const hash = userId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+      return (hash % 100) < flag.rolloutPercentage;
+    }
+    
+    return flag.enabled;
   }
 }
 
