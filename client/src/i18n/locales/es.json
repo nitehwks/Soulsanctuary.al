@@ -1,0 +1,150 @@
+{
+  "common": {
+    "loading": "Cargando...",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "create": "Crear",
+    "search": "Buscar",
+    "settings": "Configuración",
+    "logout": "Cerrar sesión",
+    "login": "Iniciar sesión",
+    "signUp": "Registrarse",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "submit": "Enviar",
+    "close": "Cerrar",
+    "yes": "Sí",
+    "no": "No",
+    "or": "o",
+    "and": "y"
+  },
+  "nav": {
+    "chat": "Chat",
+    "groups": "Grupos",
+    "analytics": "Analíticas",
+    "clinician": "Clínico",
+    "featureFlags": "Funciones",
+    "activity": "Actividad",
+    "settings": "Configuración"
+  },
+  "landing": {
+    "title": "Tu Compañero de Bienestar Mental con IA",
+    "subtitle": "Un espacio seguro y privado para apoyo emocional, orientación terapéutica y crecimiento personal.",
+    "getStarted": "Comenzar",
+    "learnMore": "Saber Más",
+    "features": {
+      "secure": {
+        "title": "Seguro y Privado",
+        "description": "Tus conversaciones están protegidas con encriptación de nivel empresarial"
+      },
+      "ai": {
+        "title": "Apoyo con IA",
+        "description": "Recibe orientación compasiva de IA avanzada entrenada en principios terapéuticos"
+      },
+      "available": {
+        "title": "Siempre Disponible",
+        "description": "Accede al apoyo cuando lo necesites, 24/7"
+      }
+    }
+  },
+  "chat": {
+    "title": "Chat",
+    "newConversation": "Nueva Conversación",
+    "placeholder": "Escribe tu mensaje...",
+    "send": "Enviar",
+    "voiceRecord": "Grabar mensaje de voz",
+    "voiceStop": "Detener grabación",
+    "thinking": "Pensando...",
+    "noConversations": "Sin conversaciones aún",
+    "startChat": "Inicia una nueva conversación para comenzar"
+  },
+  "groups": {
+    "title": "Grupos de Apoyo",
+    "subtitle": "Conéctate con otros en discusiones grupales anónimas",
+    "createGroup": "Crear Grupo",
+    "joinGroup": "Unirse",
+    "leaveGroup": "Salir",
+    "members": "miembros",
+    "noGroups": "No hay grupos disponibles",
+    "createFirst": "Crea tu primer grupo de apoyo"
+  },
+  "analytics": {
+    "title": "Panel de Analíticas",
+    "subtitle": "Rastrea tu viaje de bienestar y progreso",
+    "moodTrends": "Tendencias de Ánimo",
+    "activityStats": "Estadísticas de Actividad",
+    "insights": "Perspectivas",
+    "weekly": "Semanal",
+    "monthly": "Mensual",
+    "yearly": "Anual"
+  },
+  "clinician": {
+    "title": "Panel del Clínico",
+    "subtitle": "Supervisión profesional y gestión de sesiones",
+    "sessions": "Sesiones",
+    "patients": "Pacientes",
+    "notes": "Notas",
+    "schedule": "Horario"
+  },
+  "featureFlags": {
+    "title": "Funciones",
+    "subtitle": "Controla los lanzamientos de funciones y pruebas A/B",
+    "newFlag": "Nueva Función",
+    "createFlag": "Crear Función",
+    "key": "Clave",
+    "name": "Nombre",
+    "description": "Descripción",
+    "enabled": "Habilitado",
+    "rollout": "Porcentaje de Lanzamiento",
+    "segments": "segmentos",
+    "active": "Activo",
+    "inactive": "Inactivo",
+    "noFlags": "Sin funciones aún",
+    "createFirst": "Crea tu primera función para controlar los lanzamientos",
+    "keyPlaceholder": "funcion_modo_oscuro",
+    "namePlaceholder": "Función de Modo Oscuro",
+    "created": "Función creada exitosamente",
+    "updated": "Función actualizada",
+    "deleted": "Función eliminada",
+    "errorCreate": "Error al crear función",
+    "errorUpdate": "Error al actualizar función",
+    "errorDelete": "Error al eliminar función",
+    "requiredFields": "Clave y nombre son requeridos"
+  },
+  "settings": {
+    "title": "Configuración",
+    "subtitle": "Administra cómo la IA aprende y ofusca tus datos.",
+    "language": "Idioma",
+    "languageDescription": "Selecciona tu idioma preferido para la interfaz.",
+    "theme": "Tema",
+    "notifications": "Notificaciones",
+    "privacy": "Privacidad",
+    "privacyTab": "Protocolos de Privacidad",
+    "learningTab": "Módulos de Aprendizaje",
+    "integrationsTab": "Integraciones",
+    "account": "Cuenta",
+    "preferences": "Preferencias",
+    "languages": {
+      "en": "Inglés",
+      "es": "Español",
+      "pt": "Portugués"
+    },
+    "piiRedaction": "Auto-Redacción de PII",
+    "piiRedactionDesc": "Reemplazar automáticamente correos, números de teléfono y direcciones con marcadores.",
+    "encryption": "Cifrado de Extremo a Extremo",
+    "encryptionDesc": "Cifrar todos los datos en reposo y en tránsito usando AES-256.",
+    "ephemeral": "Modo de Sesión Efímera",
+    "ephemeralDesc": "No almacenar historial de chat después de que termine la sesión.",
+    "purgeData": "Purgar Todos los Datos Aprendidos",
+    "learningManaged": "La configuración del módulo de aprendizaje es administrada por el administrador central.",
+    "integrationsManaged": "La configuración de integraciones se administra a través del API Gateway."
+  },
+  "errors": {
+    "generic": "Algo salió mal. Por favor, inténtalo de nuevo.",
+    "network": "Error de red. Por favor, verifica tu conexión.",
+    "unauthorized": "No estás autorizado para realizar esta acción.",
+    "notFound": "El recurso solicitado no fue encontrado."
+  }
+}

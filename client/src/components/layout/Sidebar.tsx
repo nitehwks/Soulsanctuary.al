@@ -2,18 +2,20 @@ import { Home, Shield, Settings, Activity, Users, BarChart3, Stethoscope, Flag }
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useTranslation } from "react-i18next";
 
 export function Sidebar() {
   const [location] = useLocation();
+  const { t } = useTranslation();
 
   const links = [
-    { href: "/", icon: Home, label: "Chat" },
-    { href: "/groups", icon: Users, label: "Groups" },
-    { href: "/analytics", icon: BarChart3, label: "Analytics" },
-    { href: "/clinician", icon: Stethoscope, label: "Clinician" },
-    { href: "/feature-flags", icon: Flag, label: "Feature Flags" },
-    { href: "/dashboard", icon: Activity, label: "Activity" },
-    { href: "/settings", icon: Settings, label: "Settings" },
+    { href: "/", icon: Home, labelKey: "nav.chat" },
+    { href: "/groups", icon: Users, labelKey: "nav.groups" },
+    { href: "/analytics", icon: BarChart3, labelKey: "nav.analytics" },
+    { href: "/clinician", icon: Stethoscope, labelKey: "nav.clinician" },
+    { href: "/feature-flags", icon: Flag, labelKey: "nav.featureFlags" },
+    { href: "/dashboard", icon: Activity, labelKey: "nav.activity" },
+    { href: "/settings", icon: Settings, labelKey: "nav.settings" },
   ];
 
   return (
@@ -42,7 +44,7 @@ export function Sidebar() {
                 </Link>
               </TooltipTrigger>
               <TooltipContent side="right">
-                <p>{link.label}</p>
+                <p>{t(link.labelKey)}</p>
               </TooltipContent>
             </Tooltip>
           );

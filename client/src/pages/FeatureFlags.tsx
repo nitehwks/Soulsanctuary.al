@@ -18,10 +18,12 @@ import {
 } from "@/components/ui/dialog";
 import { Plus, Trash2, Flag, Percent, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 import type { FeatureFlag } from "@shared/schema";
 
 export default function FeatureFlags() {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [newFlag, setNewFlag] = useState({
     key: "",
@@ -43,10 +45,10 @@ export default function FeatureFlags() {
       queryClient.invalidateQueries({ queryKey: ["/api/feature-flags"] });
       setDialogOpen(false);
       setNewFlag({ key: "", name: "", description: "", enabled: false, rolloutPercentage: 0 });
-      toast({ title: "Feature flag created successfully" });
+      toast({ title: t('featureFlags.created') });
     },
     onError: (error: any) => {
-      toast({ title: "Error creating flag", description: error.message, variant: "destructive" });
+      toast({ title: t('featureFlags.errorCreate'), description: error.message, variant: "destructive" });
     },
   });
 
@@ -56,10 +58,10 @@ export default function FeatureFlags() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/feature-flags"] });
-      toast({ title: "Feature flag updated" });
+      toast({ title: t('featureFlags.updated') });
     },
     onError: (error: any) => {
-      toast({ title: "Error updating flag", description: error.message, variant: "destructive" });
+      toast({ title: t('featureFlags.errorUpdate'), description: error.message, variant: "destructive" });
     },
   });
 
@@ -69,10 +71,10 @@ export default function FeatureFlags() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/feature-flags"] });
-      toast({ title: "Feature flag deleted" });
+      toast({ title: t('featureFlags.deleted') });
     },
     onError: (error: any) => {
-      toast({ title: "Error deleting flag", description: error.message, variant: "destructive" });
+      toast({ title: t('featureFlags.errorDelete'), description: error.message, variant: "destructive" });
     },
   });
 
@@ -86,7 +88,7 @@ export default function FeatureFlags() {
 
   const handleCreate = () => {
     if (!newFlag.key || !newFlag.name) {
-      toast({ title: "Key and name are required", variant: "destructive" });
+      toast({ title: t('featureFlags.requiredFields'), variant: "destructive" });
       return;
     }
     createMutation.mutate(newFlag);
@@ -106,10 +108,10 @@ export default function FeatureFlags() {
         <div>
           <h1 className="text-2xl font-semibold flex items-center gap-2" data-testid="text-page-title">
             <Flag className="h-6 w-6" />
-            Feature Flags
+            {t('featureFlags.title')}
           </h1>
           <p className="text-muted-foreground mt-1">
-            Control feature rollouts and A/B testing
+            {t('featureFlags.subtitle')}
           </p>
         </div>
         
@@ -117,46 +119,45 @@ export default function FeatureFlags() {
           <DialogTrigger asChild>
             <Button data-testid="button-create-flag">
               <Plus className="h-4 w-4 mr-2" />
-              New Flag
+              {t('featureFlags.newFlag')}
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Create Feature Flag</DialogTitle>
+              <DialogTitle>{t('featureFlags.createFlag')}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 mt-4">
               <div className="space-y-2">
-                <Label htmlFor="key">Key</Label>
+                <Label htmlFor="key">{t('featureFlags.key')}</Label>
                 <Input
                   id="key"
                   data-testid="input-flag-key"
-                  placeholder="feature_dark_mode"
+                  placeholder={t('featureFlags.keyPlaceholder')}
                   value={newFlag.key}
                   onChange={(e) => setNewFlag({ ...newFlag, key: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
+                <Label htmlFor="name">{t('featureFlags.name')}</Label>
                 <Input
                   id="name"
                   data-testid="input-flag-name"
-                  placeholder="Dark Mode Feature"
+                  placeholder={t('featureFlags.namePlaceholder')}
                   value={newFlag.name}
                   onChange={(e) => setNewFlag({ ...newFlag, name: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description">{t('featureFlags.description')}</Label>
                 <Textarea
                   id="description"
                   data-testid="input-flag-description"
-                  placeholder="Enables dark mode across the application"
                   value={newFlag.description}
                   onChange={(e) => setNewFlag({ ...newFlag, description: e.target.value })}
                 />
               </div>
               <div className="flex items-center justify-between">
-                <Label htmlFor="enabled">Enabled</Label>
+                <Label htmlFor="enabled">{t('featureFlags.enabled')}</Label>
                 <Switch
                   id="enabled"
                   data-testid="switch-flag-enabled"
@@ -166,7 +167,7 @@ export default function FeatureFlags() {
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label>Rollout Percentage</Label>
+                  <Label>{t('featureFlags.rollout')}</Label>
                   <span className="text-sm text-muted-foreground">{newFlag.rolloutPercentage}%</span>
                 </div>
                 <Slider
@@ -183,7 +184,7 @@ export default function FeatureFlags() {
                 onClick={handleCreate}
                 disabled={createMutation.isPending}
               >
-                {createMutation.isPending ? "Creating..." : "Create Flag"}
+                {createMutation.isPending ? t('common.loading') : t('featureFlags.createFlag')}
               </Button>
             </div>
           </DialogContent>
@@ -194,13 +195,13 @@ export default function FeatureFlags() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Flag className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium mb-2">No feature flags yet</h3>
+            <h3 className="text-lg font-medium mb-2">{t('featureFlags.noFlags')}</h3>
             <p className="text-muted-foreground text-center mb-4">
-              Create your first feature flag to control feature rollouts
+              {t('featureFlags.createFirst')}
             </p>
             <Button onClick={() => setDialogOpen(true)} data-testid="button-create-first-flag">
               <Plus className="h-4 w-4 mr-2" />
-              Create Flag
+              {t('featureFlags.createFlag')}
             </Button>
           </CardContent>
         </Card>
@@ -217,11 +218,11 @@ export default function FeatureFlags() {
                     </Badge>
                     {flag.enabled ? (
                       <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
-                        Active
+                        {t('featureFlags.active')}
                       </Badge>
                     ) : (
                       <Badge variant="secondary">
-                        Inactive
+                        {t('featureFlags.inactive')}
                       </Badge>
                     )}
                   </div>
@@ -251,7 +252,7 @@ export default function FeatureFlags() {
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Percent className="h-4 w-4" />
-                    <span>Rollout: {flag.rolloutPercentage ?? 0}%</span>
+                    <span>{t('featureFlags.rollout')}: {flag.rolloutPercentage ?? 0}%</span>
                   </div>
                   <div className="flex-1 max-w-xs">
                     <Slider
@@ -266,7 +267,7 @@ export default function FeatureFlags() {
                   {flag.userSegments && flag.userSegments.length > 0 && (
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Users className="h-4 w-4" />
-                      <span>{flag.userSegments.length} segments</span>
+                      <span>{flag.userSegments.length} {t('featureFlags.segments')}</span>
                     </div>
                   )}
                 </div>

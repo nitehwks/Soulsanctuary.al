@@ -1,0 +1,150 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search",
+    "settings": "Settings",
+    "logout": "Log out",
+    "login": "Log in",
+    "signUp": "Sign up",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Submit",
+    "close": "Close",
+    "yes": "Yes",
+    "no": "No",
+    "or": "or",
+    "and": "and"
+  },
+  "nav": {
+    "chat": "Chat",
+    "groups": "Groups",
+    "analytics": "Analytics",
+    "clinician": "Clinician",
+    "featureFlags": "Feature Flags",
+    "activity": "Activity",
+    "settings": "Settings"
+  },
+  "landing": {
+    "title": "Your AI Mental Wellness Companion",
+    "subtitle": "A safe, private space for emotional support, therapeutic guidance, and personal growth.",
+    "getStarted": "Get Started",
+    "learnMore": "Learn More",
+    "features": {
+      "secure": {
+        "title": "Secure & Private",
+        "description": "Your conversations are protected with enterprise-grade encryption"
+      },
+      "ai": {
+        "title": "AI-Powered Support",
+        "description": "Get compassionate guidance from advanced AI trained on therapeutic principles"
+      },
+      "available": {
+        "title": "Always Available",
+        "description": "Access support whenever you need it, 24/7"
+      }
+    }
+  },
+  "chat": {
+    "title": "Chat",
+    "newConversation": "New Conversation",
+    "placeholder": "Type your message...",
+    "send": "Send",
+    "voiceRecord": "Record voice message",
+    "voiceStop": "Stop recording",
+    "thinking": "Thinking...",
+    "noConversations": "No conversations yet",
+    "startChat": "Start a new conversation to begin"
+  },
+  "groups": {
+    "title": "Support Groups",
+    "subtitle": "Connect with others in anonymous group discussions",
+    "createGroup": "Create Group",
+    "joinGroup": "Join",
+    "leaveGroup": "Leave",
+    "members": "members",
+    "noGroups": "No groups available",
+    "createFirst": "Create your first support group"
+  },
+  "analytics": {
+    "title": "Analytics Dashboard",
+    "subtitle": "Track your wellness journey and progress",
+    "moodTrends": "Mood Trends",
+    "activityStats": "Activity Statistics",
+    "insights": "Insights",
+    "weekly": "Weekly",
+    "monthly": "Monthly",
+    "yearly": "Yearly"
+  },
+  "clinician": {
+    "title": "Clinician Dashboard",
+    "subtitle": "Professional oversight and session management",
+    "sessions": "Sessions",
+    "patients": "Patients",
+    "notes": "Notes",
+    "schedule": "Schedule"
+  },
+  "featureFlags": {
+    "title": "Feature Flags",
+    "subtitle": "Control feature rollouts and A/B testing",
+    "newFlag": "New Flag",
+    "createFlag": "Create Flag",
+    "key": "Key",
+    "name": "Name",
+    "description": "Description",
+    "enabled": "Enabled",
+    "rollout": "Rollout Percentage",
+    "segments": "segments",
+    "active": "Active",
+    "inactive": "Inactive",
+    "noFlags": "No feature flags yet",
+    "createFirst": "Create your first feature flag to control feature rollouts",
+    "keyPlaceholder": "feature_dark_mode",
+    "namePlaceholder": "Dark Mode Feature",
+    "created": "Feature flag created successfully",
+    "updated": "Feature flag updated",
+    "deleted": "Feature flag deleted",
+    "errorCreate": "Error creating flag",
+    "errorUpdate": "Error updating flag",
+    "errorDelete": "Error deleting flag",
+    "requiredFields": "Key and name are required"
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Manage how the AI learns and obfuscates your data.",
+    "language": "Language",
+    "languageDescription": "Select your preferred language for the interface.",
+    "theme": "Theme",
+    "notifications": "Notifications",
+    "privacy": "Privacy Protocols",
+    "privacyTab": "Privacy Protocols",
+    "learningTab": "Learning Modules",
+    "integrationsTab": "Integrations",
+    "account": "Account",
+    "preferences": "Preferences",
+    "languages": {
+      "en": "English",
+      "es": "Spanish",
+      "pt": "Portuguese"
+    },
+    "piiRedaction": "PII Auto-Redaction",
+    "piiRedactionDesc": "Automatically replace emails, phone numbers, and addresses with placeholders.",
+    "encryption": "End-to-End Encryption",
+    "encryptionDesc": "Encrypt all data at rest and in transit using AES-256.",
+    "ephemeral": "Ephemeral Session Mode",
+    "ephemeralDesc": "Do not store chat history after the session ends.",
+    "purgeData": "Purge All Learned Data",
+    "learningManaged": "Learning module configuration is managed by the central administrator.",
+    "integrationsManaged": "Integration settings are managed via the API Gateway."
+  },
+  "errors": {
+    "generic": "Something went wrong. Please try again.",
+    "network": "Network error. Please check your connection.",
+    "unauthorized": "You are not authorized to perform this action.",
+    "notFound": "The requested resource was not found."
+  }
+}
