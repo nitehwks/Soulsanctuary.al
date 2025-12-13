@@ -1807,5 +1807,165 @@ Guidelines:
     }
   });
 
+  // ============= ANALYTICS ROUTES =============
+  
+  // Track analytics event
+  app.post("/api/analytics/events", async (req, res) => {
+    try {
+      const { eventType, eventCategory, metadata } = req.body;
+      
+      if (!eventType || !eventCategory) {
+        return res.status(400).json({ error: "eventType and eventCategory are required" });
+      }
+      
+      const userId = req.user?.id;
+      const event = await storage.createAnalyticsEvent({
+        eventType,
+        eventCategory,
+        anonUserHash: userId ? undefined : req.ip?.replace(/[.:]/g, '').slice(-16),
+        metadata
+      });
+      
+      res.json({ event });
+    } catch (error: any) {
+      console.error("Analytics event error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  // Get analytics summary (admin only in production, available in dev)
+  app.get("/api/analytics/summary", async (req, res) => {
+    try {
+      const summary = await storage.getAnalyticsSummary();
+      res.json(summary);
+    } catch (error: any) {
+      console.error("Analytics summary error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  // Get analytics events
+  app.get("/api/analytics/events", async (req, res) => {
+    try {
+      const { category, limit } = req.query;
+      const events = await storage.getAnalyticsEvents(
+        category as string | undefined,
+        limit ? parseInt(limit as string) : undefined
+      );
+      res.json(events);
+    } catch (error: any) {
+      console.error("Analytics events error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ============= CLINICIAN SESSION ROUTES =============
+  
+  // Create clinician session
+  app.post("/api/clinician/sessions", isAuthenticated, async (req: any, res) => {
+    try {
+      const clinicianId = req.user.claims.sub;
+      const { anonPatientHash, sessionType, scheduledAt, sessionNotes } = req.body;
+      
+      if (!anonPatientHash) {
+        return res.status(400).json({ error: "Patient identifier is required" });
+      }
+      
+      const session = await storage.createClinicianSession({
+        clinicianId,
+        anonPatientHash,
+        sessionType: sessionType || 'ad_hoc',
+        status: 'scheduled',
+        scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
+        sessionNotes: sessionNotes || null
+      });
+      
+      res.json(session);
+    } catch (error: any) {
+      console.error("Create clinician session error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  // Get clinician's sessions
+  app.get("/api/clinician/sessions", isAuthenticated, async (req: any, res) => {
+    try {
+      const clinicianId = req.user.claims.sub;
+      const sessions = await storage.getClinicianSessions(clinicianId);
+      res.json(sessions);
+    } catch (error: any) {
+      console.error("Get clinician sessions error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  // Get clinician session stats
+  app.get("/api/clinician/stats", isAuthenticated, async (req: any, res) => {
+    try {
+      const clinicianId = req.user.claims.sub;
+      const stats = await storage.getClinicianSessionStats(clinicianId);
+      res.json(stats);
+    } catch (error: any) {
+      console.error("Get clinician stats error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  // Get single session
+  app.get("/api/clinician/sessions/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const sessionId = parseInt(req.params.id);
+      const clinicianId = req.user.claims.sub;
+      
+      if (isNaN(sessionId)) {
+        return res.status(400).json({ error: "Invalid session ID" });
+      }
+      
+      const session = await storage.getClinicianSession(sessionId);
+      
+      if (!session) {
+        return res.status(404).json({ error: "Session not found" });
+      }
+      
+      if (session.clinicianId !== clinicianId) {
+        return res.status(403).json({ error: "Unauthorized access" });
+      }
+      
+      res.json(session);
+    } catch (error: any) {
+      console.error("Get clinician session error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  // Update clinician session
+  app.patch("/api/clinician/sessions/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const sessionId = parseInt(req.params.id);
+      const clinicianId = req.user.claims.sub;
+      const updates = req.body;
+      
+      if (isNaN(sessionId)) {
+        return res.status(400).json({ error: "Invalid session ID" });
+      }
+      
+      const existing = await storage.getClinicianSession(sessionId);
+      
+      if (!existing) {
+        return res.status(404).json({ error: "Session not found" });
+      }
+      
+      if (existing.clinicianId !== clinicianId) {
+        return res.status(403).json({ error: "Unauthorized access" });
+      }
+      
+      const updated = await storage.updateClinicianSession(sessionId, updates);
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Update clinician session error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   return httpServer;
 }

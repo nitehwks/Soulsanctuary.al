@@ -52,7 +52,12 @@ import {
   type InsertGroupMember,
   type GroupMessage,
   type InsertGroupMessage,
+  type AnalyticsEvent,
+  type InsertAnalyticsEvent,
+  type ClinicianSession,
+  type InsertClinicianSession,
   users,
+  clinicianSessions,
   conversations,
   messages,
   userContext,
@@ -77,11 +82,12 @@ import {
   voiceMessages,
   groups,
   groupMembers,
-  groupMessages
+  groupMessages,
+  analyticsEvents
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "../db/index";
-import { eq, and, desc, ilike, sql } from "drizzle-orm";
+import { eq, and, desc, ilike, sql, gte, lt, count } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -219,6 +225,31 @@ export interface IStorage {
   createGroupMessage(message: InsertGroupMessage): Promise<GroupMessage>;
   getGroupMessages(groupId: number, limit?: number): Promise<GroupMessage[]>;
   moderateGroupMessage(id: number, reason: string): Promise<GroupMessage | undefined>;
+  
+  // Analytics methods
+  createAnalyticsEvent(event: InsertAnalyticsEvent): Promise<AnalyticsEvent>;
+  getAnalyticsEvents(category?: string, limit?: number): Promise<AnalyticsEvent[]>;
+  getAnalyticsSummary(): Promise<{
+    totalUsers: number;
+    totalConversations: number;
+    totalMessages: number;
+    activeUsersToday: number;
+    avgMessagesPerConversation: number;
+    topCategories: { category: string; count: number }[];
+    recentActivity: { date: string; count: number }[];
+  }>;
+  
+  // Clinician session methods
+  createClinicianSession(session: InsertClinicianSession): Promise<ClinicianSession>;
+  getClinicianSessions(clinicianId: string): Promise<ClinicianSession[]>;
+  getClinicianSession(id: number): Promise<ClinicianSession | undefined>;
+  updateClinicianSession(id: number, updates: Partial<InsertClinicianSession>): Promise<ClinicianSession | undefined>;
+  getClinicianSessionStats(clinicianId: string): Promise<{
+    totalSessions: number;
+    activeSessions: number;
+    completedSessions: number;
+    patientCount: number;
+  }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -961,6 +992,155 @@ export class DatabaseStorage implements IStorage {
       .where(eq(groupMessages.id, id))
       .returning();
     return updated;
+  }
+
+  // Analytics methods
+  async createAnalyticsEvent(event: InsertAnalyticsEvent): Promise<AnalyticsEvent> {
+    const [created] = await db.insert(analyticsEvents).values(event).returning();
+    return created;
+  }
+
+  async getAnalyticsEvents(category?: string, limit: number = 100): Promise<AnalyticsEvent[]> {
+    if (category) {
+      return await db.select().from(analyticsEvents)
+        .where(eq(analyticsEvents.eventCategory, category))
+        .orderBy(desc(analyticsEvents.timestamp))
+        .limit(limit);
+    }
+    return await db.select().from(analyticsEvents)
+      .orderBy(desc(analyticsEvents.timestamp))
+      .limit(limit);
+  }
+
+  async getAnalyticsSummary(): Promise<{
+    totalUsers: number;
+    totalConversations: number;
+    totalMessages: number;
+    activeUsersToday: number;
+    avgMessagesPerConversation: number;
+    topCategories: { category: string; count: number }[];
+    recentActivity: { date: string; count: number }[];
+  }> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const [userCount] = await db.select({ count: count() }).from(users);
+    const [convCount] = await db.select({ count: count() }).from(conversations);
+    const [msgCount] = await db.select({ count: count() }).from(messages);
+    
+    const totalUsers = Number(userCount?.count ?? 0);
+    const totalConversations = Number(convCount?.count ?? 0);
+    const totalMessages = Number(msgCount?.count ?? 0);
+    
+    const activeToday = await db.select({ userId: conversations.userId })
+      .from(conversations)
+      .where(gte(conversations.updatedAt, today))
+      .groupBy(conversations.userId);
+    
+    const avgMessages = totalConversations > 0 
+      ? Math.round(totalMessages / totalConversations * 10) / 10 
+      : 0;
+    
+    const categoryStats = await db.select({
+      category: analyticsEvents.eventCategory,
+      count: count()
+    })
+      .from(analyticsEvents)
+      .groupBy(analyticsEvents.eventCategory)
+      .orderBy(desc(count()))
+      .limit(5);
+    
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+    
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
+    
+    const recentMessages = await db.select({
+      timestamp: messages.timestamp
+    })
+      .from(messages)
+      .where(and(
+        gte(messages.timestamp, sevenDaysAgo),
+        lt(messages.timestamp, tomorrow)
+      ));
+    
+    const dayCountMap: Record<string, number> = {};
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      dayCountMap[date.toISOString().split('T')[0]] = 0;
+    }
+    
+    for (const msg of recentMessages) {
+      const dateKey = msg.timestamp.toISOString().split('T')[0];
+      if (dayCountMap[dateKey] !== undefined) {
+        dayCountMap[dateKey]++;
+      }
+    }
+    
+    const recentDays = Object.entries(dayCountMap).map(([date, cnt]) => ({
+      date,
+      count: cnt
+    }));
+    
+    return {
+      totalUsers,
+      totalConversations,
+      totalMessages,
+      activeUsersToday: activeToday.length,
+      avgMessagesPerConversation: avgMessages,
+      topCategories: categoryStats.map(s => ({ category: s.category, count: Number(s.count) })),
+      recentActivity: recentDays
+    };
+  }
+
+  async createClinicianSession(session: InsertClinicianSession): Promise<ClinicianSession> {
+    const [created] = await db.insert(clinicianSessions).values(session).returning();
+    return created;
+  }
+
+  async getClinicianSessions(clinicianId: string): Promise<ClinicianSession[]> {
+    return await db.select().from(clinicianSessions)
+      .where(eq(clinicianSessions.clinicianId, clinicianId))
+      .orderBy(desc(clinicianSessions.createdAt));
+  }
+
+  async getClinicianSession(id: number): Promise<ClinicianSession | undefined> {
+    const [session] = await db.select().from(clinicianSessions)
+      .where(eq(clinicianSessions.id, id));
+    return session;
+  }
+
+  async updateClinicianSession(id: number, updates: Partial<InsertClinicianSession>): Promise<ClinicianSession | undefined> {
+    const [updated] = await db.update(clinicianSessions)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(clinicianSessions.id, id))
+      .returning();
+    return updated;
+  }
+
+  async getClinicianSessionStats(clinicianId: string): Promise<{
+    totalSessions: number;
+    activeSessions: number;
+    completedSessions: number;
+    patientCount: number;
+  }> {
+    const sessions = await this.getClinicianSessions(clinicianId);
+    
+    const activeSessions = sessions.filter(s => s.status === 'in_progress' || s.status === 'scheduled').length;
+    const completedSessions = sessions.filter(s => s.status === 'completed').length;
+    
+    const uniquePatients = new Set(sessions.map(s => s.anonPatientHash));
+    
+    return {
+      totalSessions: sessions.length,
+      activeSessions,
+      completedSessions,
+      patientCount: uniquePatients.size
+    };
   }
 }
 

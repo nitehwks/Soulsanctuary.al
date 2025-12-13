@@ -13,6 +13,8 @@ import Landing from "@/pages/Landing";
 import PremiumAddons from "@/pages/PremiumAddons";
 import Donate from "@/pages/Donate";
 import Groups from "@/pages/Groups";
+import Analytics from "@/pages/Analytics";
+import ClinicianDashboard from "@/pages/ClinicianDashboard";
 import { Loader2 } from "lucide-react";
 
 function AppRouter() {
@@ -44,6 +46,8 @@ function AppRouter() {
       <Route path="/addons" component={PremiumAddons} />
       <Route path="/donate" component={Donate} />
       <Route path="/groups" component={Groups} />
+      <Route path="/analytics" component={Analytics} />
+      <Route path="/clinician" component={ClinicianDashboard} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -1,4 +1,4 @@
-import { Home, Shield, Database, Book, Settings, Activity, Mic, Users } from "lucide-react";
+import { Home, Shield, Settings, Activity, Users, BarChart3, Stethoscope } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -9,6 +9,8 @@ export function Sidebar() {
   const links = [
     { href: "/", icon: Home, label: "Chat" },
     { href: "/groups", icon: Users, label: "Groups" },
+    { href: "/analytics", icon: BarChart3, label: "Analytics" },
+    { href: "/clinician", icon: Stethoscope, label: "Clinician" },
     { href: "/dashboard", icon: Activity, label: "Activity" },
     { href: "/settings", icon: Settings, label: "Settings" },
   ];
@@ -26,17 +28,16 @@ export function Sidebar() {
           return (
             <Tooltip key={link.href}>
               <TooltipTrigger asChild>
-                <Link href={link.href}>
-                  <a
-                    className={cn(
-                      "p-3 rounded-xl transition-all duration-200 flex items-center justify-center",
-                      isActive
-                        ? "bg-primary text-primary-foreground shadow-md scale-105"
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                    )}
-                  >
-                    <Icon className="h-5 w-5" />
-                  </a>
+                <Link
+                  href={link.href}
+                  className={cn(
+                    "p-3 rounded-xl transition-all duration-200 flex items-center justify-center",
+                    isActive
+                      ? "bg-primary text-primary-foreground shadow-md scale-105"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  )}
+                >
+                  <Icon className="h-5 w-5" />
                 </Link>
               </TooltipTrigger>
               <TooltipContent side="right">
