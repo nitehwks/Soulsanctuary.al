@@ -231,6 +231,13 @@ export default function Landing() {
         <div className="container mx-auto px-6 text-center text-sm text-muted-foreground">
           <p>SoulSanctuary - Find Your Sanctuary Within</p>
           <p className="text-xs mt-1 text-muted-foreground/70">A faith-integrated AI companion for hope, peace, and comfort</p>
+          <a 
+            href="/sales" 
+            className="text-xs mt-2 inline-block text-primary hover:underline"
+            data-testid="link-sales"
+          >
+            View Plans & Pricing
+          </a>
         </div>
       </footer>
     </div>

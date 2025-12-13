@@ -17,6 +17,7 @@ import Groups from "@/pages/Groups";
 import Analytics from "@/pages/Analytics";
 import ClinicianDashboard from "@/pages/ClinicianDashboard";
 import FeatureFlags from "@/pages/FeatureFlags";
+import Sales from "@/pages/Sales";
 import { Loader2 } from "lucide-react";
 
 function AppRouter() {
@@ -35,6 +36,7 @@ function AppRouter() {
       <Switch>
         {/* BETA: Stripe payments disabled - using GoFundMe instead */}
         {/* <Route path="/donate" component={Donate} /> */}
+        <Route path="/sales" component={Sales} />
         <Route component={Landing} />
       </Switch>
     );
@@ -53,6 +55,7 @@ function AppRouter() {
       <Route path="/analytics" component={Analytics} />
       <Route path="/clinician" component={ClinicianDashboard} />
       <Route path="/feature-flags" component={FeatureFlags} />
+      <Route path="/sales" component={Sales} />
       <Route component={NotFound} />
     </Switch>
   );
