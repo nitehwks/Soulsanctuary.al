@@ -1,4 +1,4 @@
-import { Home, Shield, Database, Book, Settings, Activity, Mic } from "lucide-react";
+import { Home, Shield, Database, Book, Settings, Activity, Mic, Users } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -8,6 +8,7 @@ export function Sidebar() {
 
   const links = [
     { href: "/", icon: Home, label: "Chat" },
+    { href: "/groups", icon: Users, label: "Groups" },
     { href: "/dashboard", icon: Activity, label: "Activity" },
     { href: "/settings", icon: Settings, label: "Settings" },
   ];
