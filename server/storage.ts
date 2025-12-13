@@ -46,6 +46,12 @@ import {
   type InsertAttachment,
   type VoiceMessage,
   type InsertVoiceMessage,
+  type Group,
+  type InsertGroup,
+  type GroupMember,
+  type InsertGroupMember,
+  type GroupMessage,
+  type InsertGroupMessage,
   users,
   conversations,
   messages,
@@ -68,7 +74,10 @@ import {
   coachingPlanSteps,
   progressReflections,
   attachments,
-  voiceMessages
+  voiceMessages,
+  groups,
+  groupMembers,
+  groupMessages
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "../db/index";
@@ -190,6 +199,26 @@ export interface IStorage {
   getVoiceMessagesByConversation(conversationId: number): Promise<VoiceMessage[]>;
   getVoiceMessagesByUser(userId: string): Promise<VoiceMessage[]>;
   updateVoiceMessageTranscript(id: number, transcript: string): Promise<VoiceMessage | undefined>;
+  
+  // Group methods
+  createGroup(group: InsertGroup): Promise<Group>;
+  getGroup(id: number): Promise<Group | undefined>;
+  getGroupByHash(groupHash: string): Promise<Group | undefined>;
+  getGroups(category?: string): Promise<Group[]>;
+  updateGroup(id: number, updates: Partial<Group>): Promise<Group | undefined>;
+  incrementGroupMemberCount(id: number): Promise<Group | undefined>;
+  incrementGroupMessageCount(id: number): Promise<Group | undefined>;
+  
+  // Group Member methods
+  createGroupMember(member: InsertGroupMember): Promise<GroupMember>;
+  getGroupMember(groupId: number, anonUserHash: string): Promise<GroupMember | undefined>;
+  getGroupMembers(groupId: number): Promise<GroupMember[]>;
+  updateGroupMemberActivity(groupId: number, anonUserHash: string): Promise<GroupMember | undefined>;
+  
+  // Group Message methods
+  createGroupMessage(message: InsertGroupMessage): Promise<GroupMessage>;
+  getGroupMessages(groupId: number, limit?: number): Promise<GroupMessage[]>;
+  moderateGroupMessage(id: number, reason: string): Promise<GroupMessage | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -832,6 +861,104 @@ export class DatabaseStorage implements IStorage {
     const [updated] = await db.update(voiceMessages)
       .set({ transcript, isProcessed: true })
       .where(eq(voiceMessages.id, id))
+      .returning();
+    return updated;
+  }
+
+  // Group methods
+  async createGroup(group: InsertGroup): Promise<Group> {
+    const [created] = await db.insert(groups).values(group).returning();
+    return created;
+  }
+
+  async getGroup(id: number): Promise<Group | undefined> {
+    const [group] = await db.select().from(groups).where(eq(groups.id, id));
+    return group;
+  }
+
+  async getGroupByHash(groupHash: string): Promise<Group | undefined> {
+    const [group] = await db.select().from(groups).where(eq(groups.groupHash, groupHash));
+    return group;
+  }
+
+  async getGroups(category?: string): Promise<Group[]> {
+    if (category) {
+      return await db.select().from(groups)
+        .where(and(eq(groups.isActive, true), eq(groups.category, category)))
+        .orderBy(desc(groups.memberCount));
+    }
+    return await db.select().from(groups)
+      .where(eq(groups.isActive, true))
+      .orderBy(desc(groups.memberCount));
+  }
+
+  async updateGroup(id: number, updates: Partial<Group>): Promise<Group | undefined> {
+    const [updated] = await db.update(groups)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(groups.id, id))
+      .returning();
+    return updated;
+  }
+
+  async incrementGroupMemberCount(id: number): Promise<Group | undefined> {
+    const [updated] = await db.update(groups)
+      .set({ memberCount: sql`${groups.memberCount} + 1`, updatedAt: new Date() })
+      .where(eq(groups.id, id))
+      .returning();
+    return updated;
+  }
+
+  async incrementGroupMessageCount(id: number): Promise<Group | undefined> {
+    const [updated] = await db.update(groups)
+      .set({ messageCount: sql`${groups.messageCount} + 1`, updatedAt: new Date() })
+      .where(eq(groups.id, id))
+      .returning();
+    return updated;
+  }
+
+  // Group Member methods
+  async createGroupMember(member: InsertGroupMember): Promise<GroupMember> {
+    const [created] = await db.insert(groupMembers).values(member).returning();
+    return created;
+  }
+
+  async getGroupMember(groupId: number, anonUserHash: string): Promise<GroupMember | undefined> {
+    const [member] = await db.select().from(groupMembers)
+      .where(and(eq(groupMembers.groupId, groupId), eq(groupMembers.anonUserHash, anonUserHash)));
+    return member;
+  }
+
+  async getGroupMembers(groupId: number): Promise<GroupMember[]> {
+    return await db.select().from(groupMembers)
+      .where(eq(groupMembers.groupId, groupId))
+      .orderBy(desc(groupMembers.lastActiveAt));
+  }
+
+  async updateGroupMemberActivity(groupId: number, anonUserHash: string): Promise<GroupMember | undefined> {
+    const [updated] = await db.update(groupMembers)
+      .set({ lastActiveAt: new Date() })
+      .where(and(eq(groupMembers.groupId, groupId), eq(groupMembers.anonUserHash, anonUserHash)))
+      .returning();
+    return updated;
+  }
+
+  // Group Message methods
+  async createGroupMessage(message: InsertGroupMessage): Promise<GroupMessage> {
+    const [created] = await db.insert(groupMessages).values(message).returning();
+    return created;
+  }
+
+  async getGroupMessages(groupId: number, limit: number = 50): Promise<GroupMessage[]> {
+    return await db.select().from(groupMessages)
+      .where(and(eq(groupMessages.groupId, groupId), eq(groupMessages.moderated, false)))
+      .orderBy(desc(groupMessages.createdAt))
+      .limit(limit);
+  }
+
+  async moderateGroupMessage(id: number, reason: string): Promise<GroupMessage | undefined> {
+    const [updated] = await db.update(groupMessages)
+      .set({ moderated: true, moderationReason: reason })
+      .where(eq(groupMessages.id, id))
       .returning();
     return updated;
   }

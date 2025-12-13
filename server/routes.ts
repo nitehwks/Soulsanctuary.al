@@ -1571,6 +1571,192 @@ Guidelines:
     }
   });
 
+  // ============ GROUP CHAT API ============
+  
+  // Create a new group
+  app.post("/api/groups", async (req, res) => {
+    try {
+      const { name, description, category, isPrivate } = req.body;
+      
+      if (!name) {
+        return res.status(400).json({ error: "Group name is required" });
+      }
+      
+      // Generate unique group hash
+      const groupHash = require('crypto').createHash('sha256')
+        .update(name + Date.now() + Math.random())
+        .digest('hex')
+        .substring(0, 16);
+      
+      const group = await storage.createGroup({
+        groupHash,
+        name,
+        description: description || null,
+        category: category || "general",
+        isPrivate: isPrivate || false,
+        memberCount: 0,
+        messageCount: 0,
+        isActive: true
+      });
+      
+      res.json(group);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // List groups
+  app.get("/api/groups", async (req, res) => {
+    try {
+      const category = req.query.category as string | undefined;
+      const groups = await storage.getGroups(category);
+      res.json(groups);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get single group
+  app.get("/api/groups/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid group ID" });
+      }
+      
+      const group = await storage.getGroup(id);
+      if (!group) {
+        return res.status(404).json({ error: "Group not found" });
+      }
+      
+      res.json(group);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Join group (anonymous)
+  app.post("/api/groups/:id/join", async (req, res) => {
+    try {
+      const groupId = parseInt(req.params.id);
+      const { anonUserHash, displayName } = req.body;
+      
+      if (isNaN(groupId)) {
+        return res.status(400).json({ error: "Invalid group ID" });
+      }
+      
+      if (!anonUserHash) {
+        return res.status(400).json({ error: "anonUserHash is required" });
+      }
+      
+      // Check if group exists
+      const group = await storage.getGroup(groupId);
+      if (!group) {
+        return res.status(404).json({ error: "Group not found" });
+      }
+      
+      // Check if already a member
+      const existingMember = await storage.getGroupMember(groupId, anonUserHash);
+      if (existingMember) {
+        // Update activity and return existing member
+        await storage.updateGroupMemberActivity(groupId, anonUserHash);
+        return res.json({ member: existingMember, isNewMember: false });
+      }
+      
+      // Create new member
+      const member = await storage.createGroupMember({
+        groupId,
+        anonUserHash,
+        displayName: displayName || `Anonymous${Math.floor(Math.random() * 9999)}`,
+        role: "member"
+      });
+      
+      // Increment member count
+      await storage.incrementGroupMemberCount(groupId);
+      
+      res.json({ member, isNewMember: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get group members
+  app.get("/api/groups/:id/members", async (req, res) => {
+    try {
+      const groupId = parseInt(req.params.id);
+      if (isNaN(groupId)) {
+        return res.status(400).json({ error: "Invalid group ID" });
+      }
+      
+      const members = await storage.getGroupMembers(groupId);
+      res.json(members);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Send message to group
+  app.post("/api/groups/:id/messages", async (req, res) => {
+    try {
+      const groupId = parseInt(req.params.id);
+      const { anonUserHash, message, replyToId } = req.body;
+      
+      if (isNaN(groupId)) {
+        return res.status(400).json({ error: "Invalid group ID" });
+      }
+      
+      if (!anonUserHash || !message) {
+        return res.status(400).json({ error: "anonUserHash and message are required" });
+      }
+      
+      // Check if group exists
+      const group = await storage.getGroup(groupId);
+      if (!group) {
+        return res.status(404).json({ error: "Group not found" });
+      }
+      
+      // Verify user is a member
+      const member = await storage.getGroupMember(groupId, anonUserHash);
+      if (!member) {
+        return res.status(403).json({ error: "You must join the group first" });
+      }
+      
+      // Create message
+      const groupMessage = await storage.createGroupMessage({
+        groupId,
+        anonUserHash,
+        message,
+        replyToId: replyToId || null,
+        moderated: false
+      });
+      
+      // Update counters and activity
+      await storage.incrementGroupMessageCount(groupId);
+      await storage.updateGroupMemberActivity(groupId, anonUserHash);
+      
+      res.json(groupMessage);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get group messages
+  app.get("/api/groups/:id/messages", async (req, res) => {
+    try {
+      const groupId = parseInt(req.params.id);
+      const limit = parseInt(req.query.limit as string) || 50;
+      
+      if (isNaN(groupId)) {
+        return res.status(400).json({ error: "Invalid group ID" });
+      }
+      
+      const messages = await storage.getGroupMessages(groupId, limit);
+      res.json(messages);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Donation checkout endpoint
   app.post("/api/donate/checkout", async (req, res) => {
     try {
