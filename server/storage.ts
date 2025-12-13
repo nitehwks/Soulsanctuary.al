@@ -132,6 +132,7 @@ export interface IStorage {
   getMessagesByConversation(conversationId: number): Promise<Message[]>;
   getAllMessagesByUser(userId: string): Promise<Message[]>;
   searchMessages(userId: string, query: string): Promise<Message[]>;
+  getLastMessageTimeForUser(userId: string): Promise<Date | null>;
   
   createUserContext(context: InsertUserContext): Promise<UserContext>;
   getUserContextByUser(userId: string): Promise<UserContext[]>;
@@ -442,6 +443,26 @@ export class DatabaseStorage implements IStorage {
       )
       .orderBy(desc(messages.timestamp))
       .limit(20);
+  }
+
+  async getLastMessageTimeForUser(userId: string): Promise<Date | null> {
+    const userConversations = await this.getConversationsByUser(userId);
+    const conversationIds = userConversations.map(c => c.id);
+    
+    if (conversationIds.length === 0) return null;
+    
+    const result = await db.select({ timestamp: messages.timestamp })
+      .from(messages)
+      .where(
+        and(
+          sql`${messages.conversationId} IN (${sql.join(conversationIds, sql`, `)})`,
+          eq(messages.role, 'user')
+        )
+      )
+      .orderBy(desc(messages.timestamp))
+      .limit(1);
+    
+    return result[0]?.timestamp || null;
   }
 
   async createUserContext(context: InsertUserContext): Promise<UserContext> {
