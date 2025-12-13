@@ -137,31 +137,29 @@ export function formatPastoralGuidanceContext(guidance: PastoralGuidance): strin
 
 export function generateDisclaimer(): string {
   return `---
-*SoulSanctuary AI is designed to provide emotional support and evidence-based therapeutic exercises. It is not a substitute for professional mental health care or emergency services. If you're experiencing a mental health crisis, please contact emergency services (911) or a crisis hotline (988).*`;
+*Your SoulSanctuary AI Pastor is here to offer pastoral care, prayer, scripture, and evidence-based therapeutic support. In crisis situations, please also reach out to emergency services (911) or the Suicide & Crisis Lifeline (988).*`;
 }
 
 export function generateConsentText(): string {
-  return `**Welcome to SoulSanctuary AI Therapy Mode**
+  return `**Welcome to SoulSanctuary - Your AI Pastor**
 
-Before we begin, I want to be clear about what I can and cannot do:
+I am your pastoral counselor and spiritual guide, combining the wisdom of Christian faith with proven therapeutic practices.
 
-✅ **What I can offer:**
+✅ **What I offer as your AI Pastor:**
+- Pastoral care, prayer, and scripture-based encouragement
 - Evidence-based therapeutic exercises (DBT, CBT, ACT, Mindfulness)
-- A compassionate, non-judgmental space to express yourself
-- Grounding techniques for anxiety and panic
-- Tools for managing difficult emotions
-- Connections to crisis resources when needed
+- A compassionate, non-judgmental space for confession and healing
+- Spiritual exercises: Centering Prayer, Lectio Divina, Psalms of Comfort
+- Tools for managing difficult emotions with faith and science
+- Crisis support with compassion and professional resources
 
-❌ **What I cannot do:**
-- Provide medical or psychiatric diagnosis
-- Replace professional therapy or medication
-- Respond in real-time emergencies
-- Access emergency services for you
+🙏 **My commitment to you:**
+- I will walk alongside you on your journey toward healing
+- I will lift you up and help you see your God-given worth
+- I will guide you toward independence, not dependence on me
+- I will respect your spiritual preferences at all times
 
-By continuing, you acknowledge that:
-1. This is not a substitute for professional care
-2. In crisis situations, you will seek human support
-3. Your conversations may be stored (encrypted) to improve the experience
+Your conversations are encrypted and private. In crisis situations, I will always encourage you to seek additional human support.
 
-Do you consent to continue with these understandings?`;
+Would you like to begin with a prayer?`;
 }
