@@ -44,6 +44,8 @@ import {
   type InsertProgressReflection,
   type Attachment,
   type InsertAttachment,
+  type VoiceMessage,
+  type InsertVoiceMessage,
   users,
   conversations,
   messages,
@@ -65,7 +67,8 @@ import {
   coachingPlans,
   coachingPlanSteps,
   progressReflections,
-  attachments
+  attachments,
+  voiceMessages
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "../db/index";
@@ -181,6 +184,12 @@ export interface IStorage {
   getAttachmentsByUser(userId: string): Promise<Attachment[]>;
   updateAttachmentAnalysis(id: number, analysisResult: string, keyInsights: string[]): Promise<Attachment | undefined>;
   linkAttachmentToMessage(attachmentId: number, messageId: number): Promise<Attachment | undefined>;
+  
+  // Voice Message methods
+  createVoiceMessage(voiceMessage: InsertVoiceMessage): Promise<VoiceMessage>;
+  getVoiceMessagesByConversation(conversationId: number): Promise<VoiceMessage[]>;
+  getVoiceMessagesByUser(userId: string): Promise<VoiceMessage[]>;
+  updateVoiceMessageTranscript(id: number, transcript: string): Promise<VoiceMessage | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -797,6 +806,32 @@ export class DatabaseStorage implements IStorage {
     const [updated] = await db.update(attachments)
       .set({ messageId })
       .where(eq(attachments.id, attachmentId))
+      .returning();
+    return updated;
+  }
+
+  // Voice Message methods
+  async createVoiceMessage(voiceMessage: InsertVoiceMessage): Promise<VoiceMessage> {
+    const [created] = await db.insert(voiceMessages).values(voiceMessage).returning();
+    return created;
+  }
+
+  async getVoiceMessagesByConversation(conversationId: number): Promise<VoiceMessage[]> {
+    return await db.select().from(voiceMessages)
+      .where(eq(voiceMessages.conversationId, conversationId))
+      .orderBy(desc(voiceMessages.createdAt));
+  }
+
+  async getVoiceMessagesByUser(userId: string): Promise<VoiceMessage[]> {
+    return await db.select().from(voiceMessages)
+      .where(eq(voiceMessages.userId, userId))
+      .orderBy(desc(voiceMessages.createdAt));
+  }
+
+  async updateVoiceMessageTranscript(id: number, transcript: string): Promise<VoiceMessage | undefined> {
+    const [updated] = await db.update(voiceMessages)
+      .set({ transcript, isProcessed: true })
+      .where(eq(voiceMessages.id, id))
       .returning();
     return updated;
   }

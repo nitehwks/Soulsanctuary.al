@@ -1507,6 +1507,70 @@ Guidelines:
     }
   });
 
+  // Voice Message API Endpoints
+  app.post("/api/voice/messages", async (req, res) => {
+    try {
+      const { conversationId, messageId, userId, audioData, transcript, duration, sentimentScore } = req.body;
+      
+      if (!userId) {
+        return res.status(400).json({ error: "userId is required" });
+      }
+      
+      const voiceMessage = await storage.createVoiceMessage({
+        conversationId,
+        messageId,
+        userId,
+        audioData,
+        transcript,
+        duration,
+        sentimentScore,
+        isProcessed: !!transcript
+      });
+      
+      res.json(voiceMessage);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/voice/messages/:conversationId", async (req, res) => {
+    try {
+      const conversationId = parseInt(req.params.conversationId);
+      if (isNaN(conversationId)) {
+        return res.status(400).json({ error: "Invalid conversation ID" });
+      }
+      
+      const voiceMessages = await storage.getVoiceMessagesByConversation(conversationId);
+      res.json(voiceMessages);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/voice/messages/:id/transcript", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { transcript } = req.body;
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid voice message ID" });
+      }
+      
+      if (!transcript) {
+        return res.status(400).json({ error: "transcript is required" });
+      }
+      
+      const updated = await storage.updateVoiceMessageTranscript(id, transcript);
+      if (!updated) {
+        return res.status(404).json({ error: "Voice message not found" });
+      }
+      
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Donation checkout endpoint
   app.post("/api/donate/checkout", async (req, res) => {
     try {

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Send, Mic, MicOff, PanelLeftClose, PanelLeft, Heart, Shield, Target, Brain, Paperclip, Camera, X, FileText, Image as ImageIcon, HelpCircle } from "lucide-react";
+import { Send, Mic, MicOff, PanelLeftClose, PanelLeft, Heart, Shield, Target, Brain, Paperclip, Camera, X, FileText, Image as ImageIcon, HelpCircle, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useVoiceChat } from "@/hooks/useVoiceChat";
 import { ConversationList } from "./ConversationList";
 import { WellnessPanel } from "./WellnessPanel";
 import { PrivacyDashboard } from "./PrivacyDashboard";
@@ -56,6 +57,7 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
   const [smartReplies, setSmartReplies] = useState<SmartReply[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [filePreview, setFilePreview] = useState<string | null>(null);
+  const [speakingMessageId, setSpeakingMessageId] = useState<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -63,6 +65,33 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
   const { toast } = useToast();
   const { user, isLoading: isUserLoading } = useAuth();
   const userId = user?.id;
+
+  const { speak, stopSpeaking, isSpeaking } = useVoiceChat({
+    onError: (error) => {
+      toast({
+        title: "Voice Error",
+        description: error,
+        variant: "destructive"
+      });
+    }
+  });
+
+  const handleSpeakMessage = (messageId: number, content: string) => {
+    if (speakingMessageId === messageId && isSpeaking) {
+      stopSpeaking();
+      setSpeakingMessageId(null);
+    } else {
+      stopSpeaking();
+      setSpeakingMessageId(messageId);
+      speak(content);
+    }
+  };
+
+  useEffect(() => {
+    if (!isSpeaking && speakingMessageId !== null) {
+      setSpeakingMessageId(null);
+    }
+  }, [isSpeaking]);
 
   useEffect(() => {
     const { webkitSpeechRecognition, SpeechRecognition } = window as unknown as IWindow;
@@ -588,8 +617,28 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
                         <span className="ml-2 text-[10px] opacity-60">[redacted]</span>
                       )}
                     </div>
-                    <div className="text-[10px] text-muted-foreground mt-1 opacity-50">
-                       {new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-[10px] text-muted-foreground opacity-50">
+                        {new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                      </span>
+                      {msg.role === "assistant" && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className={cn(
+                            "h-5 w-5 rounded-full",
+                            speakingMessageId === msg.id && isSpeaking && "text-primary animate-pulse"
+                          )}
+                          onClick={() => handleSpeakMessage(msg.id, msg.content)}
+                          data-testid={`button-speak-${msg.id}`}
+                        >
+                          {speakingMessageId === msg.id && isSpeaking ? (
+                            <VolumeX className="h-3 w-3" />
+                          ) : (
+                            <Volume2 className="h-3 w-3" />
+                          )}
+                        </Button>
+                      )}
                     </div>
                   </div>
 
