@@ -449,7 +449,7 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
             initial={{ width: 0, opacity: 0 }}
             animate={{ width: 280, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
-            className="border-r border-border bg-card/50 h-full overflow-hidden"
+            className="border-r border-border bg-card/50 h-full overflow-hidden hidden md:block"
           >
             <ConversationList 
               currentConversationId={conversationId}
@@ -462,12 +462,12 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
       </AnimatePresence>
 
       <div className="flex-1 flex flex-col min-w-0">
-        <div className="h-10 border-b border-border/50 flex items-center px-2 bg-background/50">
+        <div className="h-11 md:h-10 border-b border-border/50 flex items-center px-2 bg-background/50">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setShowSidebar(!showSidebar)}
-            className="h-8 w-8"
+            className="h-9 w-9 md:h-8 md:w-8"
             data-testid="button-toggle-sidebar"
           >
             {showSidebar ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeft className="h-4 w-4" />}
@@ -481,7 +481,7 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
                 variant={showCoaching ? "secondary" : "ghost"}
                 size="icon"
                 onClick={() => setShowCoaching(!showCoaching)}
-                className="h-8 w-8"
+                className="h-9 w-9 md:h-8 md:w-8"
                 data-testid="button-toggle-coaching"
               >
                 <Target className={cn("h-4 w-4", showCoaching && "text-purple-400")} />
@@ -491,7 +491,7 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
               variant={showWellness ? "secondary" : "ghost"}
               size="icon"
               onClick={() => setShowWellness(!showWellness)}
-              className="h-8 w-8"
+              className="h-9 w-9 md:h-8 md:w-8"
               data-testid="button-toggle-wellness"
             >
               <Heart className={cn("h-4 w-4", showWellness && "text-rose-400")} />
@@ -500,7 +500,7 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
               variant={showPrivacy ? "secondary" : "ghost"}
               size="icon"
               onClick={() => setShowPrivacy(!showPrivacy)}
-              className="h-8 w-8"
+              className="h-9 w-9 md:h-8 md:w-8"
               data-testid="button-toggle-privacy"
             >
               <Shield className={cn("h-4 w-4", showPrivacy && "text-emerald-400")} />
@@ -510,7 +510,7 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8"
+                  className="h-9 w-9 md:h-8 md:w-8"
                   data-testid="button-about"
                 >
                   <HelpCircle className="h-4 w-4" />
@@ -520,7 +520,7 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
           </div>
         </div>
 
-        <ScrollArea className="flex-1 px-4 py-8" ref={scrollRef}>
+        <ScrollArea className="flex-1 px-3 md:px-4 py-4 md:py-8" ref={scrollRef}>
           <div className="max-w-3xl mx-auto space-y-8 pb-4">
             {messages.length === 0 && (
               <div className="space-y-6">
@@ -535,17 +535,17 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
                     />
                   </div>
                 ) : (
-                  <div className="text-center py-20">
-                    <div className="text-4xl mb-4">{mode === "therapist" ? "🎯" : "💬"}</div>
-                    <h3 className="text-lg font-medium mb-2">
+                  <div className="text-center py-10 md:py-20 px-2">
+                    <div className="text-3xl md:text-4xl mb-3 md:mb-4">{mode === "therapist" ? "🎯" : "💬"}</div>
+                    <h3 className="text-base md:text-lg font-medium mb-2">
                       {mode === "therapist" 
                         ? "Welcome to Your Sanctuary" 
                         : "Welcome to SoulSanctuary"}
                     </h3>
-                    <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                    <p className="text-xs md:text-sm text-muted-foreground max-w-md mx-auto">
                       {mode === "therapist" 
-                        ? "I'm here to walk alongside you with faith, wisdom, and proven practices. Together, we'll work toward your healing and growth - helping you find strength and independence through life's challenges."
-                        : "Your story matters to me. I'm here to truly know you - your joys, struggles, and dreams - so I can serve you better with each conversation."}
+                        ? "I'm here to walk alongside you with faith, wisdom, and proven practices. Together, we'll work toward your healing and growth."
+                        : "Your story matters to me. I'm here to truly know you - your joys, struggles, and dreams."}
                     </p>
                     {mode === "therapist" && coachingEligible && !showProfile && (
                       <div className="mt-4">
