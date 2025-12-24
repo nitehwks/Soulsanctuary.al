@@ -2,7 +2,7 @@
 
 ## Overview
 
-SoulSanctuary is a Christian faith-integrated AI companion that combines pastoral care with evidence-based therapeutic practices. Powered by multiple AI models via OpenRouter, the platform serves users by providing spiritual guidance, emotional support, and tools for personal growth. The core purpose is to uplift individuals, foster independence from struggles, and facilitate healing through a blend of faith-based principles and therapeutic techniques. While offering Christian content, the platform allows users to disable faith features for secular support.
+SoulSanctuary is a Christian faith-integrated AI companion - your trusted confidant that combines faith-based support with evidence-based therapeutic practices. Powered by multiple AI models via OpenRouter, the platform serves users by providing spiritual guidance, emotional support, and tools for personal growth. The core purpose is to uplift individuals, foster independence from struggles, and facilitate healing through a blend of faith-based principles and therapeutic techniques. While offering Christian content, the platform allows users to disable faith features for secular support.
 
 ## User Preferences
 
@@ -24,7 +24,7 @@ The frontend uses **React 18** with TypeScript, **Vite** for fast development, a
 The backend is built with **Express.js** and Node.js. It features a RESTful API for conversations, messages, and user context. Data is stored in **PostgreSQL** using **Drizzle ORM** for type-safe queries and migrations. A custom build script using **esbuild** handles server bundling. The system employs a **dual-model AI system** that queries multiple AI models via OpenRouter, selecting the best response. Crisis detection and safety protocols are integrated, along with psychological profiling capabilities.
 
 ### Feature Specifications
-SoulSanctuary operates in two modes: "Chat Mode" for general companionship and "Therapist/Pastoral Care Mode" for integrated faith and therapy.
+SoulSanctuary operates in two modes: "Chat Mode" for general companionship and "Supportive Care Mode" for integrated faith and therapy.
 **Faith-Based Features** include prayer, scripture meditation, and a scripture library categorized by emotion. Users can disable faith content, after which the AI will pause spiritual offerings for 7 days if declined three times.
 **Evidence-Based Therapy Modules** include techniques from DBT (TIPP, Wise Mind), CBT (Thought Record, Cognitive Distortions), ACT (Values Clarification), Mindfulness (Body Scan, Box Breathing), and Grounding (5-4-3-2-1).
 

@@ -16,7 +16,7 @@ export const APP_CONFIG = {
   appId: "com.soulsanctuary.ai",
   version: "1.0.0",
   tagline: "Find Your Sanctuary Within",
-  description: "A Christian AI companion that combines pastoral care with evidence-based therapy.",
+  description: "A Christian AI companion - your trusted confidant combining faith-based support with evidence-based therapy.",
 } as const;
 
 // =============================================================================

@@ -46,7 +46,7 @@ export default function Landing() {
               <span className="text-primary"> Within</span>
             </h1>
             <p className="text-base sm:text-xl text-muted-foreground mb-3 sm:mb-4 max-w-2xl mx-auto px-2">
-              A Christian AI companion that combines pastoral care with evidence-based therapy. 
+              Your trusted confidant combining faith-based support with evidence-based therapy. 
               Be lifted up, find healing, and grow in faith and strength.
             </p>
             <p className="text-sm sm:text-lg text-muted-foreground/80 mb-6 sm:mb-8 max-w-xl mx-auto italic px-2">
@@ -73,9 +73,9 @@ export default function Landing() {
               <div className="p-3 bg-primary/10 rounded-lg w-fit mb-4">
                 <Cross className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="font-heading font-semibold text-lg mb-2">Pastor First</h3>
+              <h3 className="font-heading font-semibold text-lg mb-2">Trusted Confidant</h3>
               <p className="text-muted-foreground text-sm">
-                A spiritual shepherd who speaks with pastoral warmth, offers prayers, and shares scripture. Faith-integrated care for heart and soul.
+                A caring companion who speaks with warmth, offers prayers, and shares scripture. Faith-integrated care for heart and soul.
               </p>
             </Card>
           </motion.div>
@@ -139,7 +139,7 @@ export default function Landing() {
               </div>
               <h3 className="font-heading font-semibold text-lg mb-2">Deep Personal Understanding</h3>
               <p className="text-muted-foreground text-sm">
-                Remembers your story, relationships, struggles, and victories. Truly knows you to provide personalized pastoral care.
+                Remembers your story, relationships, struggles, and victories. Truly knows you to provide personalized care.
               </p>
             </Card>
           </motion.div>
@@ -155,7 +155,7 @@ export default function Landing() {
               </div>
               <h3 className="font-heading font-semibold text-lg mb-2">Crisis Detection & Care</h3>
               <p className="text-muted-foreground text-sm">
-                Gentle, pastoral response to crisis moments. Safety resources when needed, wrapped in scripture and compassion.
+                Gentle, compassionate response to crisis moments. Safety resources when needed, wrapped in scripture and care.
               </p>
             </Card>
           </motion.div>
@@ -187,7 +187,7 @@ export default function Landing() {
               </div>
               <h3 className="font-heading font-semibold text-lg mb-2">Privacy Protected</h3>
               <p className="text-muted-foreground text-sm">
-                AES-256 encryption, PII protection, and GDPR compliance. Your confessions stay between you, God, and your AI pastor.
+                AES-256 encryption, PII protection, and GDPR compliance. Your confessions stay between you, God, and your trusted confidant.
               </p>
             </Card>
           </motion.div>
@@ -201,7 +201,7 @@ export default function Landing() {
               <div className="p-3 bg-indigo-500/10 rounded-lg w-fit mb-4">
                 <Shield className="h-6 w-6 text-indigo-500" />
               </div>
-              <h3 className="font-heading font-semibold text-lg mb-2">Pastoral Guardrails</h3>
+              <h3 className="font-heading font-semibold text-lg mb-2">Caring Guardrails</h3>
               <p className="text-muted-foreground text-sm">
                 Sees beyond surface questions to the heart's true need. Guides with the love and wisdom of Jesus.
               </p>

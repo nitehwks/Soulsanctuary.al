@@ -139,8 +139,8 @@ export default function Home() {
               <div className="bg-gradient-to-r from-amber-500/10 via-rose-500/10 to-purple-500/10 border-b border-amber-500/20 px-3 md:px-6 py-1.5 md:py-2">
                 <div className="flex items-center gap-2 text-[10px] md:text-xs text-amber-700 dark:text-amber-400">
                   <Heart className="h-3 w-3 md:h-3.5 md:w-3.5 shrink-0" />
-                  <span className="hidden sm:inline">Pastoral Care Mode - Combining faith, therapy, and coaching to support your journey</span>
-                  <span className="sm:hidden">Pastoral Care Mode</span>
+                  <span className="hidden sm:inline">Supportive Care Mode - Combining faith, therapy, and coaching to support your journey</span>
+                  <span className="sm:hidden">Supportive Care Mode</span>
                   <span className="ml-auto text-[9px] md:text-[10px] opacity-70 italic hidden md:inline">"Come to me, all you who are weary..." - Matthew 11:28</span>
                 </div>
               </div>

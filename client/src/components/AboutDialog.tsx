@@ -39,7 +39,7 @@ export function AboutDialog({ trigger }: AboutDialogProps) {
                 Our Mission
               </h3>
               <p className="text-muted-foreground leading-relaxed">
-                SoulSanctuary is a Christian faith-integrated AI companion that combines pastoral care 
+                SoulSanctuary is a Christian faith-integrated AI companion - your trusted confidant that combines faith-based support 
                 with evidence-based therapeutic practices. We serve each person by lifting them up, 
                 helping them gain independence from their struggles, and walking alongside them on 
                 their journey toward healing and growth.

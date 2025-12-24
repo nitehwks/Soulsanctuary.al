@@ -122,7 +122,7 @@ export function wrapResponseWithSafety(
 }
 
 export function formatPastoralGuidanceContext(guidance: PastoralGuidance): string {
-  let context = `\n\n## PASTORAL GUIDANCE FOR THIS SITUATION\n`;
+  let context = `\n\n## SUPPORTIVE GUIDANCE FOR THIS SITUATION\n`;
   context += `**Root Issue to Address:** ${guidance.rootIssue}\n`;
   context += `**Recommended Therapeutic Approach:** ${guidance.therapeuticApproach}\n`;
   context += `**Gentle Redirect:** ${guidance.gentleRedirect}\n`;
@@ -137,16 +137,16 @@ export function formatPastoralGuidanceContext(guidance: PastoralGuidance): strin
 
 export function generateDisclaimer(): string {
   return `---
-*Your SoulSanctuary AI Pastor is here to offer pastoral care, prayer, scripture, and evidence-based therapeutic support. In crisis situations, please also reach out to emergency services (911) or the Suicide & Crisis Lifeline (988).*`;
+*Your SoulSanctuary AI is here to offer compassionate care, prayer, scripture, and evidence-based therapeutic support. In crisis situations, please also reach out to emergency services (911) or the Suicide & Crisis Lifeline (988).*`;
 }
 
 export function generateConsentText(): string {
-  return `**Welcome to SoulSanctuary - Your AI Pastor**
+  return `**Welcome to SoulSanctuary - Your Trusted Confidant**
 
-I am your pastoral counselor and spiritual guide, combining the wisdom of Christian faith with proven therapeutic practices.
+I am your caring counselor and spiritual guide, combining the wisdom of Christian faith with proven therapeutic practices.
 
-✅ **What I offer as your AI Pastor:**
-- Pastoral care, prayer, and scripture-based encouragement
+✅ **What I offer as your trusted confidant:**
+- Compassionate care, prayer, and scripture-based encouragement
 - Evidence-based therapeutic exercises (DBT, CBT, ACT, Mindfulness)
 - A compassionate, non-judgmental space for confession and healing
 - Spiritual exercises: Centering Prayer, Lectio Divina, Psalms of Comfort

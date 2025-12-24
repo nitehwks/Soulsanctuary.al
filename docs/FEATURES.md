@@ -2,7 +2,7 @@
 
 ## Overview
 
-SoulSanctuary is a **Christian faith-integrated AI companion** that combines pastoral care with evidence-based therapeutic practices. Available as a web app and native iOS app for iPhone and iPad.
+SoulSanctuary is a **Christian faith-integrated AI companion** - your trusted confidant that combines faith-based support with evidence-based therapeutic practices. Available as a web app and native iOS app for iPhone and iPad.
 
 ---
 
@@ -14,7 +14,7 @@ Switch seamlessly between two specialized modes:
 | Mode | Purpose |
 |------|---------|
 | **Chat Mode** | Caring companion for everyday conversations, remembering your story |
-| **Therapist Mode** | Pastoral care combining faith, therapy techniques, and life coaching |
+| **Therapist Mode** | Supportive care combining faith, therapy techniques, and life coaching |
 
 ### 2. Faith Integration (Optional)
 - **Prayer Support**: AI offers to pray with you at meaningful moments
@@ -40,7 +40,7 @@ Real-time protection for vulnerable users:
 - **Severity Assessment**: None, low, moderate, high, critical levels
 - **Crisis Resources**: Immediate connection to hotlines and support
 - **Safety Wrapping**: All responses filtered for user safety
-- **Pastoral Guidance**: Appropriate spiritual support in crisis moments
+- **Compassionate Guidance**: Appropriate spiritual support in crisis moments
 
 ### 5. Advanced Privacy & Security
 World-class data protection:
@@ -149,7 +149,7 @@ Curated verses organized by emotional need:
 
 ## What Makes SoulSanctuary Unique
 
-1. **Faith + Science**: Only AI that seamlessly combines Christian pastoral care with evidence-based therapy
+1. **Faith + Science**: Only AI that seamlessly combines Christian faith-based support with evidence-based therapy
 2. **Privacy First**: Enterprise-grade security rarely seen in consumer apps
 3. **Truly Knows You**: Deep contextual memory that improves over time
 4. **Crisis Ready**: Professional-grade safety features protect vulnerable users

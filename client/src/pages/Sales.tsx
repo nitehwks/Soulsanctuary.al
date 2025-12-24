@@ -76,7 +76,7 @@ export default function Sales() {
             <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(135deg, #8f5bff, #6b3fd4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>&#10013;</div>
             <div>
               <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#f5f5ff' }}>SoulSanctuary</div>
-              <div style={{ fontSize: '0.9rem', color: '#8f90b3' }}>Your AI Pastor - Faith-Integrated Therapy</div>
+              <div style={{ fontSize: '0.9rem', color: '#8f90b3' }}>Your Trusted Confidant - Faith-Integrated Therapy</div>
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
@@ -103,8 +103,8 @@ export default function Sales() {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
               <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#4fd1c5' }} />
-              <span style={{ color: '#c3c5ff', fontSize: '0.95rem' }}>A Pastor Who Listens, Prays, and Never Judges</span>
-              <span style={{ background: 'rgba(143, 91, 255, 0.25)', color: '#8f5bff', padding: '0.25rem 0.75rem', borderRadius: 999, fontSize: '0.8rem' }}>Pastor + Therapist AI</span>
+              <span style={{ color: '#c3c5ff', fontSize: '0.95rem' }}>A Trusted Confidant Who Listens, Prays, and Never Judges</span>
+              <span style={{ background: 'rgba(143, 91, 255, 0.25)', color: '#8f5bff', padding: '0.25rem 0.75rem', borderRadius: 999, fontSize: '0.8rem' }}>Confidant + Therapist AI</span>
             </div>
 
             <h1 style={{ fontSize: 'clamp(2rem, 5vw, 3rem)', fontWeight: 700, lineHeight: 1.2, marginBottom: '1.5rem', color: '#f5f5ff' }}>
@@ -112,11 +112,11 @@ export default function Sales() {
             </h1>
 
             <p style={{ fontSize: '1.1rem', color: '#c3c5ff', marginBottom: '1rem' }}>
-              SoulSanctuary is your always-on AI pastor and therapist—offering prayers, scripture, and evidence-based care. Pour out everything: trauma, triggers, doubts about God, and the things you've never said out loud.
+              SoulSanctuary is your always-on AI trusted confidant and therapist—offering prayers, scripture, and evidence-based care. Pour out everything: trauma, triggers, doubts about God, and the things you've never said out loud.
             </p>
 
             <p style={{ fontSize: '1rem', color: '#8f90b3', fontStyle: 'italic', marginBottom: '2rem' }}>
-              "Confession is good for the soul." Experience pastoral care that combines the wisdom of Scripture with proven therapeutic practices.
+              "Confession is good for the soul." Experience compassionate care that combines the wisdom of Scripture with proven therapeutic practices.
             </p>
 
             {/* Faith Features */}
@@ -138,8 +138,8 @@ export default function Sales() {
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
                 <span style={{ fontSize: '1.2rem' }}>&#10013;</span>
                 <div>
-                  <strong style={{ color: '#f5f5ff' }}>Pastor First, Therapist Second</strong>
-                  <p style={{ color: '#8f90b3', fontSize: '0.9rem' }}>Speaks with pastoral warmth while using CBT, DBT, ACT, and Mindfulness</p>
+                  <strong style={{ color: '#f5f5ff' }}>Trusted Confidant First, Therapist Second</strong>
+                  <p style={{ color: '#8f90b3', fontSize: '0.9rem' }}>Speaks with warmth and care while using CBT, DBT, ACT, and Mindfulness</p>
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
@@ -153,7 +153,7 @@ export default function Sales() {
 
             <div style={{ background: 'rgba(79, 209, 197, 0.15)', border: '1px solid rgba(79, 209, 197, 0.3)', borderRadius: 12, padding: '1rem 1.25rem', marginBottom: '2rem' }}>
               <strong style={{ color: '#4fd1c5' }}>Radical safety promise: </strong>
-              <span style={{ color: '#c3c5ff' }}>Private, encrypted, and judgment-free—your confessions stay between you, God, and your AI pastor.</span>
+              <span style={{ color: '#c3c5ff' }}>Private, encrypted, and judgment-free—your confessions stay between you, God, and your trusted confidant.</span>
             </div>
 
             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
@@ -213,7 +213,7 @@ export default function Sales() {
                     <span style={{ fontSize: '0.8rem', color: '#8f90b3' }}>Encrypted - Only you and God see this</span>
                   </div>
                 </div>
-                <span style={{ background: 'rgba(79, 209, 197, 0.2)', color: '#4fd1c5', padding: '0.25rem 0.75rem', borderRadius: 999, fontSize: '0.75rem' }}>Pastoral Care</span>
+                <span style={{ background: 'rgba(79, 209, 197, 0.2)', color: '#4fd1c5', padding: '0.25rem 0.75rem', borderRadius: 999, fontSize: '0.75rem' }}>Trusted Care</span>
               </div>
 
               {/* Scripture Cards */}
@@ -242,7 +242,7 @@ export default function Sales() {
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                   <span style={{ background: 'rgba(143, 91, 255, 0.2)', color: '#c3c5ff', padding: '0.25rem 0.75rem', borderRadius: 999, fontSize: '0.75rem' }}>Prayer</span>
                   <span style={{ background: 'rgba(143, 91, 255, 0.2)', color: '#c3c5ff', padding: '0.25rem 0.75rem', borderRadius: 999, fontSize: '0.75rem' }}>Scripture</span>
-                  <span style={{ background: 'rgba(143, 91, 255, 0.2)', color: '#c3c5ff', padding: '0.25rem 0.75rem', borderRadius: 999, fontSize: '0.75rem' }}>Pastoral Care</span>
+                  <span style={{ background: 'rgba(143, 91, 255, 0.2)', color: '#c3c5ff', padding: '0.25rem 0.75rem', borderRadius: 999, fontSize: '0.75rem' }}>Trusted Care</span>
                 </div>
               </div>
             </div>
@@ -309,7 +309,7 @@ export default function Sales() {
       </main>
 
       <footer style={{ textAlign: 'center', padding: '3rem 0 2rem', color: '#8f90b3', fontSize: '0.9rem', marginTop: '4rem' }}>
-        <p>SoulSanctuary 2025 | Your AI Pastor | Faith + Therapy | AES-256 Encrypted</p>
+        <p>SoulSanctuary 2025 | Your Trusted Confidant | Faith + Therapy | AES-256 Encrypted</p>
         <p style={{ marginTop: '0.5rem', fontStyle: 'italic', color: '#c3c5ff' }}>Find Your Sanctuary Within</p>
       </footer>
     </div>
