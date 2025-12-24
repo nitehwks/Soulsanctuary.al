@@ -1558,14 +1558,87 @@ Guidelines:
     }
   });
 
-  // Attachment upload and vision analysis endpoint
+  // Attachment upload and vision analysis endpoint with security enhancements
+  const ALLOWED_MIME_TYPES = [
+    'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+    'application/pdf', 'text/plain',
+    'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  ];
+  const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.pdf', '.txt', '.doc', '.docx'];
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+  const MAX_BASE64_SIZE = 15 * 1024 * 1024; // ~15MB for base64 encoded data
+
+  function sanitizeFileName(name: string): string {
+    return name
+      .replace(/[^a-zA-Z0-9.-]/g, '_')
+      .replace(/_{2,}/g, '_')
+      .substring(0, 100);
+  }
+
+  function getFileExtension(name: string): string {
+    const parts = name.split('.');
+    return parts.length > 1 ? `.${parts.pop()?.toLowerCase()}` : '';
+  }
+
+  function generateUniqueFileName(originalName: string): string {
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(2, 8);
+    const sanitized = sanitizeFileName(originalName);
+    const ext = getFileExtension(originalName);
+    const baseName = sanitized.replace(ext, '');
+    return `${baseName}_${timestamp}_${random}${ext}`;
+  }
+
   app.post("/api/attachments/upload", async (req, res) => {
     try {
       const { userId, fileName, fileType, fileSize, fileData } = req.body;
 
+      // Validate required fields
       if (!userId || !fileName || !fileType || !fileData) {
+        console.error('Upload error: Missing required fields');
         return res.status(400).json({ error: "Missing required fields" });
       }
+
+      // Security: Validate MIME type
+      if (!ALLOWED_MIME_TYPES.includes(fileType)) {
+        console.error(`Upload error: Invalid MIME type: ${fileType}`);
+        return res.status(400).json({ 
+          error: `File type not allowed. Accepted types: ${ALLOWED_MIME_TYPES.join(', ')}` 
+        });
+      }
+
+      // Security: Validate file extension
+      const extension = getFileExtension(fileName);
+      if (!ALLOWED_EXTENSIONS.includes(extension)) {
+        console.error(`Upload error: Invalid extension: ${extension}`);
+        return res.status(400).json({ 
+          error: `File extension not allowed. Accepted: ${ALLOWED_EXTENSIONS.join(', ')}` 
+        });
+      }
+
+      // Security: Validate file size
+      if (fileSize && fileSize > MAX_FILE_SIZE) {
+        console.error(`Upload error: File too large: ${fileSize} bytes`);
+        return res.status(400).json({ 
+          error: `File too large. Maximum size: ${MAX_FILE_SIZE / (1024 * 1024)}MB` 
+        });
+      }
+
+      // Security: Validate base64 data size
+      if (fileData.length > MAX_BASE64_SIZE) {
+        console.error(`Upload error: Base64 data too large: ${fileData.length}`);
+        return res.status(400).json({ error: "File data too large" });
+      }
+
+      // Security: Validate base64 format
+      const base64Pattern = /^data:[a-zA-Z0-9+/]+;base64,/;
+      if (!base64Pattern.test(fileData)) {
+        console.error('Upload error: Invalid base64 format');
+        return res.status(400).json({ error: "Invalid file data format" });
+      }
+
+      // Generate unique, sanitized filename
+      const safeFileName = generateUniqueFileName(fileName);
 
       // Determine type category
       let attachmentType = "document";
@@ -1575,10 +1648,12 @@ Guidelines:
         attachmentType = "voice";
       }
 
+      console.log(`Processing upload: ${safeFileName} (${fileType}, ${fileSize} bytes) for user ${userId}`);
+
       // Create attachment record (without messageId yet - will be linked when message is created)
       const attachment = await storage.createAttachment({
         userId,
-        fileName,
+        fileName: safeFileName,
         type: attachmentType,
         mimeType: fileType,
         fileSize: fileSize || 0,
