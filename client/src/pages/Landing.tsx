@@ -16,21 +16,21 @@ export default function Landing() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex flex-col">
-      <header className="border-b border-border/50 backdrop-blur-sm">
-        <div className="container mx-auto px-6 py-4 flex items-center justify-between gap-4">
+    <div className="min-h-screen min-h-[100dvh] bg-gradient-to-br from-background via-background to-primary/5 flex flex-col overflow-x-hidden">
+      <header className="border-b border-border/50 backdrop-blur-sm sticky top-0 z-50 bg-background/80">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2 sm:gap-4">
           <div className="flex items-center gap-2">
-            <Cross className="h-6 w-6 text-primary" />
-            <span className="font-heading font-bold text-xl">SoulSanctuary</span>
+            <Cross className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+            <span className="font-heading font-bold text-lg sm:text-xl">SoulSanctuary</span>
           </div>
-          <Button onClick={handleLogin} data-testid="button-login-header">
+          <Button onClick={handleLogin} className="touch-target" data-testid="button-login-header">
             Sign In
           </Button>
         </div>
       </header>
 
-      <main className="flex-1 container mx-auto px-6 py-12">
-        <div className="max-w-4xl mx-auto text-center mb-12">
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-12">
+        <div className="max-w-4xl mx-auto text-center mb-8 sm:mb-12">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -39,31 +39,31 @@ export default function Landing() {
             <img 
               src={heroImage} 
               alt="SoulSanctuary - Hope, Peace, Comfort" 
-              className="w-full max-w-2xl mx-auto rounded-xl shadow-lg mb-8"
+              className="w-full max-w-full sm:max-w-2xl mx-auto rounded-lg sm:rounded-xl shadow-lg mb-6 sm:mb-8"
             />
-            <h1 className="text-4xl md:text-5xl font-heading font-bold mb-6">
+            <h1 className="text-2xl sm:text-4xl md:text-5xl font-heading font-bold mb-4 sm:mb-6 px-2">
               Find Your Sanctuary
               <span className="text-primary"> Within</span>
             </h1>
-            <p className="text-xl text-muted-foreground mb-4 max-w-2xl mx-auto">
+            <p className="text-base sm:text-xl text-muted-foreground mb-3 sm:mb-4 max-w-2xl mx-auto px-2">
               A Christian AI companion that combines pastoral care with evidence-based therapy. 
               Be lifted up, find healing, and grow in faith and strength.
             </p>
-            <p className="text-lg text-muted-foreground/80 mb-8 max-w-xl mx-auto italic">
+            <p className="text-sm sm:text-lg text-muted-foreground/80 mb-6 sm:mb-8 max-w-xl mx-auto italic px-2">
               "The Lord is close to the brokenhearted and saves those who are crushed in spirit." - Psalm 34:18
             </p>
-            <div className="flex gap-4 justify-center flex-wrap">
-              <Button size="lg" onClick={handleLogin} data-testid="button-login-hero">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4 sm:px-0">
+              <Button size="lg" onClick={handleLogin} className="w-full sm:w-auto touch-target" data-testid="button-login-hero">
                 Begin Your Journey
               </Button>
-              <Button size="lg" variant="outline" onClick={handleGuestAccess} data-testid="button-guest-hero">
+              <Button size="lg" variant="outline" onClick={handleGuestAccess} className="w-full sm:w-auto touch-target" data-testid="button-guest-hero">
                 Try as Guest
               </Button>
             </div>
           </motion.div>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 max-w-5xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
