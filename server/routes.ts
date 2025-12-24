@@ -1559,26 +1559,16 @@ Guidelines:
   });
 
   // Attachment upload and vision analysis endpoint with security enhancements
-  const ALLOWED_MIME_TYPES = [
-    'image/jpeg', 'image/png', 'image/gif', 'image/webp',
-    'application/pdf', 'text/plain',
-    'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-  ];
-  const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.pdf', '.txt', '.doc', '.docx'];
-  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-  const MAX_BASE64_SIZE = 15 * 1024 * 1024; // ~15MB for base64 encoded data
-
-  function sanitizeFileName(name: string): string {
-    return name
-      .replace(/[^a-zA-Z0-9.-]/g, '_')
-      .replace(/_{2,}/g, '_')
-      .substring(0, 100);
-  }
-
-  function getFileExtension(name: string): string {
-    const parts = name.split('.');
-    return parts.length > 1 ? `.${parts.pop()?.toLowerCase()}` : '';
-  }
+  // Configuration imported from shared/config.ts for consistency
+  const { 
+    UPLOAD_CONFIG, 
+    isValidFileType, 
+    isValidFileExtension, 
+    isValidFileSize,
+    sanitizeFileName,
+    getFileExtension,
+    formatFileSize 
+  } = await import("@shared/config");
 
   function generateUniqueFileName(originalName: string): string {
     const timestamp = Date.now();
@@ -1599,33 +1589,33 @@ Guidelines:
         return res.status(400).json({ error: "Missing required fields" });
       }
 
-      // Security: Validate MIME type
-      if (!ALLOWED_MIME_TYPES.includes(fileType)) {
+      // Security: Validate MIME type (using shared config)
+      if (!isValidFileType(fileType)) {
         console.error(`Upload error: Invalid MIME type: ${fileType}`);
         return res.status(400).json({ 
-          error: `File type not allowed. Accepted types: ${ALLOWED_MIME_TYPES.join(', ')}` 
+          error: `File type not allowed. Accepted types: ${UPLOAD_CONFIG.allowedMimeTypes.join(', ')}` 
         });
       }
 
-      // Security: Validate file extension
+      // Security: Validate file extension (using shared config)
       const extension = getFileExtension(fileName);
-      if (!ALLOWED_EXTENSIONS.includes(extension)) {
+      if (!isValidFileExtension(extension)) {
         console.error(`Upload error: Invalid extension: ${extension}`);
         return res.status(400).json({ 
-          error: `File extension not allowed. Accepted: ${ALLOWED_EXTENSIONS.join(', ')}` 
+          error: `File extension not allowed. Accepted: ${UPLOAD_CONFIG.allowedExtensions.join(', ')}` 
         });
       }
 
-      // Security: Validate file size
-      if (fileSize && fileSize > MAX_FILE_SIZE) {
+      // Security: Validate file size (using shared config)
+      if (fileSize && !isValidFileSize(fileSize)) {
         console.error(`Upload error: File too large: ${fileSize} bytes`);
         return res.status(400).json({ 
-          error: `File too large. Maximum size: ${MAX_FILE_SIZE / (1024 * 1024)}MB` 
+          error: `File too large. Maximum size: ${formatFileSize(UPLOAD_CONFIG.maxFileSize)}` 
         });
       }
 
-      // Security: Validate base64 data size
-      if (fileData.length > MAX_BASE64_SIZE) {
+      // Security: Validate base64 data size (using shared config)
+      if (fileData.length > UPLOAD_CONFIG.maxBase64Size) {
         console.error(`Upload error: Base64 data too large: ${fileData.length}`);
         return res.status(400).json({ error: "File data too large" });
       }

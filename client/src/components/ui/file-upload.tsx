@@ -3,6 +3,7 @@ import { Upload, X, FileIcon, ImageIcon, File, AlertCircle, CheckCircle, Loader2
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
+import { UPLOAD_CONFIG } from "@shared/config";
 
 export interface FileUploadConfig {
   maxFileSize?: number;
@@ -35,22 +36,14 @@ interface FileUploadProps {
   compact?: boolean;
 }
 
+// Configuration synced from shared/config.ts for consistency
 const DEFAULT_CONFIG: FileUploadConfig = {
-  maxFileSize: 10 * 1024 * 1024,
-  acceptedTypes: [
-    "image/jpeg",
-    "image/png",
-    "image/gif",
-    "image/webp",
-    "application/pdf",
-    "text/plain",
-    "application/msword",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  ],
-  acceptedExtensions: [".jpg", ".jpeg", ".png", ".gif", ".webp", ".pdf", ".txt", ".doc", ".docx"],
-  maxDimensions: { width: 4096, height: 4096 },
+  maxFileSize: UPLOAD_CONFIG.maxFileSize,
+  acceptedTypes: [...UPLOAD_CONFIG.allowedMimeTypes],
+  acceptedExtensions: [...UPLOAD_CONFIG.allowedExtensions],
+  maxDimensions: UPLOAD_CONFIG.imageDimensions,
   enableCompression: true,
-  compressionQuality: 0.8,
+  compressionQuality: UPLOAD_CONFIG.compressionQuality,
 };
 
 function sanitizeFileName(fileName: string): string {
