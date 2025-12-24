@@ -2043,7 +2043,7 @@ Guidelines:
         return res.status(400).json({ error: "eventType and eventCategory are required" });
       }
       
-      const userId = req.user?.id;
+      const userId = (req.user as any)?.id;
       const event = await storage.createAnalyticsEvent({
         eventType,
         eventCategory,
