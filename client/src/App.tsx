@@ -4,6 +4,8 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
+import { useEffect } from "react";
+import { initDeepLinkHandler } from "@/lib/deepLink";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import Dashboard from "@/pages/Dashboard";
@@ -11,8 +13,6 @@ import SettingsPage from "@/pages/Settings";
 import Docs from "@/pages/Docs";
 import Landing from "@/pages/Landing";
 import PremiumAddons from "@/pages/PremiumAddons";
-// BETA: Stripe payments disabled - using GoFundMe instead
-// import Donate from "@/pages/Donate";
 import Groups from "@/pages/Groups";
 import Analytics from "@/pages/Analytics";
 import ClinicianDashboard from "@/pages/ClinicianDashboard";
@@ -62,6 +62,10 @@ function AppRouter() {
 }
 
 function App() {
+  useEffect(() => {
+    initDeepLinkHandler();
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>

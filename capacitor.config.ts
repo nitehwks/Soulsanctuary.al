@@ -6,8 +6,9 @@ const config: CapacitorConfig = {
   webDir: 'dist/public',
   server: {
     androidScheme: 'https',
-    iosScheme: 'https',
-    hostname: 'soulsanctuary.app'
+    iosScheme: 'capacitor',
+    hostname: 'localhost',
+    allowNavigation: ['*.replit.app', '*.replit.dev', 'soulsanctuary.app', 'replit.com']
   },
   ios: {
     contentInset: 'automatic',
