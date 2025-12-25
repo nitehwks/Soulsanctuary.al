@@ -42,3 +42,8 @@ waitForPort = 5000
 mockupState = "FULLSTACK"
 integrations = ["javascript_openrouter_ai_integrations:1.0.0", "stripe:2.0.0"]
 expertMode = true
+
+[userenv]
+
+[userenv.shared]
+VITE_API_URL = "https://29d8380d-fd95-4ae5-a6a8-3ccc804675d7-00-33wfol16ssd3n.janeway.replit.dev"

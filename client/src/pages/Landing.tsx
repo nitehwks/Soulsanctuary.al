@@ -3,10 +3,24 @@ import { Card } from "@/components/ui/card";
 import { Shield, Brain, Heart, Lock, BookOpen, Sparkles, Cross, HandHeart, AlertTriangle } from "lucide-react";
 import { motion } from "framer-motion";
 import heroImage from "@assets/IMG_0630_1765623983997.jpeg";
+import { isNativeApp } from "@/lib/platform";
 
 export default function Landing() {
-  const handleLogin = () => {
-    window.location.href = "/api/login";
+  const handleLogin = async () => {
+    if (isNativeApp()) {
+      try {
+        const { Browser } = await import('@capacitor/browser');
+        const baseUrl = import.meta.env.VITE_API_URL || 'https://soulsanctuary.app';
+        await Browser.open({ 
+          url: `${baseUrl}/api/login`,
+          presentationStyle: 'popover'
+        });
+      } catch {
+        window.location.href = "/api/login";
+      }
+    } else {
+      window.location.href = "/api/login";
+    }
   };
 
   const handleGuestAccess = () => {
