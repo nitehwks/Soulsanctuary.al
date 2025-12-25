@@ -16,12 +16,6 @@ const config: CapacitorConfig = {
     scrollEnabled: true,
     limitsNavigationsToAppBoundDomains: true
   },
-  android: {
-    backgroundColor: '#1a1625',
-    allowMixedContent: true,
-    captureInput: true,
-    webContentsDebuggingEnabled: false
-  },
   plugins: {
     SplashScreen: {
       launchShowDuration: 2000,

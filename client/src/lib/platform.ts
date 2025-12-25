@@ -5,13 +5,26 @@
  * Ensures functional equivalence between web app and iOS app.
  */
 
-export type Platform = 'web' | 'ios' | 'android';
+export type Platform = 'web' | 'ios' | 'android' | 'electron';
+
+/**
+ * Check if running in Electron desktop app
+ */
+export function isElectron(): boolean {
+  return typeof navigator !== 'undefined' && 
+    navigator.userAgent.toLowerCase().includes('electron');
+}
 
 /**
  * Detect the current platform
  */
 export function getPlatform(): Platform {
   const userAgent = navigator.userAgent.toLowerCase();
+  
+  // Check if running in Electron (desktop app)
+  if (isElectron()) {
+    return 'electron';
+  }
   
   // Check if running in Capacitor native shell
   if ((window as any).Capacitor?.isNativePlatform?.()) {
@@ -35,10 +48,17 @@ export function getPlatform(): Platform {
 }
 
 /**
- * Check if running as a native app (Capacitor)
+ * Check if running as a native app (Capacitor or Electron)
  */
 export function isNativeApp(): boolean {
-  return (window as any).Capacitor?.isNativePlatform?.() === true;
+  return (window as any).Capacitor?.isNativePlatform?.() === true || isElectron();
+}
+
+/**
+ * Check if running as a desktop app (Electron)
+ */
+export function isDesktopApp(): boolean {
+  return isElectron();
 }
 
 /**
@@ -157,10 +177,11 @@ export function applyPlatformClasses(): void {
 }
 
 /**
- * Haptic feedback (works on native iOS)
+ * Haptic feedback (works on native iOS and Android)
  */
 export async function hapticFeedback(style: 'light' | 'medium' | 'heavy' = 'light'): Promise<void> {
-  if (isNativeApp() && getPlatform() === 'ios') {
+  const platform = getPlatform();
+  if ((platform === 'ios' || platform === 'android') && !isElectron()) {
     try {
       const { Haptics, ImpactStyle } = await import('@capacitor/haptics');
       const styleMap = {

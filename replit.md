@@ -35,6 +35,20 @@ The app runs on web browsers and as a native iOS app via **Capacitor.js**. The `
 - **Native integrations**: `hapticFeedback()`, `shareContent()`, `openExternalUrl()`
 - **Capacitor plugins installed**: `@capacitor/haptics`, `@capacitor/share`, `@capacitor/browser`, `@capacitor/status-bar`
 
+### Multi-Platform Build Support
+The app can be built for multiple platforms:
+- **Web**: Runs in any browser (primary deployment via Replit)
+- **iOS**: Native iPhone/iPad app via Capacitor (`ios/` folder)
+- **Android**: Native Android app via Capacitor (`android/` folder)
+- **Desktop (Windows/Mac/Linux)**: Desktop app via Capacitor Electron (`electron/` folder)
+
+Build commands:
+- `npm run build` - Build web assets
+- `npx cap sync` - Sync to all native platforms
+- `npx cap open ios` - Open iOS project in Xcode (requires Mac)
+- `npx cap open android` - Open Android project in Android Studio
+- `npx cap open @capacitor-community/electron` - Run Electron desktop app
+
 ### System Design Choices
 **Data Storage:** The PostgreSQL database schema includes tables for Users, Conversations, Messages, and User Context. Messages include `wasObfuscated` and `originalContent` fields to support PII redaction.
 **Privacy & Security:** Features include AES-256-GCM encryption, tamper-evident audit logging, a privacy dashboard UI, granular consent management, GDPR-compliant data export and deletion, PII redaction for sensitive information, and configurable data retention policies.

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">SoulSanctuary</string>
+    <string name="title_activity_main">SoulSanctuary</string>
+    <string name="package_name">com.soulsanctuary.ai</string>
+    <string name="custom_url_scheme">com.soulsanctuary.ai</string>
+</resources>
