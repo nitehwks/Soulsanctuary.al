@@ -28,6 +28,13 @@ SoulSanctuary operates in two modes: "Chat Mode" for general companionship and "
 **Faith-Based Features** include prayer, scripture meditation, and a scripture library categorized by emotion. Users can disable faith content, after which the AI will pause spiritual offerings for 7 days if declined three times.
 **Evidence-Based Therapy Modules** include techniques from DBT (TIPP, Wise Mind), CBT (Thought Record, Cognitive Distortions), ACT (Values Clarification), Mindfulness (Body Scan, Box Breathing), and Grounding (5-4-3-2-1).
 
+### Platform Parity (Web & iOS)
+The app runs on web browsers and as a native iOS app via **Capacitor.js**. The `client/src/lib/platform.ts` utility provides cross-platform feature detection to ensure functional equivalence:
+- **Platform detection**: `getPlatform()`, `isNativeApp()`, `isWebApp()`, `isMobile()`
+- **Feature detection**: `platformFeatures.speechRecognition()`, `.share()`, `.vibration()`, etc.
+- **Native integrations**: `hapticFeedback()`, `shareContent()`, `openExternalUrl()`
+- **Capacitor plugins installed**: `@capacitor/haptics`, `@capacitor/share`, `@capacitor/browser`, `@capacitor/status-bar`
+
 ### System Design Choices
 **Data Storage:** The PostgreSQL database schema includes tables for Users, Conversations, Messages, and User Context. Messages include `wasObfuscated` and `originalContent` fields to support PII redaction.
 **Privacy & Security:** Features include AES-256-GCM encryption, tamper-evident audit logging, a privacy dashboard UI, granular consent management, GDPR-compliant data export and deletion, PII redaction for sensitive information, and configurable data retention policies.
