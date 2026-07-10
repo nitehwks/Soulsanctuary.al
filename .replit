@@ -45,5 +45,6 @@ expertMode = true
 
 [userenv]
 
-[userenv.shared]
-VITE_API_URL = "https://29d8380d-fd95-4ae5-a6a8-3ccc804675d7-00-33wfol16ssd3n.janeway.replit.dev"
+# Shared environment variables for this Repl are set via Replit Secrets.
+# Do not hardcode deployment URLs here; the frontend uses window.location.origin
+# for same-origin API calls and VITE_API_URL is injected at build time for native apps.
