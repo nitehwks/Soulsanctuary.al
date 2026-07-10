@@ -12,7 +12,8 @@
     "db:push": "drizzle-kit push",
     "mobile:sync": "npm run build && npx cap sync",
     "mobile:ios": "npm run mobile:sync && npx cap open ios",
-    "mobile:android": "npm run mobile:sync && npx cap open android"
+    "mobile:android": "npm run mobile:sync && npx cap open android",
+    "replit": "npm run build && npm run start"
   },
   "dependencies": {
     "@capacitor-community/electron": "^5.0.1",

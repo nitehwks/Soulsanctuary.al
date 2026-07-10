@@ -2,6 +2,8 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+import fs from "fs";
+import path from "path";
 
 const app = express();
 const httpServer = createServer(app);
@@ -131,9 +133,15 @@ app.use((req, res, next) => {
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
-  if (process.env.NODE_ENV === "production") {
+  const distPath = path.resolve(__dirname, "public");
+  if (process.env.NODE_ENV === "production" && fs.existsSync(distPath)) {
     serveStatic(app);
   } else {
+    if (process.env.NODE_ENV === "production") {
+      console.warn(
+        `[server] Production mode requested but build directory ${distPath} not found; falling back to Vite dev server.`,
+      );
+    }
     const { setupVite } = await import("./vite");
     await setupVite(httpServer, app);
   }
