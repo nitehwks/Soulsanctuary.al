@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "FxHM8vJyCFiVNcMRBu8cr"
+uri = "file://attached_assets/generated_videos/soulsanctuary_promo.mp4"
+type = "video"
+title = "SoulSanctuary Animated Promo Video"
