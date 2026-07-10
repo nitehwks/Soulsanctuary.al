@@ -12,23 +12,41 @@ declare module "http" {
   }
 }
 
-// Allow Capacitor app origins and local web clients to reach the backend.
+// Allow Capacitor app origins, local web clients, and Replit deployments.
 const allowedOrigins = new Set([
   "capacitor://localhost",
   "http://localhost",
   "https://localhost",
   `http://localhost:${process.env.PORT || 5001}`,
   `https://localhost:${process.env.PORT || 5001}`,
-  `http://100.124.42.67:${process.env.PORT || 5001}`,
 ]);
+
+// Optional exact frontend URL (e.g. your Replit deployment URL).
+if (process.env.FRONTEND_URL) {
+  try {
+    allowedOrigins.add(new URL(process.env.FRONTEND_URL).origin);
+  } catch {
+    // ignore invalid FRONTEND_URL
+  }
+}
+
+const allowedOriginPatterns = [
+  /^https:\/\/[a-z0-9-]+\.[a-z0-9-]+\.replit\.dev$/i,
+  /^https:\/\/[a-z0-9-]+\.replit\.app$/i,
+];
+
+function isAllowedOrigin(origin: string): boolean {
+  if (allowedOrigins.has(origin)) return true;
+  return allowedOriginPatterns.some((pattern) => pattern.test(origin));
+}
 
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   const allowAnyOrigin = process.env.NODE_ENV !== "production";
-  const isAllowedOrigin =
-    allowAnyOrigin || !origin || allowedOrigins.has(origin);
+  const originAllowed =
+    allowAnyOrigin || !origin || isAllowedOrigin(origin);
 
-  if (origin && isAllowedOrigin) {
+  if (origin && originAllowed) {
     res.setHeader("Access-Control-Allow-Origin", origin);
     res.setHeader("Access-Control-Allow-Credentials", "true");
     res.setHeader(

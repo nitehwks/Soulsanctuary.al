@@ -21,7 +21,6 @@ const allowedRedirectOrigins = [
   "https://localhost",
   "http://localhost:5001",
   "https://localhost:5001",
-  "http://100.124.42.67:5001",
 ];
 
 if (clerkSignInRedirectUrl) {

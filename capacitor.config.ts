@@ -13,7 +13,6 @@ const config: CapacitorConfig = {
       '*.replit.dev',
       'soulsanctuary.app',
       'replit.com',
-      '100.124.42.67',
       '*.clerk.accounts.dev',
       '*.clerk.dev',
       'accounts.google.com',
