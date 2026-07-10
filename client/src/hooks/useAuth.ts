@@ -1,5 +1,6 @@
 import { useUser, useAuth as useClerkAuth } from "@clerk/clerk-react";
 import { useEffect, useState } from "react";
+import { getApiUrl } from "@/lib/queryClient";
 
 interface GuestUser {
   id: string;
@@ -52,7 +53,7 @@ export function useAuth() {
     if (isClerkConfigured) return;
 
     let cancelled = false;
-    fetch("/api/dev-login", { method: "POST", credentials: "include" })
+    fetch(getApiUrl("/api/dev-login"), { method: "POST", credentials: "include" })
       .then((res) => res.json())
       .then((data) => {
         if (!cancelled && data.token) {
@@ -129,7 +130,7 @@ export function useAuth() {
  */
 export async function signInWithLocalAccount(): Promise<void> {
   try {
-    const res = await fetch("/api/dev-login", { method: "POST", credentials: "include" });
+    const res = await fetch(getApiUrl("/api/dev-login"), { method: "POST", credentials: "include" });
     const data = await res.json();
     if (data.token) {
       localStorage.setItem("clerkSessionToken", data.token);
