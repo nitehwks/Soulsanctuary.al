@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import type { User } from "@shared/schema";
+import { getApiUrl } from "@/lib/queryClient";
 
 interface UserContextType {
   currentUser: User | null;
@@ -16,7 +17,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const storedUserId = localStorage.getItem("trusthub_user_id");
     if (storedUserId) {
-      fetch(`/api/users/${storedUserId}`)
+      fetch(getApiUrl(`/api/users/${storedUserId}`))
         .then((res) => {
           if (res.ok) return res.json();
           throw new Error("User not found");

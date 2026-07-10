@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
+import { getApiUrl } from "@/lib/queryClient";
 
 interface TopicGroup {
   category: string;
@@ -64,7 +65,7 @@ export function KnowledgePanel({ isOpen, onClose }: KnowledgePanelProps) {
     
     setLoading(true);
     try {
-      const response = await fetch(`/api/knowledge/${userId}`);
+      const response = await fetch(getApiUrl(`/api/knowledge/${userId}`));
       if (response.ok) {
         const result = await response.json();
         setData(result);

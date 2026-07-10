@@ -23,7 +23,7 @@ export const APP_CONFIG = {
 // SERVER CONFIGURATION
 // =============================================================================
 export const SERVER_CONFIG = {
-  port: 5000,
+  port: 5001,
   host: "0.0.0.0",
   environment: process.env.NODE_ENV || "development",
 } as const;

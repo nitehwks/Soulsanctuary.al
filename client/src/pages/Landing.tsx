@@ -3,30 +3,21 @@ import { Card } from "@/components/ui/card";
 import { Shield, Brain, Heart, Lock, BookOpen, Sparkles, Cross, HandHeart, AlertTriangle } from "lucide-react";
 import { motion } from "framer-motion";
 import heroImage from "@assets/IMG_0630_1765623983997.jpeg";
-import { isNativeApp } from "@/lib/platform";
+import { signInWithLocalAccount } from "@/hooks/useAuth";
 
 export default function Landing() {
-  const handleLogin = async () => {
-    if (isNativeApp()) {
-      try {
-        const { Browser } = await import('@capacitor/browser');
-        const baseUrl = import.meta.env.VITE_API_URL || 'https://soulsanctuary.app';
-        await Browser.open({ 
-          url: `${baseUrl}/api/login`,
-          presentationStyle: 'popover'
-        });
-      } catch {
-        window.location.href = "/api/login";
-      }
-    } else {
-      window.location.href = "/api/login";
-    }
+  const handleLogin = () => {
+    window.location.href = "/sign-in";
   };
 
   const handleGuestAccess = () => {
     localStorage.setItem('guestMode', 'true');
     localStorage.setItem('guestUserId', 'guest-' + Date.now());
     window.location.reload();
+  };
+
+  const handleLocalAccount = () => {
+    signInWithLocalAccount();
   };
 
   return (
@@ -66,12 +57,15 @@ export default function Landing() {
             <p className="text-sm sm:text-lg text-muted-foreground/80 mb-6 sm:mb-8 max-w-xl mx-auto italic px-2">
               "The Lord is close to the brokenhearted and saves those who are crushed in spirit." - Psalm 34:18
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4 sm:px-0">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4 sm:px-0 flex-wrap">
               <Button size="lg" onClick={handleLogin} className="w-full sm:w-auto touch-target" data-testid="button-login-hero">
                 Begin Your Journey
               </Button>
               <Button size="lg" variant="outline" onClick={handleGuestAccess} className="w-full sm:w-auto touch-target" data-testid="button-guest-hero">
                 Try as Guest
+              </Button>
+              <Button size="lg" variant="secondary" onClick={handleLocalAccount} className="w-full sm:w-auto touch-target" data-testid="button-local-hero">
+                Use Local Account
               </Button>
             </div>
           </motion.div>
@@ -236,6 +230,9 @@ export default function Landing() {
             </Button>
             <Button size="lg" variant="outline" onClick={handleGuestAccess} data-testid="button-guest-bottom">
               Try as Guest
+            </Button>
+            <Button size="lg" variant="secondary" onClick={handleLocalAccount} data-testid="button-local-bottom">
+              Use Local Account
             </Button>
           </div>
         </div>

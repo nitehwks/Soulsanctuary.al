@@ -206,7 +206,7 @@ All platforms use the same backend API. Set these in your deployment:
 ## Testing on Each Platform
 
 ### Web
-- Visit your Replit URL or localhost:5000
+- Visit your Replit URL or localhost:5001
 
 ### iOS Simulator
 ```bash

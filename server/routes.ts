@@ -30,7 +30,7 @@ import { generateSmartReplies, type SmartReply } from "./lib/smart-replies";
 import { createAndStoreInsight, getAggregatedInsights } from "./lib/psychological-analyzer";
 import { updateUserProfile, getProfileSummary, generateCoachingPlan, getEnhancedProfileContext } from "./lib/profile-aggregator";
 import { processMessageForLearning } from "./lib/contextualLearning";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupAuth, isAuthenticated } from "./clerkAuth";
 import OpenAI from "openai";
 
 const openai = new OpenAI({
@@ -211,8 +211,7 @@ export async function registerRoutes(
 
   app.get("/api/auth/user", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
+      const user = req.user || (await storage.getUser(req.userId));
       res.json(user);
     } catch (error: any) {
       console.error("Error fetching user:", error);
@@ -791,7 +790,7 @@ Guidelines:
       ];
       
       const secondaryModels = [
-        "anthropic/claude-3.5-haiku",
+        "anthropic/claude-4-sonnet",
         "mistralai/mistral-nemo",
         "nousresearch/hermes-3-llama-3.1-405b:free"
       ];
@@ -2033,7 +2032,7 @@ Guidelines:
         return res.status(400).json({ error: "eventType and eventCategory are required" });
       }
       
-      const userId = (req.user as any)?.id;
+      const userId = req.userId;
       const event = await storage.createAnalyticsEvent({
         eventType,
         eventCategory,
@@ -2079,7 +2078,7 @@ Guidelines:
   // Create clinician session
   app.post("/api/clinician/sessions", isAuthenticated, async (req: any, res) => {
     try {
-      const clinicianId = req.user.claims.sub;
+      const clinicianId = req.userId;
       const { anonPatientHash, sessionType, scheduledAt, sessionNotes } = req.body;
       
       if (!anonPatientHash) {
@@ -2105,7 +2104,7 @@ Guidelines:
   // Get clinician's sessions
   app.get("/api/clinician/sessions", isAuthenticated, async (req: any, res) => {
     try {
-      const clinicianId = req.user.claims.sub;
+      const clinicianId = req.userId;
       const sessions = await storage.getClinicianSessions(clinicianId);
       res.json(sessions);
     } catch (error: any) {
@@ -2117,7 +2116,7 @@ Guidelines:
   // Get clinician session stats
   app.get("/api/clinician/stats", isAuthenticated, async (req: any, res) => {
     try {
-      const clinicianId = req.user.claims.sub;
+      const clinicianId = req.userId;
       const stats = await storage.getClinicianSessionStats(clinicianId);
       res.json(stats);
     } catch (error: any) {
@@ -2130,7 +2129,7 @@ Guidelines:
   app.get("/api/clinician/sessions/:id", isAuthenticated, async (req: any, res) => {
     try {
       const sessionId = parseInt(req.params.id);
-      const clinicianId = req.user.claims.sub;
+      const clinicianId = req.userId;
       
       if (isNaN(sessionId)) {
         return res.status(400).json({ error: "Invalid session ID" });
@@ -2157,7 +2156,7 @@ Guidelines:
   app.patch("/api/clinician/sessions/:id", isAuthenticated, async (req: any, res) => {
     try {
       const sessionId = parseInt(req.params.id);
-      const clinicianId = req.user.claims.sub;
+      const clinicianId = req.userId;
       const updates = req.body;
       
       if (isNaN(sessionId)) {

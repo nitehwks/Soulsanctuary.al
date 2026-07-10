@@ -3,6 +3,7 @@ import { MessageSquare, Plus, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { getApiUrl } from "@/lib/queryClient";
 import { formatDistanceToNow } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -41,7 +42,7 @@ export function ConversationList({
     const fetchConversations = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`/api/conversations?userId=${userId}&mode=${mode}`);
+        const response = await fetch(getApiUrl(`/api/conversations?userId=${userId}&mode=${mode}`));
         if (response.ok) {
           const data = await response.json();
           setConversations(data);

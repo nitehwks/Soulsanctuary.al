@@ -9,6 +9,8 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useVoiceChat } from "@/hooks/useVoiceChat";
+import { useKeyboard } from "@/hooks/useKeyboard";
+import { getApiUrl } from "@/lib/queryClient";
 import { ConversationList } from "./ConversationList";
 import { WellnessPanel } from "./WellnessPanel";
 import { PrivacyDashboard } from "./PrivacyDashboard";
@@ -62,8 +64,10 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
   const recognitionRef = useRef<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  const messageInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { user, isLoading: isUserLoading } = useAuth();
+  const { height: keyboardHeight } = useKeyboard();
   const userId = user?.id;
 
   const handleVoiceError = useCallback((error: string) => {
@@ -125,7 +129,7 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
     if (!userId) return;
     
     try {
-      const response = await fetch('/api/conversations', {
+      const response = await fetch(getApiUrl('/api/conversations'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -152,7 +156,7 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
   const loadConversation = async (id: number) => {
     try {
       setConversationId(id);
-      const messagesResponse = await fetch(`/api/messages/${id}`);
+      const messagesResponse = await fetch(getApiUrl(`/api/messages/${id}`));
       if (messagesResponse.ok) {
         const loadedMessages = await messagesResponse.json();
         setMessages(loadedMessages);
@@ -175,7 +179,7 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
         setMessages([]);
         setConversationId(null);
         
-        const response = await fetch(`/api/conversations?userId=${userId}&mode=${mode}`);
+        const response = await fetch(getApiUrl(`/api/conversations?userId=${userId}&mode=${mode}`));
         if (response.ok) {
           const conversations = await response.json();
           if (conversations.length > 0) {
@@ -200,7 +204,7 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
     
     const checkCoachingEligibility = async () => {
       try {
-        const response = await fetch(`/api/coaching/eligibility/${userId}`);
+        const response = await fetch(getApiUrl(`/api/coaching/eligibility/${userId}`));
         if (response.ok) {
           const data = await response.json();
           setCoachingEligible(data.eligible);
@@ -218,7 +222,7 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
     
     setProfileLoading(true);
     try {
-      const response = await fetch(`/api/coaching/profile/${userId}`);
+      const response = await fetch(getApiUrl(`/api/coaching/profile/${userId}`));
       if (response.ok) {
         const data = await response.json();
         setProfileData(data);
@@ -348,7 +352,7 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
             });
           }
 
-          const uploadResponse = await fetch('/api/attachments/upload', {
+          const uploadResponse = await fetch(getApiUrl('/api/attachments/upload'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -379,7 +383,7 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
         }
       }
 
-      const response = await fetch('/api/chat', {
+      const response = await fetch(getApiUrl('/api/chat'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -670,8 +674,11 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
           </div>
         </ScrollArea>
 
-        <div className="p-4 bg-background/80 backdrop-blur-sm sticky bottom-0 z-10 border-t border-border/40">
-          <div className="max-w-3xl mx-auto">
+        <div
+          className="bg-background/80 backdrop-blur-sm z-10 border-t border-border/40 transition-all duration-200 keyboard-pad"
+          style={{ ["--keyboard-height" as any]: `${keyboardHeight}px` }}
+        >
+          <div className="max-w-3xl mx-auto px-4 pt-4">
             {/* Smart Reply Suggestions */}
             <AnimatePresence>
               {smartReplies.length > 0 && !isProcessing && (
@@ -793,14 +800,25 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
                 {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
               </Button>
               
-              <Input 
+              <Input
+                ref={messageInputRef}
                 value={input}
                 onChange={(e) => {
                   setInput(e.target.value);
                   if (e.target.value.length > 0) setSmartReplies([]);
                 }}
+                onFocus={() => {
+                  // Ensure the input stays visible when the soft keyboard opens.
+                  setTimeout(() => {
+                    messageInputRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                    const viewport = scrollRef.current?.querySelector<HTMLDivElement>("[data-radix-scroll-area-viewport]");
+                    if (viewport) {
+                      viewport.scrollTo({ top: viewport.scrollHeight, behavior: "smooth" });
+                    }
+                  }, 300);
+                }}
                 placeholder={selectedFile ? "Add a message about this file..." : "Ask anything..."}
-                className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent shadow-none px-2 font-medium"
+                className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent shadow-none px-2 font-medium flex-1 min-w-0"
                 data-testid="input-message"
               />
               

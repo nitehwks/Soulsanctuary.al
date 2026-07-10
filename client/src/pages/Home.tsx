@@ -13,6 +13,7 @@ import { Link } from "wouter";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { getApiUrl } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -33,7 +34,7 @@ export default function Home() {
   useEffect(() => {
     const checkDbStatus = async () => {
       try {
-        const response = await fetch('/api/users');
+        const response = await fetch(getApiUrl('/api/users'));
         setDbStatus(response.ok ? "connected" : "disconnected");
       } catch {
         setDbStatus("disconnected");

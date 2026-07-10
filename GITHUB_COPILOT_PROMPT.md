@@ -444,7 +444,7 @@ npm run db:push
 npm run dev
 ```
 
-The app will run on port 5000 by default.
+The app will run on port 5001 by default.
 
 ---
 

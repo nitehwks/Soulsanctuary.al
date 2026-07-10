@@ -19,8 +19,13 @@ export async function initDeepLinkHandler(): Promise<void> {
     App.addListener('appUrlOpen', (event) => {
       const url = new URL(event.url);
       
-      // Handle OAuth callback
-      if (url.pathname === '/api/callback' || url.pathname.startsWith('/auth')) {
+      // Handle OAuth callback from the production backend
+      // The backend redirects to soulsanctuary://auth-callback after Replit OIDC.
+      if (
+        url.pathname === '/api/callback' ||
+        url.pathname.startsWith('/auth') ||
+        url.host === 'auth-callback'
+      ) {
         // The OAuth flow completed - reload to pick up the session
         window.location.href = '/';
       }
@@ -30,7 +35,11 @@ export async function initDeepLinkHandler(): Promise<void> {
     const urlOpen = await App.getLaunchUrl();
     if (urlOpen?.url) {
       const url = new URL(urlOpen.url);
-      if (url.pathname === '/api/callback') {
+      if (
+        url.pathname === '/api/callback' ||
+        url.pathname.startsWith('/auth') ||
+        url.host === 'auth-callback'
+      ) {
         window.location.href = '/';
       }
     }

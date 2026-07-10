@@ -412,6 +412,14 @@
   }
 }
 
+.keyboard-pad {
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom) + var(--keyboard-height, 0px));
+}
+
+.keyboard-pad-min {
+  padding-bottom: calc(env(safe-area-inset-bottom) + var(--keyboard-height, 0px));
+}
+
 @media (orientation: landscape) and (max-height: 500px) {
   .landscape-compact {
     padding-top: 0.5rem;

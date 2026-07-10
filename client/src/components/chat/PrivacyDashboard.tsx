@@ -21,7 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, getApiUrl } from "@/lib/queryClient";
 
 interface PrivacyDashboardProps {
   isOpen: boolean;
@@ -75,7 +75,7 @@ export function PrivacyDashboard({ isOpen, onClose, userId }: PrivacyDashboardPr
   const { data: summary, isLoading } = useQuery<PrivacySummary>({
     queryKey: ["/api/privacy/summary", userId],
     queryFn: async () => {
-      const res = await fetch(`/api/privacy/summary/${userId}`);
+      const res = await fetch(getApiUrl(`/api/privacy/summary/${userId}`));
       if (!res.ok) throw new Error("Failed to fetch privacy summary");
       return res.json();
     },

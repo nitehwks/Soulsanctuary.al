@@ -19,7 +19,7 @@ export function Sidebar() {
   ];
 
   return (
-    <div className="w-16 border-r border-border bg-card flex flex-col h-screen items-center py-4 z-20 shadow-sm">
+    <div className="hidden md:flex w-16 border-r border-border bg-card flex-col h-full items-center py-4 z-20 shadow-sm">
       <div className="mb-8 p-2 rounded-xl bg-primary/10 text-primary">
         <Shield className="h-6 w-6" />
       </div>

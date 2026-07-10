@@ -12,6 +12,44 @@ declare module "http" {
   }
 }
 
+// Allow Capacitor app origins and local web clients to reach the backend.
+const allowedOrigins = new Set([
+  "capacitor://localhost",
+  "http://localhost",
+  "https://localhost",
+  `http://localhost:${process.env.PORT || 5001}`,
+  `https://localhost:${process.env.PORT || 5001}`,
+  `http://100.124.42.67:${process.env.PORT || 5001}`,
+]);
+
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  const allowAnyOrigin = process.env.NODE_ENV !== "production";
+  const isAllowedOrigin =
+    allowAnyOrigin || !origin || allowedOrigins.has(origin);
+
+  if (origin && isAllowedOrigin) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader(
+      "Access-Control-Allow-Methods",
+      "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+    );
+    res.setHeader(
+      "Access-Control-Allow-Headers",
+      "Content-Type, Authorization",
+    );
+  }
+  if (req.method === "OPTIONS") {
+    if (origin && !isAllowedOrigin) {
+      res.sendStatus(403);
+      return;
+    }
+    res.sendStatus(204);
+    return;
+  }
+  next();
+});
 
 // Now apply JSON middleware for all other routes
 app.use(
@@ -86,12 +124,11 @@ app.use((req, res, next) => {
   // Other ports are firewalled. Default to 5000 if not specified.
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
-  const port = parseInt(process.env.PORT || "5000", 10);
+  const port = parseInt(process.env.PORT || "5001", 10);
   httpServer.listen(
     {
       port,
       host: "0.0.0.0",
-      reusePort: true,
     },
     () => {
       log(`serving on port ${port}`);

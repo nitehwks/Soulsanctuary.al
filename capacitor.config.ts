@@ -8,7 +8,17 @@ const config: CapacitorConfig = {
     androidScheme: 'https',
     iosScheme: 'capacitor',
     hostname: 'localhost',
-    allowNavigation: ['*.replit.app', '*.replit.dev', 'soulsanctuary.app', 'replit.com']
+    allowNavigation: [
+      '*.replit.app',
+      '*.replit.dev',
+      'soulsanctuary.app',
+      'replit.com',
+      '100.124.42.67',
+      '*.clerk.accounts.dev',
+      '*.clerk.dev',
+      'accounts.google.com',
+      'appleid.apple.com'
+    ]
   },
   ios: {
     contentInset: 'automatic',
@@ -41,7 +51,7 @@ const config: CapacitorConfig = {
       backgroundColor: '#1a1625'
     },
     CapacitorHttp: {
-      enabled: true
+      enabled: false
     }
   }
 };
