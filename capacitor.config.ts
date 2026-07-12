@@ -23,8 +23,7 @@ const config: CapacitorConfig = {
     contentInset: 'automatic',
     preferredContentMode: 'mobile',
     allowsLinkPreview: true,
-    scrollEnabled: true,
-    limitsNavigationsToAppBoundDomains: true
+    scrollEnabled: true
   },
   android: {
     backgroundColor: '#1a1625',
