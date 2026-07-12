@@ -4,15 +4,17 @@ import { isNativeApp } from "./platform";
 /**
  * Resolve an API path to a full URL.
  * - On web: keep relative paths so same-origin cookies work.
- * - In native apps: prepend VITE_API_URL so calls reach the remote backend.
+ * - In native apps: use the runtime config API_URL if available, otherwise
+ *   fall back to VITE_API_URL so calls reach the remote backend.
  */
 export function getApiUrl(path: string): string {
   if (!isNativeApp()) return path;
 
-  const baseUrl = import.meta.env.VITE_API_URL as string | undefined;
+  const runtimeConfig = (typeof window !== "undefined" && (window as any).SOULSANCTUARY_CONFIG) || {};
+  const baseUrl = (runtimeConfig.API_URL as string | undefined) || (import.meta.env.VITE_API_URL as string | undefined);
   if (!baseUrl) {
     // eslint-disable-next-line no-console
-    console.warn("[getApiUrl] VITE_API_URL is not set for native app");
+    console.warn("[getApiUrl] No API_URL configured for native app");
     return path;
   }
 

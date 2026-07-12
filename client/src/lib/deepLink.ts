@@ -55,19 +55,29 @@ export async function initDeepLinkHandler(): Promise<void> {
 }
 
 /**
+ * Get the backend base URL for the current platform.
+ * - Native apps use the runtime config API_URL or VITE_API_URL.
+ * - Web uses the current origin.
+ */
+function getBaseUrl(): string {
+  const runtimeConfig = (typeof window !== "undefined" && (window as any).SOULSANCTUARY_CONFIG) || {};
+  const apiUrl = (runtimeConfig.API_URL as string | undefined) || (import.meta.env.VITE_API_URL as string | undefined);
+  if (apiUrl) return apiUrl.replace(/\/$/, "");
+  return window.location.origin;
+}
+
+/**
  * Get the appropriate login URL for the current platform
  */
 export function getLoginUrl(): string {
-  const baseUrl = import.meta.env.VITE_API_URL || window.location.origin;
-  return `${baseUrl}/api/login`;
+  return `${getBaseUrl()}/api/login`;
 }
 
 /**
  * Get the appropriate callback URL for OAuth
  */
 export function getCallbackUrl(): string {
-  const baseUrl = import.meta.env.VITE_API_URL || window.location.origin;
-  return `${baseUrl}/api/callback`;
+  return `${getBaseUrl()}/api/callback`;
 }
 
 /**
