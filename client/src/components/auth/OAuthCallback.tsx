@@ -14,7 +14,17 @@ export function OAuthCallback() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!clerk) return;
+    console.log("[OAuthCallback] mounted. location:", window.location.href);
+    if (!clerk) {
+      console.warn("[OAuthCallback] Clerk instance not available yet");
+      return;
+    }
+
+    if (!window.location.search.includes("__clerk_status")) {
+      console.error("[OAuthCallback] Missing Clerk callback params");
+      setError("Missing sign-in information. Please try again.");
+      return;
+    }
 
     // Clerk will read __clerk_status and other params from the current URL.
     clerk
@@ -22,13 +32,14 @@ export function OAuthCallback() {
         redirectUrl: window.location.href,
       })
       .then(() => {
+        console.log("[OAuthCallback] handleRedirectCallback succeeded");
         // Give Clerk a moment to update auth state, then send the user home.
         setTimeout(() => {
           window.location.href = "/";
         }, 100);
       })
       .catch((err) => {
-        console.error("OAuth callback failed:", err);
+        console.error("[OAuthCallback] handleRedirectCallback failed:", err);
         setError("We couldn't complete the sign-in. Please try again.");
       });
   }, [clerk]);

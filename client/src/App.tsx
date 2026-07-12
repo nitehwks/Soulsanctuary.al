@@ -22,6 +22,7 @@ import ClinicianDashboard from "@/pages/ClinicianDashboard";
 import FeatureFlags from "@/pages/FeatureFlags";
 import Sales from "@/pages/Sales";
 import { OAuthCallback } from "@/components/auth/OAuthCallback";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Loader2 } from "lucide-react";
 
 const clerkKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined;
@@ -134,7 +135,9 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
-        <AppRouter />
+        <ErrorBoundary>
+          <AppRouter />
+        </ErrorBoundary>
       </TooltipProvider>
     </QueryClientProvider>
   );

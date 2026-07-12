@@ -33,6 +33,7 @@ export async function initDeepLinkHandler(): Promise<void> {
     
     // Listen for app URL open events (deep links)
     App.addListener('appUrlOpen', (event) => {
+      console.log('[DeepLink] appUrlOpen:', event.url);
       const url = new URL(event.url);
 
       if (isOAuthCallbackUrl(url)) {
@@ -40,16 +41,21 @@ export async function initDeepLinkHandler(): Promise<void> {
         // complete the sign-in. Stripping them (e.g. reloading to '/') is what
         // causes the white screen after Apple/Google authentication.
         const redirectPath = `/oauth/callback${url.search}${url.hash}`;
+        console.log('[DeepLink] redirecting to:', redirectPath);
         window.location.href = redirectPath;
+      } else {
+        console.log('[DeepLink] not an OAuth callback, ignoring');
       }
     });
 
     // Check if app was opened with a URL
     const urlOpen = await App.getLaunchUrl();
     if (urlOpen?.url) {
+      console.log('[DeepLink] launchUrl:', urlOpen.url);
       const url = new URL(urlOpen.url);
       if (isOAuthCallbackUrl(url)) {
         const redirectPath = `/oauth/callback${url.search}${url.hash}`;
+        console.log('[DeepLink] launch redirect to:', redirectPath);
         window.location.href = redirectPath;
       }
     }
