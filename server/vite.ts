@@ -66,7 +66,11 @@ export async function setupVite(server: Server, app: Express) {
         `src="/src/main.tsx?v=${nanoid()}"`,
       );
       const page = await vite.transformIndexHtml(url, template);
-      const status = clientRoutes.has(pathname) ? 200 : 404;
+      const isSpaRoute =
+        clientRoutes.has(pathname) ||
+        pathname.startsWith("/sign-in/") ||
+        pathname.startsWith("/sign-up/");
+      const status = isSpaRoute ? 200 : 404;
       res.status(status).set({ "Content-Type": "text/html" }).end(page);
     } catch (e) {
       vite.ssrFixStacktrace(e as Error);

@@ -29,7 +29,11 @@ export function serveStatic(app: Express) {
   ]);
   app.use("*", (req, res) => {
     const pathname = req.path;
-    const status = clientRoutes.has(pathname) ? 200 : 404;
+    const isSpaRoute =
+      clientRoutes.has(pathname) ||
+      pathname.startsWith("/sign-in/") ||
+      pathname.startsWith("/sign-up/");
+    const status = isSpaRoute ? 200 : 404;
     res.status(status).sendFile(path.resolve(distPath, "index.html"));
   });
 }

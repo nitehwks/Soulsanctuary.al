@@ -56,7 +56,7 @@ function AppRouter() {
   if (!isAuthenticated) {
     return (
       <Switch>
-        <Route path="/sign-in">
+        <Route path="/sign-in/:rest*">
           <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4 gap-4">
             <SignIn
               routing="path"
@@ -71,7 +71,7 @@ function AppRouter() {
             </Button>
           </div>
         </Route>
-        <Route path="/sign-up">
+        <Route path="/sign-up/:rest*">
           <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4 gap-4">
             <SignUp
               routing="path"
