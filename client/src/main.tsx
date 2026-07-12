@@ -22,9 +22,12 @@ const allowedRedirectOrigins = [
   "http://localhost:5001",
   "https://localhost:5001",
   // iOS/Android custom URL scheme for Clerk native OAuth callbacks.
+  // Clerk is picky about the origin format, so include several variations.
   "com.soulsanctuary.ai",
+  "com.soulsanctuary.ai://",
   "com.soulsanctuary.ai://oauth",
   "com.soulsanctuary.ai://localhost",
+  "com.soulsanctuary.ai://oauth/callback",
 ];
 
 if (clerkSignInRedirectUrl) {
