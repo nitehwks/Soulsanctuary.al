@@ -16,6 +16,13 @@ import {
 } from "./lib/coaching-analyzer";
 import { logConsentChange, logDataExport, logDataModification } from "./lib/audit-logger";
 import { detectCrisis, detectTherapyTrigger, formatCrisisResources, CrisisAssessment } from "./lib/crisis-detection";
+import {
+  scanForCrisis,
+  generateSafetyWrapper,
+  generateElevatedDistressResponse,
+  isHighRiskOrImminent,
+  type CrisisScanResult,
+} from "./lib/crisis-detection-service";
 import { selectTherapyModule, formatTherapyExercise, THERAPY_EXERCISES, getRelevantScripture } from "./lib/therapy-modules";
 import { wrapResponseWithSafety, generateDisclaimer, generateConsentText, formatPastoralGuidanceContext } from "./lib/safety-wrapper";
 import { 
@@ -369,13 +376,83 @@ export async function registerRoutes(
       }
 
       const fullContent = messageContent + attachmentContext;
+
+      // CRISIS SCAN — HIGHEST PRIORITY: must happen before any storage,
+      // learning, or AI processing so we can avoid storing crisis content
+      // in memory and bypass the AI for high-risk/imminent situations.
+      const crisisScan = scanForCrisis(fullContent);
+      const isCrisis = isHighRiskOrImminent(crisisScan);
+
+      if (isCrisis) {
+        // Store the user's message flagged as crisis content.
+        const redactionResult = redactPII(fullContent);
+        const userMessage = await storage.createMessage({
+          conversationId,
+          role: "user",
+          content: redactionResult.redactedContent,
+          originalContent: redactionResult.wasRedacted ? fullContent : null,
+          wasObfuscated: redactionResult.wasRedacted,
+          crisisDetected: true,
+          crisisLevel: crisisScan.level,
+          requiresSafetyWrapper: true,
+          crisisTriggers: crisisScan.triggeredBy,
+        });
+
+        if (attachment && attachment.id) {
+          await storage.linkAttachmentToMessage(attachment.id, userMessage.id);
+        }
+
+        // Log crisis event for admin awareness. Do NOT include the raw message content.
+        try {
+          await storage.createAnalyticsEvent({
+            eventType: "crisis_detected",
+            eventCategory: "safety",
+            anonUserHash: userId,
+            metadata: {
+              level: crisisScan.level,
+              triggeredBy: crisisScan.triggeredBy,
+              conversationId,
+            },
+          });
+        } catch (logError) {
+          console.error("Failed to log crisis event:", logError);
+        }
+
+        console.log(
+          `Crisis detected for user ${userId}: level=${crisisScan.level}, triggers=${crisisScan.triggeredBy.join(", ")}`
+        );
+
+        // Return safety wrapper. Do NOT call the AI, do NOT extract facts,
+        // do NOT run contextual learning, and do NOT store psychological insights.
+        const safetyContent = generateSafetyWrapper(crisisScan.level as 2 | 3);
+        const aiMessage = await storage.createMessage({
+          conversationId,
+          role: "assistant",
+          content: safetyContent,
+          crisisDetected: true,
+          crisisLevel: crisisScan.level,
+          requiresSafetyWrapper: true,
+        });
+
+        return res.json({
+          userMessage,
+          aiMessage,
+          wasRedacted: redactionResult.wasRedacted,
+          crisisDetected: true,
+          crisisLevel: crisisScan.level,
+          paused: true,
+          smartReplies: [],
+          modelsUsed: [],
+        });
+      }
+
       const redactionResult = redactPII(fullContent);
       const sentimentResult = analyzeSentiment(fullContent);
       const keyPhrases = extractKeyPhrases(fullContent);
-      
+
       // Check last message time BEFORE storing new message (for first-of-day detection)
       const lastMessageTimeBeforeThis = await storage.getLastMessageTimeForUser(userId);
-      
+
       const userMessage = await storage.createMessage({
         conversationId,
         role: "user",
@@ -385,6 +462,10 @@ export async function registerRoutes(
         sentiment: sentimentResult.sentiment,
         sentimentScore: sentimentResult.score,
         keyPhrases: keyPhrases,
+        crisisDetected: crisisScan.level > 0,
+        crisisLevel: crisisScan.level,
+        requiresSafetyWrapper: crisisScan.requiresSafetyWrapper,
+        crisisTriggers: crisisScan.triggeredBy,
       });
 
       // Link attachment to the created message if one was provided
@@ -759,6 +840,12 @@ You are a faithful AI trusted confidant who leads with prayer, cares deeply, and
         crisisContext = formatPastoralGuidanceContext(crisisAssessment.pastoralGuidance);
       }
 
+      // Level 1 elevated distress: instruct the AI to respond with empathy and
+      // validation only, without inserting hotlines or crisis resources.
+      if (crisisScan.level === 1) {
+        crisisContext += `\n\n## ELEVATED DISTRESS RESPONSE\nThe user is expressing significant emotional distress. Respond with warmth, empathy, and validation. Offer to listen and talk through what they're going through. Do NOT insert crisis hotlines or resources in this response. If their distress seems to be escalating toward self-harm, stop and provide the safety resources instead.`;
+      }
+
       const systemMessage = {
         role: "system" as const,
         content: `${basePrompt}
@@ -852,14 +939,16 @@ Guidelines:
         aiContent = "I'm sorry, I couldn't generate a response.";
       }
 
-      // Apply safety wrapper for any non-"continue" recommendation (moderate, high, critical)
+      // Apply safety wrapper for any non-"continue" recommendation (moderate, high, critical).
+      // Skip resource addition for Level 1 elevated distress per the crisis spec.
       let safetyResult = null;
-      const needsSafetyWrapper = crisisAssessment.recommendedAction !== "continue";
-      
-      if (therapistMode) {
+      const isNewLevel1 = crisisScan.level === 1;
+      const needsSafetyWrapper = !isNewLevel1 && crisisAssessment.recommendedAction !== "continue";
+
+      if (therapistMode && !isNewLevel1) {
         safetyResult = wrapResponseWithSafety(aiContent, crisisAssessment, selectedExercise, faithEnabled);
         aiContent = safetyResult.modifiedContent;
-        
+
         // Add disclaimer for therapist mode if crisis resources were added
         if (safetyResult.addedResources) {
           aiContent += "\n\n" + generateDisclaimer();
@@ -868,7 +957,7 @@ Guidelines:
         // In chat mode, add crisis resources for moderate/high/critical situations
         safetyResult = wrapResponseWithSafety(aiContent, crisisAssessment, null, faithEnabled);
         aiContent = safetyResult.modifiedContent;
-        
+
         // Add disclaimer when resources are added in chat mode too
         if (safetyResult?.addedResources) {
           aiContent += "\n\n" + generateDisclaimer();
@@ -877,7 +966,7 @@ Guidelines:
 
       // Probing Questions: Ask deeper questions over time (48-hour cooldown)
       let probingQuestionAsked: string | undefined;
-      if (!needsSafetyWrapper && crisisAssessment.severity === "none") {
+      if (!needsSafetyWrapper && crisisAssessment.severity === "none" && !isNewLevel1) {
         try {
           const conversationCount = await storage.getConversationCount(userId);
           let probingState = await storage.getUserProbingState(userId);
@@ -950,6 +1039,9 @@ Guidelines:
         role: "assistant",
         content: aiContent,
         wasObfuscated: false,
+        crisisDetected: crisisScan.level > 0,
+        crisisLevel: crisisScan.level,
+        requiresSafetyWrapper: crisisScan.requiresSafetyWrapper,
       });
 
       const conversation = await storage.getConversation(conversationId);
@@ -964,13 +1056,16 @@ Guidelines:
         userMessage: content,
         sentiment: sentimentResult.sentiment,
         therapistMode,
-        crisisDetected: crisisAssessment.severity !== "none" && crisisAssessment.severity !== "low"
+        crisisDetected: crisisScan.level >= 2 || (crisisAssessment.severity !== "none" && crisisAssessment.severity !== "low")
       });
 
       res.json({
         userMessage,
         aiMessage,
         wasRedacted: redactionResult.wasRedacted,
+        crisisDetected: crisisScan.level > 0,
+        crisisLevel: crisisScan.level,
+        requiresSafetyWrapper: crisisScan.requiresSafetyWrapper,
         crisisSeverity: crisisAssessment.severity !== "none" ? crisisAssessment.severity : undefined,
         therapyExercise: selectedExercise ? selectedExercise.name : undefined,
         smartReplies,
