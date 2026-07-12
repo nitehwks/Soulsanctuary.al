@@ -21,6 +21,7 @@ import Analytics from "@/pages/Analytics";
 import ClinicianDashboard from "@/pages/ClinicianDashboard";
 import FeatureFlags from "@/pages/FeatureFlags";
 import Sales from "@/pages/Sales";
+import { OAuthCallback } from "@/components/auth/OAuthCallback";
 import { Loader2 } from "lucide-react";
 
 const clerkKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined;
@@ -53,6 +54,11 @@ function AppRouter() {
       })
       .catch(() => {});
   }, [isSignedIn, getToken]);
+
+  // OAuth callback route must be reachable regardless of current auth state.
+  if (window.location.pathname === "/oauth/callback") {
+    return <OAuthCallback />;
+  }
 
   if (isLoading) {
     return (

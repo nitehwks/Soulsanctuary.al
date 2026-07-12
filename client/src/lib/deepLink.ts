@@ -36,8 +36,11 @@ export async function initDeepLinkHandler(): Promise<void> {
       const url = new URL(event.url);
 
       if (isOAuthCallbackUrl(url)) {
-        // The OAuth flow completed - reload to pick up the session
-        window.location.href = '/';
+        // Forward the OAuth callback params into the WebView so Clerk can
+        // complete the sign-in. Stripping them (e.g. reloading to '/') is what
+        // causes the white screen after Apple/Google authentication.
+        const redirectPath = `/oauth/callback${url.search}${url.hash}`;
+        window.location.href = redirectPath;
       }
     });
 
@@ -46,7 +49,8 @@ export async function initDeepLinkHandler(): Promise<void> {
     if (urlOpen?.url) {
       const url = new URL(urlOpen.url);
       if (isOAuthCallbackUrl(url)) {
-        window.location.href = '/';
+        const redirectPath = `/oauth/callback${url.search}${url.hash}`;
+        window.location.href = redirectPath;
       }
     }
   } catch (error) {
