@@ -86,8 +86,9 @@ function AppRouter() {
             </Button>
           </div>
         </Route>
+        <Route path="/" component={Landing} />
         <Route path="/sales" component={Sales} />
-        <Route component={Landing} />
+        <Route component={NotFound} />
       </Switch>
     );
   }

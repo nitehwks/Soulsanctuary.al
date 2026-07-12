@@ -1,0 +1,15 @@
+# SoulSanctuary
+
+SoulSanctuary is a Christian faith-integrated AI companion that combines faith-based spiritual guidance with evidence-based therapeutic practices (DBT, CBT, ACT, Mindfulness). It helps users find emotional support, personal growth, and healing through a blend of faith and psychology. Faith features can be disabled for secular support.
+
+## Key public pages
+
+- /         — Home / marketing landing page
+- /sales    — Sales and pricing page
+
+## About
+
+- Product: AI-powered emotional wellness and spiritual companion
+- Audience: Adults seeking faith-based or secular mental health support
+- Modes: Chat Mode (general companionship) and Supportive Care Mode (integrated faith and therapy)
+- Platforms: Web, iOS, Android, Desktop
