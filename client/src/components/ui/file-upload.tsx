@@ -41,10 +41,7 @@ const DEFAULT_CONFIG: FileUploadConfig = {
   maxFileSize: UPLOAD_CONFIG.maxFileSize,
   acceptedTypes: [...UPLOAD_CONFIG.allowedMimeTypes],
   acceptedExtensions: [...UPLOAD_CONFIG.allowedExtensions],
-  maxDimensions: {
-    width: UPLOAD_CONFIG.imageDimensions.maxWidth,
-    height: UPLOAD_CONFIG.imageDimensions.maxHeight,
-  },
+  maxDimensions: UPLOAD_CONFIG.imageDimensions,
   enableCompression: true,
   compressionQuality: UPLOAD_CONFIG.compressionQuality,
 };

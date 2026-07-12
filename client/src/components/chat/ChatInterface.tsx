@@ -29,9 +29,6 @@ interface Message {
   content: string;
   timestamp: string;
   wasObfuscated?: boolean;
-  crisisDetected?: boolean;
-  crisisLevel?: number;
-  requiresSafetyWrapper?: boolean;
 }
 
 interface SmartReply {
@@ -60,7 +57,6 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
   const [profileLoading, setProfileLoading] = useState(false);
   const [coachingEligible, setCoachingEligible] = useState(false);
   const [smartReplies, setSmartReplies] = useState<SmartReply[]>([]);
-  const [crisisPaused, setCrisisPaused] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [filePreview, setFilePreview] = useState<string | null>(null);
   const [speakingMessageId, setSpeakingMessageId] = useState<number | null>(null);
@@ -164,17 +160,6 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
       if (messagesResponse.ok) {
         const loadedMessages = await messagesResponse.json();
         setMessages(loadedMessages);
-
-        // If the most recent assistant message is a safety wrapper, keep the
-        // conversation paused until the user explicitly continues.
-        const lastAssistantMessage = [...loadedMessages]
-          .reverse()
-          .find((m: Message) => m.role === "assistant");
-        setCrisisPaused(
-          !!lastAssistantMessage &&
-          lastAssistantMessage.crisisDetected &&
-          (lastAssistantMessage.crisisLevel ?? 0) >= 2
-        );
       }
     } catch (error) {
       console.error('Failed to load conversation:', error);
@@ -414,13 +399,7 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
       }
 
       const data = await response.json();
-
-      // If a safety wrapper was triggered, pause the conversation until the user
-      // explicitly chooses to continue.
-      if (data.crisisDetected && data.crisisLevel >= 2) {
-        setCrisisPaused(true);
-      }
-
+      
       setMessages(prev => {
         const withoutOptimistic = prev.filter(m => m.id !== optimisticUserMessage.id);
         return [...withoutOptimistic, data.userMessage, data.aiMessage];
@@ -629,21 +608,11 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
                     "max-w-[80%]",
                     msg.role === "user" ? "text-right" : "text-left"
                   )}>
-                    {msg.role === "assistant" && msg.crisisDetected && msg.crisisLevel && msg.crisisLevel >= 2 && (
-                      <div className="flex items-center gap-1.5 mb-1.5">
-                        <Shield className="h-3.5 w-3.5 text-red-500" />
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-red-500">
-                          Safety Resource
-                        </span>
-                      </div>
-                    )}
                     <div className={cn(
                       "px-4 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap",
-                      msg.role === "user"
-                        ? "bg-primary text-primary-foreground rounded-br-sm"
-                        : msg.crisisDetected && msg.crisisLevel && msg.crisisLevel >= 2
-                          ? "bg-red-50 dark:bg-red-950/30 text-foreground border border-red-200 dark:border-red-800 rounded-bl-sm"
-                          : "bg-muted text-foreground rounded-bl-sm"
+                      msg.role === "user" 
+                        ? "bg-primary text-primary-foreground rounded-br-sm" 
+                        : "bg-muted text-foreground rounded-bl-sm"
                     )}>
                       {msg.content}
                       {msg.wasObfuscated && (
@@ -772,48 +741,9 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
               </div>
             )}
 
-            {/* Crisis pause banner */}
-            <AnimatePresence>
-              {crisisPaused && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  className="mb-3 p-3 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-sm"
-                >
-                  <div className="flex items-start gap-2">
-                    <Shield className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
-                    <div className="flex-1">
-                      <p className="font-medium text-red-700 dark:text-red-300">
-                        This conversation has been paused.
-                      </p>
-                      <p className="text-red-600/80 dark:text-red-400/80 text-xs mt-0.5">
-                        If you're feeling safer now, you can continue talking. If not, the 988 Lifeline is still available.
-                      </p>
-                    </div>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setCrisisPaused(false)}
-                      className="shrink-0 border-red-300 dark:border-red-700 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/40 text-xs"
-                      data-testid="button-crisis-continue"
-                    >
-                      Continue
-                    </Button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            <form
+            <form 
               onSubmit={(e) => { e.preventDefault(); handleSend(); }}
-              className={cn(
-                "flex gap-2 items-center bg-card border rounded-full px-2 py-2 shadow-sm focus-within:ring-2 focus-within:ring-ring",
-                crisisPaused
-                  ? "border-red-200 dark:border-red-800 opacity-60"
-                  : "border-input"
-              )}
+              className="flex gap-2 items-center bg-card border border-input rounded-full px-2 py-2 shadow-sm focus-within:ring-2 focus-within:ring-ring"
             >
               {/* Hidden file inputs */}
               <input
@@ -835,11 +765,10 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
               />
 
               {/* File upload button */}
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                disabled={crisisPaused}
+              <Button 
+                type="button" 
+                variant="ghost" 
+                size="icon" 
                 className="rounded-full h-8 w-8 ml-1 hover:bg-blue-500/10 hover:text-blue-500"
                 onClick={() => fileInputRef.current?.click()}
                 data-testid="button-attach"
@@ -848,11 +777,10 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
               </Button>
 
               {/* Camera button */}
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                disabled={crisisPaused}
+              <Button 
+                type="button" 
+                variant="ghost" 
+                size="icon" 
                 className="rounded-full h-8 w-8 hover:bg-purple-500/10 hover:text-purple-500"
                 onClick={() => cameraInputRef.current?.click()}
                 data-testid="button-camera"
@@ -861,11 +789,10 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
               </Button>
 
               {/* Voice button */}
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                disabled={crisisPaused}
+              <Button 
+                type="button" 
+                variant="ghost" 
+                size="icon" 
                 className={cn("rounded-full h-8 w-8", isListening && "text-red-500 animate-pulse bg-red-500/10")}
                 onClick={toggleListening}
                 data-testid="button-voice"
@@ -876,7 +803,6 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
               <Input
                 ref={messageInputRef}
                 value={input}
-                disabled={crisisPaused}
                 onChange={(e) => {
                   setInput(e.target.value);
                   if (e.target.value.length > 0) setSmartReplies([]);
@@ -891,20 +817,15 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
                     }
                   }, 300);
                 }}
-                placeholder={crisisPaused
-                  ? "Conversation paused — tap Continue to resume"
-                  : selectedFile
-                    ? "Add a message about this file..."
-                    : "Ask anything..."
-                }
+                placeholder={selectedFile ? "Add a message about this file..." : "Ask anything..."}
                 className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent shadow-none px-2 font-medium flex-1 min-w-0"
                 data-testid="input-message"
               />
-
-              <Button
-                type="submit"
-                size="icon"
-                disabled={crisisPaused || (!input.trim() && !selectedFile) || isProcessing}
+              
+              <Button 
+                type="submit" 
+                size="icon" 
+                disabled={(!input.trim() && !selectedFile) || isProcessing} 
                 className="rounded-full h-8 w-8 mr-1 bg-primary hover:bg-primary/90 shrink-0"
                 data-testid="button-send"
               >

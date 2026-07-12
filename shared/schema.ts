@@ -47,11 +47,6 @@ export const messages = pgTable("messages", {
   keyPhrases: text("key_phrases").array(),
   hasAttachment: boolean("has_attachment").default(false),
   attachmentType: text("attachment_type"),
-  // Crisis detection fields
-  crisisDetected: boolean("crisis_detected").default(false),
-  crisisLevel: integer("crisis_level").default(0),
-  requiresSafetyWrapper: boolean("requires_safety_wrapper").default(false),
-  crisisTriggers: text("crisis_triggers").array(),
   timestamp: timestamp("timestamp").defaultNow().notNull(),
 });
 

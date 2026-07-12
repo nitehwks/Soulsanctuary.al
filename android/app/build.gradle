@@ -30,9 +30,15 @@ repositories {
     }
 }
 
-// Exclude legacy kotlin-stdlib-jdk7/jdk8 modules that duplicate classes
+// Pin androidx.browser to a version compatible with compileSdk 35 and AGP 8.7.2.
+// The Capacitor Browser plugin's transitive dependency can resolve to 1.9.0,
+// which requires compileSdk 36 / AGP 8.9.1.
+// Also exclude legacy kotlin-stdlib-jdk7/jdk8 modules that duplicate classes
 // in modern kotlin-stdlib (1.8+).
 configurations.all {
+    resolutionStrategy {
+        force 'androidx.browser:browser:1.8.0'
+    }
     exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'
     exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'
 }
