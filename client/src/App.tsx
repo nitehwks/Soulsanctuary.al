@@ -22,6 +22,7 @@ import ClinicianDashboard from "@/pages/ClinicianDashboard";
 import FeatureFlags from "@/pages/FeatureFlags";
 import Sales from "@/pages/Sales";
 import { OAuthCallback } from "@/components/auth/OAuthCallback";
+import { PendingOAuthHandler } from "@/components/auth/PendingOAuthHandler";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Loader2 } from "lucide-react";
 
@@ -59,6 +60,14 @@ function AppRouter() {
   // OAuth callback route must be reachable regardless of current auth state.
   if (window.location.pathname === "/oauth/callback") {
     return <OAuthCallback />;
+  }
+
+  // If the app was reloaded after a native OAuth deep link, process the stored
+  // callback URL. This is more reliable than navigating to /oauth/callback in
+  // Capacitor, which can fail to resolve as a static file.
+  const pendingOAuth = typeof window !== "undefined" && localStorage.getItem("pendingOAuthCallback");
+  if (pendingOAuth) {
+    return <PendingOAuthHandler />;
   }
 
   if (isLoading) {

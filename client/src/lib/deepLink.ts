@@ -34,17 +34,21 @@ export async function initDeepLinkHandler(): Promise<void> {
     // Listen for app URL open events (deep links)
     App.addListener('appUrlOpen', (event) => {
       console.log('[DeepLink] appUrlOpen:', event.url);
-      const url = new URL(event.url);
+      try {
+        const url = new URL(event.url);
 
-      if (isOAuthCallbackUrl(url)) {
-        // Forward the OAuth callback params into the WebView so Clerk can
-        // complete the sign-in. Stripping them (e.g. reloading to '/') is what
-        // causes the white screen after Apple/Google authentication.
-        const redirectPath = `/oauth/callback${url.search}${url.hash}`;
-        console.log('[DeepLink] redirecting to:', redirectPath);
-        window.location.href = redirectPath;
-      } else {
-        console.log('[DeepLink] not an OAuth callback, ignoring');
+        if (isOAuthCallbackUrl(url)) {
+          // Store the callback URL and reload to the app root. Navigating to
+          // /oauth/callback inside Capacitor can fail because the WebView tries
+          // to load it as a static file. Re-loading from / avoids that.
+          localStorage.setItem('pendingOAuthCallback', event.url);
+          console.log('[DeepLink] stored pendingOAuthCallback, reloading to /');
+          window.location.href = '/';
+        } else {
+          console.log('[DeepLink] not an OAuth callback, ignoring');
+        }
+      } catch (err) {
+        console.error('[DeepLink] failed to parse appUrlOpen URL:', err);
       }
     });
 
@@ -52,11 +56,15 @@ export async function initDeepLinkHandler(): Promise<void> {
     const urlOpen = await App.getLaunchUrl();
     if (urlOpen?.url) {
       console.log('[DeepLink] launchUrl:', urlOpen.url);
-      const url = new URL(urlOpen.url);
-      if (isOAuthCallbackUrl(url)) {
-        const redirectPath = `/oauth/callback${url.search}${url.hash}`;
-        console.log('[DeepLink] launch redirect to:', redirectPath);
-        window.location.href = redirectPath;
+      try {
+        const url = new URL(urlOpen.url);
+        if (isOAuthCallbackUrl(url)) {
+          localStorage.setItem('pendingOAuthCallback', urlOpen.url);
+          console.log('[DeepLink] stored launch pendingOAuthCallback, reloading to /');
+          window.location.href = '/';
+        }
+      } catch (err) {
+        console.error('[DeepLink] failed to parse launchUrl:', err);
       }
     }
   } catch (error) {
