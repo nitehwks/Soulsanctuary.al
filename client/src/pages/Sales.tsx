@@ -158,7 +158,7 @@ export default function Sales() {
 
             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
               <a
-                href="/"
+                href="https://soulsanctuaryal--joeabbott2.replit.app"
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{
@@ -285,7 +285,7 @@ export default function Sales() {
           </p>
           <p style={{ color: '#8f5bff', marginBottom: '2rem' }}>— Matthew 11:28</p>
           <a
-            href="/"
+            href="https://soulsanctuaryal--joeabbott2.replit.app"
             target="_blank"
             rel="noopener noreferrer"
             style={{

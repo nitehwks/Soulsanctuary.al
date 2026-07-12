@@ -31,25 +31,8 @@ export async function setupVite(server: Server, app: Express) {
 
   app.use(vite.middlewares);
 
-  // Serve the SPA shell for known client-side routes; return 404 for unknown paths
-  const clientRoutes = new Set([
-    "/",
-    "/sales",
-    "/sign-in",
-    "/sign-up",
-    "/dashboard",
-    "/settings",
-    "/docs",
-    "/addons",
-    "/groups",
-    "/analytics",
-    "/clinician",
-    "/feature-flags",
-  ]);
-
   app.use("*", async (req, res, next) => {
     const url = req.originalUrl;
-    const pathname = req.path;
 
     try {
       const clientTemplate = path.resolve(
@@ -66,12 +49,7 @@ export async function setupVite(server: Server, app: Express) {
         `src="/src/main.tsx?v=${nanoid()}"`,
       );
       const page = await vite.transformIndexHtml(url, template);
-      const isSpaRoute =
-        clientRoutes.has(pathname) ||
-        pathname.startsWith("/sign-in/") ||
-        pathname.startsWith("/sign-up/");
-      const status = isSpaRoute ? 200 : 404;
-      res.status(status).set({ "Content-Type": "text/html" }).end(page);
+      res.status(200).set({ "Content-Type": "text/html" }).end(page);
     } catch (e) {
       vite.ssrFixStacktrace(e as Error);
       next(e);

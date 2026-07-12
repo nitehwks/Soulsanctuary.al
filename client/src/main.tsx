@@ -1,7 +1,6 @@
 import { createRoot } from "react-dom/client";
 import { ClerkProvider } from "@clerk/clerk-react";
 import App from "./App";
-import { ErrorBoundary } from "./components/ErrorBoundary";
 import "./index.css";
 import "./i18n";
 
@@ -22,8 +21,6 @@ const allowedRedirectOrigins = [
   "https://localhost",
   "http://localhost:5001",
   "https://localhost:5001",
-  // iOS/Android custom URL scheme for Clerk native OAuth callbacks.
-  "com.soulsanctuary.ai",
 ];
 
 if (clerkSignInRedirectUrl) {
@@ -38,14 +35,12 @@ if (clerkSignInRedirectUrl) {
 }
 
 createRoot(document.getElementById("root")!).render(
-  <ErrorBoundary>
-    <ClerkProvider
-      publishableKey={clerkPublishableKey || ""}
-      signInUrl="/sign-in"
-      signUpUrl="/sign-up"
-      allowedRedirectOrigins={allowedRedirectOrigins}
-    >
-      <App />
-    </ClerkProvider>
-  </ErrorBoundary>,
+  <ClerkProvider
+    publishableKey={clerkPublishableKey || ""}
+    signInUrl="/sign-in"
+    signUpUrl="/sign-up"
+    allowedRedirectOrigins={allowedRedirectOrigins}
+  >
+    <App />
+  </ClerkProvider>,
 );

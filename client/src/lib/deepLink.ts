@@ -1,18 +1,10 @@
 /**
  * Deep Link Handler for OAuth Callbacks
- *
- * Handles authentication redirects from external browsers back to the native app.
- * Used by Clerk native OAuth flows on iOS/Android.
+ * 
+ * Handles authentication redirects from Safari back to the native app.
  */
 
-import { isNativeApp } from "./platform";
-
-const OAUTH_CALLBACK_PATHS = ["/oauth/callback", "/sso-callback", "/auth/callback"];
-
-function isOAuthCallbackUrl(url: URL): boolean {
-  const pathname = url.pathname;
-  return OAUTH_CALLBACK_PATHS.some((p) => pathname === p || pathname.startsWith(p));
-}
+import { isNativeApp } from './platform';
 
 /**
  * Initialize deep link handling for native apps
@@ -21,58 +13,53 @@ export async function initDeepLinkHandler(): Promise<void> {
   if (!isNativeApp()) return;
 
   try {
-    const { App } = await import("@capacitor/app");
-
-    App.addListener("appUrlOpen", (event) => {
+    const { App } = await import('@capacitor/app');
+    
+    // Listen for app URL open events (deep links)
+    App.addListener('appUrlOpen', (event) => {
       const url = new URL(event.url);
-
-      if (isOAuthCallbackUrl(url)) {
-        // Clerk OAuth flow completed - reload to pick up the session.
-        // The ClerkProvider will read the session from the URL or localStorage.
-        window.location.href = "/";
+      
+      // Handle OAuth callback from the production backend
+      // The backend redirects to soulsanctuary://auth-callback after Replit OIDC.
+      if (
+        url.pathname === '/api/callback' ||
+        url.pathname.startsWith('/auth') ||
+        url.host === 'auth-callback'
+      ) {
+        // The OAuth flow completed - reload to pick up the session
+        window.location.href = '/';
       }
     });
 
+    // Check if app was opened with a URL
     const urlOpen = await App.getLaunchUrl();
     if (urlOpen?.url) {
       const url = new URL(urlOpen.url);
-      if (isOAuthCallbackUrl(url)) {
-        window.location.href = "/";
+      if (
+        url.pathname === '/api/callback' ||
+        url.pathname.startsWith('/auth') ||
+        url.host === 'auth-callback'
+      ) {
+        window.location.href = '/';
       }
     }
   } catch (error) {
-    console.log("Deep link handler not available", error);
+    console.log('Deep link handler not available');
   }
-}
-
-/**
- * Get the backend base URL for the current platform.
- * - Native apps use VITE_API_URL (the Replit/production backend).
- * - Web uses the current origin.
- */
-function getBaseUrl(): string {
-  const apiUrl = import.meta.env.VITE_API_URL as string | undefined;
-  if (apiUrl) return apiUrl.replace(/\/$/, "");
-  return window.location.origin;
 }
 
 /**
  * Get the appropriate login URL for the current platform
  */
 export function getLoginUrl(): string {
-  return `${getBaseUrl()}/api/login`;
+  const baseUrl = import.meta.env.VITE_API_URL || window.location.origin;
+  return `${baseUrl}/api/login`;
 }
 
 /**
  * Get the appropriate callback URL for OAuth
  */
 export function getCallbackUrl(): string {
-  return `${getBaseUrl()}/api/callback`;
-}
-
-/**
- * Get the native OAuth redirect URL used by Clerk.
- */
-export function getNativeRedirectUrl(): string {
-  return "com.soulsanctuary.ai://oauth/callback";
+  const baseUrl = import.meta.env.VITE_API_URL || window.location.origin;
+  return `${baseUrl}/api/callback`;
 }

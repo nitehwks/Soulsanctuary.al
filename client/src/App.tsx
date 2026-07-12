@@ -56,35 +56,38 @@ function AppRouter() {
   if (!isAuthenticated) {
     return (
       <Switch>
-        <Route path="/sign-in/:rest*">
+        <Route path="/sign-in">
           <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4 gap-4">
             <SignIn
               routing="path"
               path="/sign-in"
-              fallbackRedirectUrl="/"
-              signUpFallbackRedirectUrl="/"
+              fallbackRedirectUrl={clerkSignInRedirectUrl || "/"}
+              forceRedirectUrl={clerkSignInRedirectUrl || undefined}
+              signUpFallbackRedirectUrl={clerkSignUpRedirectUrl || "/"}
+              signUpForceRedirectUrl={clerkSignUpRedirectUrl || undefined}
             />
             <Button variant="secondary" onClick={signInWithLocalAccount}>
               Use Local Account
             </Button>
           </div>
         </Route>
-        <Route path="/sign-up/:rest*">
+        <Route path="/sign-up">
           <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4 gap-4">
             <SignUp
               routing="path"
               path="/sign-up"
-              fallbackRedirectUrl="/"
-              signInFallbackRedirectUrl="/"
+              fallbackRedirectUrl={clerkSignUpRedirectUrl || "/"}
+              forceRedirectUrl={clerkSignUpRedirectUrl || undefined}
+              signInFallbackRedirectUrl={clerkSignInRedirectUrl || "/"}
+              signInForceRedirectUrl={clerkSignInRedirectUrl || undefined}
             />
             <Button variant="secondary" onClick={signInWithLocalAccount}>
               Use Local Account
             </Button>
           </div>
         </Route>
-        <Route path="/" component={Landing} />
         <Route path="/sales" component={Sales} />
-        <Route component={NotFound} />
+        <Route component={Landing} />
       </Switch>
     );
   }

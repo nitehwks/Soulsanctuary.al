@@ -744,7 +744,7 @@ function buildEmotionalTrendsContext(snapshots: EmotionalSnapshot[]): string {
     parts.push(`**Coping style:** ${copingLabels[topCoping[0]] || topCoping[0]}`);
   }
 
-  const uniqueTriggers = Array.from(new Set(allTriggers)).slice(0, 3);
+  const uniqueTriggers = [...new Set(allTriggers)].slice(0, 3);
   if (uniqueTriggers.length > 0) {
     parts.push(`**Common triggers:** ${uniqueTriggers.join('; ')}`);
   }

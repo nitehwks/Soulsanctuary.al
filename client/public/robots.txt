@@ -1,5 +1,0 @@
-User-agent: *
-Allow: /
-Allow: /sales
-
-Sitemap: https://soulsanctuary.replit.app/sitemap.xml

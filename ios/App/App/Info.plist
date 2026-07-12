@@ -24,7 +24,6 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>soulsanctuary</string>
-				<string>com.soulsanctuary.ai</string>
 			</array>
 		</dict>
 	</array>

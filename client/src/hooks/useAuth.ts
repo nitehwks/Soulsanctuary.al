@@ -1,6 +1,5 @@
 import { useUser, useAuth as useClerkAuth } from "@clerk/clerk-react";
 import { useEffect, useState } from "react";
-import { getApiUrl } from "@/lib/queryClient";
 
 interface GuestUser {
   id: string;
@@ -47,17 +46,13 @@ export function useAuth() {
     setLocalAuth(token === DEV_AUTH_TOKEN);
   }, []);
 
-  // Dev fallback: when Clerk keys are not configured AND no Clerk user is
-  // signed in, automatically obtain a dev token so API calls work without a
-  // real auth provider. We wait until Clerk has finished loading so we don't
-  // race against a real Apple/Google sign-in that's still initialising.
+  // Dev fallback: when Clerk keys are not configured, automatically obtain a
+  // dev token so API calls work without a real auth provider.
   useEffect(() => {
     if (isClerkConfigured) return;
-    if (!isLoaded) return;
-    if (isSignedIn) return;
 
     let cancelled = false;
-    fetch(getApiUrl("/api/dev-login"), { method: "POST", credentials: "include" })
+    fetch("/api/dev-login", { method: "POST", credentials: "include" })
       .then((res) => res.json())
       .then((data) => {
         if (!cancelled && data.token) {
@@ -69,7 +64,7 @@ export function useAuth() {
     return () => {
       cancelled = true;
     };
-  }, [isLoaded, isSignedIn]);
+  }, []);
 
   useEffect(() => {
     const guestMode = localStorage.getItem("guestMode");
@@ -134,7 +129,7 @@ export function useAuth() {
  */
 export async function signInWithLocalAccount(): Promise<void> {
   try {
-    const res = await fetch(getApiUrl("/api/dev-login"), { method: "POST", credentials: "include" });
+    const res = await fetch("/api/dev-login", { method: "POST", credentials: "include" });
     const data = await res.json();
     if (data.token) {
       localStorage.setItem("clerkSessionToken", data.token);
