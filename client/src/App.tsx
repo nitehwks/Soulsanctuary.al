@@ -7,8 +7,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { useEffect } from "react";
 import { useAuth, signInWithLocalAccount } from "@/hooks/useAuth";
-import { initDeepLinkHandler } from "@/lib/deepLink";
-import { applyPlatformClasses } from "@/lib/platform";
+import { initDeepLinkHandler, getNativeRedirectUrl } from "@/lib/deepLink";
+import { applyPlatformClasses, isNativeApp } from "@/lib/platform";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import Dashboard from "@/pages/Dashboard";
@@ -27,6 +27,15 @@ const clerkKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefine
 const isClerkConfigured = !!clerkKey && !clerkKey.includes("your_clerk") && !clerkKey.includes("...");
 const clerkSignInRedirectUrl = import.meta.env.VITE_CLERK_SIGN_IN_REDIRECT_URL as string | undefined;
 const clerkSignUpRedirectUrl = import.meta.env.VITE_CLERK_SIGN_UP_REDIRECT_URL as string | undefined;
+
+// Native apps must redirect back to a custom URL scheme so the OS returns the
+// user to the app. Web apps use the configured redirect URL or default to '/'.
+function getClerkRedirectUrl(envUrl: string | undefined): string {
+  if (isNativeApp()) {
+    return getNativeRedirectUrl();
+  }
+  return envUrl || "/";
+}
 
 function AppRouter() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -61,10 +70,10 @@ function AppRouter() {
             <SignIn
               routing="path"
               path="/sign-in"
-              fallbackRedirectUrl={clerkSignInRedirectUrl || "/"}
-              forceRedirectUrl={clerkSignInRedirectUrl || undefined}
-              signUpFallbackRedirectUrl={clerkSignUpRedirectUrl || "/"}
-              signUpForceRedirectUrl={clerkSignUpRedirectUrl || undefined}
+              fallbackRedirectUrl={getClerkRedirectUrl(clerkSignInRedirectUrl)}
+              forceRedirectUrl={getClerkRedirectUrl(clerkSignInRedirectUrl)}
+              signUpFallbackRedirectUrl={getClerkRedirectUrl(clerkSignUpRedirectUrl)}
+              signUpForceRedirectUrl={getClerkRedirectUrl(clerkSignUpRedirectUrl)}
             />
             <Button variant="secondary" onClick={signInWithLocalAccount}>
               Use Local Account
@@ -76,10 +85,10 @@ function AppRouter() {
             <SignUp
               routing="path"
               path="/sign-up"
-              fallbackRedirectUrl={clerkSignUpRedirectUrl || "/"}
-              forceRedirectUrl={clerkSignUpRedirectUrl || undefined}
-              signInFallbackRedirectUrl={clerkSignInRedirectUrl || "/"}
-              signInForceRedirectUrl={clerkSignInRedirectUrl || undefined}
+              fallbackRedirectUrl={getClerkRedirectUrl(clerkSignUpRedirectUrl)}
+              forceRedirectUrl={getClerkRedirectUrl(clerkSignUpRedirectUrl)}
+              signInFallbackRedirectUrl={getClerkRedirectUrl(clerkSignInRedirectUrl)}
+              signInForceRedirectUrl={getClerkRedirectUrl(clerkSignInRedirectUrl)}
             />
             <Button variant="secondary" onClick={signInWithLocalAccount}>
               Use Local Account

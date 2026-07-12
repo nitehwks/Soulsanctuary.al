@@ -6,6 +6,22 @@
 
 import { isNativeApp } from './platform';
 
+const OAUTH_CALLBACK_PATHS = ['/oauth/callback', '/sso-callback', '/auth/callback', '/api/callback'];
+
+function isOAuthCallbackUrl(url: URL): boolean {
+  // Custom-scheme URLs like com.soulsanctuary.ai://oauth/callback parse with
+  // host "oauth" and pathname "/callback", so check the combined form too.
+  const hostAndPath = `${url.host}${url.pathname}`;
+  return (
+    OAUTH_CALLBACK_PATHS.some((p) => url.pathname === p || url.pathname.startsWith(p)) ||
+    url.pathname.startsWith('/auth') ||
+    url.host === 'auth-callback' ||
+    hostAndPath === 'oauth/callback' ||
+    hostAndPath === 'sso-callback' ||
+    hostAndPath === 'auth/callback'
+  );
+}
+
 /**
  * Initialize deep link handling for native apps
  */
@@ -18,14 +34,8 @@ export async function initDeepLinkHandler(): Promise<void> {
     // Listen for app URL open events (deep links)
     App.addListener('appUrlOpen', (event) => {
       const url = new URL(event.url);
-      
-      // Handle OAuth callback from the production backend
-      // The backend redirects to soulsanctuary://auth-callback after Replit OIDC.
-      if (
-        url.pathname === '/api/callback' ||
-        url.pathname.startsWith('/auth') ||
-        url.host === 'auth-callback'
-      ) {
+
+      if (isOAuthCallbackUrl(url)) {
         // The OAuth flow completed - reload to pick up the session
         window.location.href = '/';
       }
@@ -35,11 +45,7 @@ export async function initDeepLinkHandler(): Promise<void> {
     const urlOpen = await App.getLaunchUrl();
     if (urlOpen?.url) {
       const url = new URL(urlOpen.url);
-      if (
-        url.pathname === '/api/callback' ||
-        url.pathname.startsWith('/auth') ||
-        url.host === 'auth-callback'
-      ) {
+      if (isOAuthCallbackUrl(url)) {
         window.location.href = '/';
       }
     }
@@ -62,4 +68,13 @@ export function getLoginUrl(): string {
 export function getCallbackUrl(): string {
   const baseUrl = import.meta.env.VITE_API_URL || window.location.origin;
   return `${baseUrl}/api/callback`;
+}
+
+/**
+ * Get the native OAuth redirect URL used by Clerk.
+ * Native apps must redirect back to a custom URL scheme so the OS
+ * returns the user to the app after external-browser OAuth.
+ */
+export function getNativeRedirectUrl(): string {
+  return 'com.soulsanctuary.ai://oauth/callback';
 }

@@ -1,0 +1,1 @@
+- [Native OAuth URL schemes](native-oauth-schemes.md) — Clerk native redirect scheme must stay in lockstep across Info.plist, AndroidManifest, and the deep-link matcher; mismatch = white screen after OAuth.
