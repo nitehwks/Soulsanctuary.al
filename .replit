@@ -45,6 +45,10 @@ expertMode = true
 
 [userenv]
 
+[postMerge]
+path = "scripts/post-merge.sh"
+timeoutMs = 120000
+
 # Shared environment variables for this Repl are set via Replit Secrets.
 # Do not hardcode deployment URLs here; the frontend uses window.location.origin
 # for same-origin API calls and VITE_API_URL is injected at build time for native apps.
