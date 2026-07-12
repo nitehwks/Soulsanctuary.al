@@ -15,6 +15,7 @@ declare module "http" {
 // Allow Capacitor app origins, local web clients, and Replit deployments.
 const allowedOrigins = new Set([
   "capacitor://localhost",
+  "ionic://localhost",
   "http://localhost",
   "https://localhost",
   `http://localhost:${process.env.PORT || 5001}`,
@@ -46,6 +47,7 @@ app.use((req, res, next) => {
   const originAllowed =
     allowAnyOrigin || !origin || isAllowedOrigin(origin);
 
+  res.setHeader("Vary", "Origin");
   if (origin && originAllowed) {
     res.setHeader("Access-Control-Allow-Origin", origin);
     res.setHeader("Access-Control-Allow-Credentials", "true");
@@ -57,9 +59,10 @@ app.use((req, res, next) => {
       "Access-Control-Allow-Headers",
       "Content-Type, Authorization",
     );
+    res.setHeader("Access-Control-Max-Age", "86400");
   }
   if (req.method === "OPTIONS") {
-    if (origin && !isAllowedOrigin) {
+    if (origin && !originAllowed) {
       res.sendStatus(403);
       return;
     }
