@@ -1,6 +1,7 @@
 import { createRoot } from "react-dom/client";
 import { ClerkProvider } from "@clerk/clerk-react";
 import App from "./App";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import "./index.css";
 import "./i18n";
 
@@ -37,12 +38,14 @@ if (clerkSignInRedirectUrl) {
 }
 
 createRoot(document.getElementById("root")!).render(
-  <ClerkProvider
-    publishableKey={clerkPublishableKey || ""}
-    signInUrl="/sign-in"
-    signUpUrl="/sign-up"
-    allowedRedirectOrigins={allowedRedirectOrigins}
-  >
-    <App />
-  </ClerkProvider>,
+  <ErrorBoundary>
+    <ClerkProvider
+      publishableKey={clerkPublishableKey || ""}
+      signInUrl="/sign-in"
+      signUpUrl="/sign-up"
+      allowedRedirectOrigins={allowedRedirectOrigins}
+    >
+      <App />
+    </ClerkProvider>
+  </ErrorBoundary>,
 );
