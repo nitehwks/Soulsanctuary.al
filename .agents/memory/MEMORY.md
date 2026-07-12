@@ -1,1 +1,2 @@
 - [Native OAuth URL schemes](native-oauth-schemes.md) — Clerk native redirect scheme must stay in lockstep across Info.plist, AndroidManifest, and the deep-link matcher; mismatch = white screen after OAuth.
+- [Capacitor CLI needs Node 22](capacitor-node-version.md) — workspace runs Node 20; use `nix-shell -p nodejs_22 --run "npx cap sync"` for native syncs.

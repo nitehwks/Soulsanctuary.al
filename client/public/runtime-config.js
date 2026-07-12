@@ -5,16 +5,15 @@
  * Web apps use same-origin relative URLs and ignore this setting.
  *
  * To switch environments, uncomment ONE block and comment out the other,
- * then rebuild the app.
+ * then rebuild the app (npm run build && npx cap sync).
  */
 
-// === LOCAL DEVELOPMENT (Mac / local backend) ===
+// === REPLIT DEPLOYMENT (live production backend) ===
 window.SOULSANCTUARY_CONFIG = {
-  API_URL: "http://localhost:5001",
+  API_URL: "https://soulsanctuaryal--joeabbott2.replit.app",
 };
 
-// === REPLIT DEPLOYMENT (commented out) ===
-// Replace the URL below with your actual Replit deployment URL.
+// === LOCAL DEVELOPMENT (Mac / local backend, commented out) ===
 // window.SOULSANCTUARY_CONFIG = {
-//   API_URL: "https://your-repl.janeway.replit.dev",
+//   API_URL: "http://localhost:5001",
 // };
