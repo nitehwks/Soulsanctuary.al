@@ -61,10 +61,8 @@ function AppRouter() {
             <SignIn
               routing="path"
               path="/sign-in"
-              fallbackRedirectUrl={clerkSignInRedirectUrl || "/"}
-              forceRedirectUrl={clerkSignInRedirectUrl || undefined}
-              signUpFallbackRedirectUrl={clerkSignUpRedirectUrl || "/"}
-              signUpForceRedirectUrl={clerkSignUpRedirectUrl || undefined}
+              fallbackRedirectUrl="/"
+              signUpFallbackRedirectUrl="/"
             />
             <Button variant="secondary" onClick={signInWithLocalAccount}>
               Use Local Account
@@ -76,10 +74,8 @@ function AppRouter() {
             <SignUp
               routing="path"
               path="/sign-up"
-              fallbackRedirectUrl={clerkSignUpRedirectUrl || "/"}
-              forceRedirectUrl={clerkSignUpRedirectUrl || undefined}
-              signInFallbackRedirectUrl={clerkSignInRedirectUrl || "/"}
-              signInForceRedirectUrl={clerkSignInRedirectUrl || undefined}
+              fallbackRedirectUrl="/"
+              signInFallbackRedirectUrl="/"
             />
             <Button variant="secondary" onClick={signInWithLocalAccount}>
               Use Local Account

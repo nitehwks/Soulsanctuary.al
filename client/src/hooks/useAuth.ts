@@ -47,10 +47,14 @@ export function useAuth() {
     setLocalAuth(token === DEV_AUTH_TOKEN);
   }, []);
 
-  // Dev fallback: when Clerk keys are not configured, automatically obtain a
-  // dev token so API calls work without a real auth provider.
+  // Dev fallback: when Clerk keys are not configured AND no Clerk user is
+  // signed in, automatically obtain a dev token so API calls work without a
+  // real auth provider. We wait until Clerk has finished loading so we don't
+  // race against a real Apple/Google sign-in that's still initialising.
   useEffect(() => {
     if (isClerkConfigured) return;
+    if (!isLoaded) return;
+    if (isSignedIn) return;
 
     let cancelled = false;
     fetch(getApiUrl("/api/dev-login"), { method: "POST", credentials: "include" })
@@ -65,7 +69,7 @@ export function useAuth() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [isLoaded, isSignedIn]);
 
   useEffect(() => {
     const guestMode = localStorage.getItem("guestMode");

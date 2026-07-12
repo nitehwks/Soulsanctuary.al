@@ -29,6 +29,17 @@
   <body>
     <!--__ROUTE_BODY__-->
     <div id="root"></div>
+    <script>
+      window.onerror = function(msg, src, line, col, err) {
+        var el = document.getElementById('root');
+        if (el && !el.hasChildNodes()) {
+          el.innerHTML = '<div style="font-family:sans-serif;padding:2rem;color:#c00"><h2>Something went wrong</h2><pre style="white-space:pre-wrap;font-size:0.8rem">' + (err ? err.stack || err.toString() : msg) + '</pre><p><a href="/">Reload</a></p></div>';
+        }
+      };
+      window.addEventListener('unhandledrejection', function(e) {
+        console.error('[unhandledrejection]', e.reason);
+      });
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
