@@ -35,6 +35,8 @@ post_install do |installer|
       config.build_settings['CLANG_ENABLE_MODULE_VERIFIER'] = 'NO'
       config.build_settings['ENABLE_MODULE_VERIFIER'] = 'NO'
       config.build_settings['CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER'] = 'NO'
+      config.build_settings['GCC_TREAT_WARNINGS_AS_ERRORS'] = 'NO'
+      config.build_settings['SWIFT_TREAT_WARNINGS_AS_ERRORS'] = 'NO'
     end
   end
 end
