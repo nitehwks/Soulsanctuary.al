@@ -14,7 +14,12 @@ const config: CapacitorConfig = {
       'soulsanctuary.app',
       'replit.com',
       '*.clerk.accounts.dev',
+      '*.accounts.dev',
       '*.clerk.dev',
+      'clerk.shared.lcl.dev',
+      '*.lcl.dev',
+      'clerk.com',
+      '*.clerk.com',
       'accounts.google.com',
       'appleid.apple.com'
     ]
