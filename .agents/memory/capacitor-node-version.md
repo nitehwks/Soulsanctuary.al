@@ -1,9 +1,9 @@
 ---
 name: Capacitor CLI needs Node 22
-description: How to run npx cap sync in this workspace, which runs Node 20 while Capacitor 8 requires Node >= 22
+description: Capacitor 8 requires Node >= 22; workspace now runs the nodejs-22 module
 ---
-Capacitor CLI 8 refuses to run on the workspace's Node 20 ("The Capacitor CLI requires NodeJS >=22.0.0").
+Capacitor CLI 8 refuses to run on Node 20 ("The Capacitor CLI requires NodeJS >=22.0.0").
 
-**Why:** The project runtime is pinned to Node 20; upgrading the whole module just for cap sync is risky.
+**Resolved (July 2026):** The workspace module was upgraded to nodejs-22 (`.replit` modules list). `npx cap sync` runs directly.
 
-**How to apply:** Run native syncs via a temporary shell: `nix-shell -p nodejs_22 --run "npx cap sync"`. Works without changing the project runtime; first invocation may be slow while nix fetches.
+**How to apply:** If the Node module is ever downgraded below 22, either reinstall the nodejs-22+ module or use the temporary shell workaround `nix-shell -p nodejs_22 --run "npx cap sync"`.

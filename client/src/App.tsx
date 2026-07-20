@@ -7,8 +7,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { useEffect } from "react";
 import { useAuth, signInWithLocalAccount } from "@/hooks/useAuth";
-import { initDeepLinkHandler, getNativeRedirectUrl } from "@/lib/deepLink";
-import { applyPlatformClasses, isNativeApp } from "@/lib/platform";
+import { initDeepLinkHandler } from "@/lib/deepLink";
+import { applyPlatformClasses } from "@/lib/platform";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import Dashboard from "@/pages/Dashboard";
@@ -31,13 +31,13 @@ const isClerkConfigured = !!clerkKey && !clerkKey.includes("your_clerk") && !cle
 const clerkSignInRedirectUrl = import.meta.env.VITE_CLERK_SIGN_IN_REDIRECT_URL as string | undefined;
 const clerkSignUpRedirectUrl = import.meta.env.VITE_CLERK_SIGN_UP_REDIRECT_URL as string | undefined;
 
-// Native apps must redirect back to a custom URL scheme so the OS returns the
-// user to the app. Web apps always return to the same origin that started the
-// sign-in ("/"), so auth works on any domain (dev preview, production, etc.).
+// Always return to the app's own origin after sign-in. On web that's the
+// current domain; in the native apps the OAuth flow runs inside the Capacitor
+// WebView, whose origin (capacitor://localhost) is registered with the WebView,
+// so a same-origin "/" redirect loads correctly. A custom URL scheme like
+// com.soulsanctuary.ai:// only works for OS-level app opens (external browser
+// flows) — the WebView cannot load it and shows a white page instead.
 function getClerkRedirectUrl(_envUrl: string | undefined): string {
-  if (isNativeApp()) {
-    return getNativeRedirectUrl();
-  }
   return "/";
 }
 
