@@ -32,12 +32,13 @@ const clerkSignInRedirectUrl = import.meta.env.VITE_CLERK_SIGN_IN_REDIRECT_URL a
 const clerkSignUpRedirectUrl = import.meta.env.VITE_CLERK_SIGN_UP_REDIRECT_URL as string | undefined;
 
 // Native apps must redirect back to a custom URL scheme so the OS returns the
-// user to the app. Web apps use the configured redirect URL or default to '/'.
-function getClerkRedirectUrl(envUrl: string | undefined): string {
+// user to the app. Web apps always return to the same origin that started the
+// sign-in ("/"), so auth works on any domain (dev preview, production, etc.).
+function getClerkRedirectUrl(_envUrl: string | undefined): string {
   if (isNativeApp()) {
     return getNativeRedirectUrl();
   }
-  return envUrl || "/";
+  return "/";
 }
 
 function AppRouter() {
@@ -81,7 +82,7 @@ function AppRouter() {
   if (!isAuthenticated) {
     return (
       <Switch>
-        <Route path="/sign-in">
+        <Route path="/sign-in/*?">
           <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4 gap-4">
             <SignIn
               routing="path"
@@ -96,7 +97,7 @@ function AppRouter() {
             </Button>
           </div>
         </Route>
-        <Route path="/sign-up">
+        <Route path="/sign-up/*?">
           <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4 gap-4">
             <SignUp
               routing="path"
