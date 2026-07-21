@@ -1,0 +1,8 @@
+# SoulSanctuary
+
+> SoulSanctuary is a Christian faith-integrated AI companion that combines faith-based spiritual support with evidence-based therapeutic practices. It provides emotional support, spiritual guidance, prayer, scripture meditation, and tools for personal growth rooted in DBT, CBT, ACT, and Mindfulness techniques.
+
+## Key Public Pages
+
+- [Home / Landing](https://soulsanctuary.app/): Overview of the product, its mission, and features.
+- [Sales / Pricing](https://soulsanctuary.app/sales): Subscription plans and premium features.
