@@ -27,10 +27,10 @@ export function OAuthCallback() {
     }
 
     // Clerk will read __clerk_status and other params from the current URL.
+    // Do not pass redirectUrl here: the current URL can contain a stale
+    // custom-scheme redirect_url, which Clerk's API rejects.
     clerk
-      .handleRedirectCallback({
-        redirectUrl: window.location.href,
-      })
+      .handleRedirectCallback({})
       .then(() => {
         console.log("[OAuthCallback] handleRedirectCallback succeeded");
         // Give Clerk a moment to update auth state, then send the user home.

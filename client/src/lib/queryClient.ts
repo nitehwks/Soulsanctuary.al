@@ -31,19 +31,40 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
-function authHeaders(): Record<string, string> {
+/**
+ * Live Clerk token getter, registered by the app once Clerk is available.
+ * Clerk session JWTs expire after ~60 seconds, so every request must ask
+ * Clerk for a fresh token (getToken auto-refreshes) instead of reusing a
+ * token cached at sign-in time — a cached token goes stale and every API
+ * call starts returning 401 shortly after login.
+ */
+let clerkTokenGetter: (() => Promise<string | null>) | null = null;
+
+export function setClerkTokenGetter(getter: (() => Promise<string | null>) | null): void {
+  clerkTokenGetter = getter;
+}
+
+async function authHeaders(): Promise<Record<string, string>> {
+  if (clerkTokenGetter) {
+    try {
+      const token = await clerkTokenGetter();
+      if (token) return { Authorization: `Bearer ${token}` };
+    } catch {
+      // Fall through to the stored token (local dev account).
+    }
+  }
   const token = localStorage.getItem("clerkSessionToken");
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-function fetchWithTimeout(
+async function fetchWithTimeout(
   input: RequestInfo | URL,
   init?: RequestInit,
   timeoutMs = 8000,
 ): Promise<Response> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
-  const headers = { ...authHeaders(), ...(init?.headers || {}) };
+  const headers = { ...(await authHeaders()), ...(init?.headers || {}) };
   return fetch(input, { ...init, headers, signal: controller.signal }).finally(
     () => clearTimeout(timeout),
   );

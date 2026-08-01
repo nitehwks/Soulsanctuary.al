@@ -38,6 +38,10 @@ export async function initDeepLinkHandler(): Promise<void> {
         const url = new URL(event.url);
 
         if (isOAuthCallbackUrl(url)) {
+          // Close the in-app browser (Safari/Chrome tab) that ran the OAuth flow.
+          import('@capacitor/browser')
+            .then(({ Browser }) => Browser.close())
+            .catch(() => {});
           // Store the callback URL and reload to the app root. Navigating to
           // /oauth/callback inside Capacitor can fail because the WebView tries
           // to load it as a static file. Re-loading from / avoids that.
@@ -77,7 +81,7 @@ export async function initDeepLinkHandler(): Promise<void> {
  * - Native apps use the runtime config API_URL or VITE_API_URL.
  * - Web uses the current origin.
  */
-function getBaseUrl(): string {
+export function getBaseUrl(): string {
   const runtimeConfig = (typeof window !== "undefined" && (window as any).SOULSANCTUARY_CONFIG) || {};
   const apiUrl = (runtimeConfig.API_URL as string | undefined) || (import.meta.env.VITE_API_URL as string | undefined);
   if (apiUrl) return apiUrl.replace(/\/$/, "");

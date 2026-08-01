@@ -1,6 +1,6 @@
 import { Switch, Route } from "wouter";
 import { useAuth as useClerkAuth, SignIn, SignUp } from "@clerk/clerk-react";
-import { queryClient } from "./lib/queryClient";
+import { queryClient, setClerkTokenGetter } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -23,6 +23,7 @@ import FeatureFlags from "@/pages/FeatureFlags";
 import Sales from "@/pages/Sales";
 import { OAuthCallback } from "@/components/auth/OAuthCallback";
 import { PendingOAuthHandler } from "@/components/auth/PendingOAuthHandler";
+import { NativeSocialSignIn } from "@/components/auth/NativeSocialSignIn";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Loader2 } from "lucide-react";
 
@@ -43,20 +44,16 @@ function getClerkRedirectUrl(_envUrl: string | undefined): string {
 
 function AppRouter() {
   const { isAuthenticated, isLoading } = useAuth();
-  const { isSignedIn, getToken } = useClerkAuth();
+  const { getToken } = useClerkAuth();
 
-  // Whenever Clerk signs in, stash the session token so API calls can use it.
+  // Give the API layer direct access to Clerk's getToken so every request
+  // uses a fresh session token. getToken auto-refreshes expired tokens,
+  // which is essential on mobile where the app stays open for long periods
+  // and a token cached at sign-in expires after ~60 seconds.
   useEffect(() => {
-    if (!isSignedIn) {
-      localStorage.removeItem("clerkSessionToken");
-      return;
-    }
-    getToken()
-      .then((token) => {
-        if (token) localStorage.setItem("clerkSessionToken", token);
-      })
-      .catch(() => {});
-  }, [isSignedIn, getToken]);
+    setClerkTokenGetter(() => getToken());
+    return () => setClerkTokenGetter(null);
+  }, [getToken]);
 
   // OAuth callback route must be reachable regardless of current auth state.
   if (window.location.pathname === "/oauth/callback") {
@@ -84,6 +81,7 @@ function AppRouter() {
       <Switch>
         <Route path="/sign-in/*?">
           <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4 gap-4">
+            <NativeSocialSignIn />
             <SignIn
               routing="path"
               path="/sign-in"
@@ -99,6 +97,7 @@ function AppRouter() {
         </Route>
         <Route path="/sign-up/*?">
           <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4 gap-4">
+            <NativeSocialSignIn />
             <SignUp
               routing="path"
               path="/sign-up"

@@ -35,7 +35,16 @@ export function PendingOAuthHandler() {
 
     try {
       const pendingUrl = new URL(pending);
-      const search = pendingUrl.search;
+
+      // Only Clerk's own __clerk_* params are needed to complete the flow.
+      // Forwarding the full query string can leak a stale redirect_url with
+      // a custom URL scheme (com.soulsanctuary.ai://...) into Clerk's API,
+      // which rejects it with "Invalid URL scheme".
+      const clerkParams = new URLSearchParams();
+      pendingUrl.searchParams.forEach((value, key) => {
+        if (key.startsWith("__clerk")) clerkParams.set(key, value);
+      });
+      const search = `?${clerkParams.toString()}`;
 
       if (!search.includes("__clerk_status")) {
         console.error("[PendingOAuthHandler] Missing Clerk params");
@@ -52,9 +61,7 @@ export function PendingOAuthHandler() {
       console.log("[PendingOAuthHandler] replaced state with:", newUrl);
 
       clerk
-        .handleRedirectCallback({
-          redirectUrl: window.location.href,
-        })
+        .handleRedirectCallback({})
         .then(() => {
           console.log("[PendingOAuthHandler] handleRedirectCallback succeeded");
           localStorage.removeItem(PENDING_KEY);

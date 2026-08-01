@@ -13,26 +13,37 @@ if (!clerkPublishableKey || clerkPublishableKey.includes("your_clerk")) {
   );
 }
 
-// Origins Clerk is allowed to redirect back to. This includes local Capacitor
-// app origins and any HTTPS tunnel/production domain used for OAuth callbacks.
+// Origins Clerk is allowed to redirect back to. Only http(s) origins belong
+// here: this list also controls which redirect_url values clerk-js forwards
+// to Clerk's API, and the API rejects non-http(s) schemes with
+// "Invalid URL scheme". The WebView's own origin (https://localhost or
+// capacitor://localhost) is same-origin and always allowed, so custom
+// URL schemes (com.soulsanctuary.ai://) must NOT be listed — letting one
+// through here is what broke OAuth on native.
 const allowedRedirectOrigins = [
-  "capacitor://localhost",
   "http://localhost",
   "https://localhost",
   "http://localhost:5001",
   "https://localhost:5001",
-  // iOS/Android custom URL scheme for Clerk native OAuth callbacks.
-  // Clerk is picky about the origin format, so include several variations.
-  "com.soulsanctuary.ai",
-  "com.soulsanctuary.ai://",
-  "com.soulsanctuary.ai://oauth",
-  "com.soulsanctuary.ai://localhost",
-  "com.soulsanctuary.ai://oauth/callback",
 ];
 
 if (clerkSignInRedirectUrl) {
   try {
     const origin = new URL(clerkSignInRedirectUrl).origin;
+    if (!allowedRedirectOrigins.includes(origin)) {
+      allowedRedirectOrigins.push(origin);
+    }
+  } catch {
+    // ignore invalid URL
+  }
+}
+
+// Native social sign-in redirects through the backend's /auth/callback relay,
+// so the backend origin must be an allowed redirect target.
+const apiUrl = import.meta.env.VITE_API_URL as string | undefined;
+if (apiUrl) {
+  try {
+    const origin = new URL(apiUrl).origin;
     if (!allowedRedirectOrigins.includes(origin)) {
       allowedRedirectOrigins.push(origin);
     }
