@@ -112,7 +112,8 @@ function AppRouter() {
           </div>
         </Route>
         <Route path="/sales" component={Sales} />
-        <Route component={Landing} />
+        <Route path="/" component={Landing} />
+        <Route component={NotFound} />
       </Switch>
     );
   }

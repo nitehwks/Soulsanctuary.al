@@ -8,6 +8,28 @@ import { nanoid } from "nanoid";
 
 const viteLogger = createLogger();
 
+const SPA_ROUTES = [
+  "/",
+  "/sales",
+  "/sign-in",
+  "/sign-up",
+  "/oauth/callback",
+  "/dashboard",
+  "/settings",
+  "/docs",
+  "/addons",
+  "/groups",
+  "/analytics",
+  "/clinician",
+  "/feature-flags",
+];
+
+function isSpaRoute(pathname: string): boolean {
+  return SPA_ROUTES.some(
+    (route) => pathname === route || pathname.startsWith(route + "/"),
+  );
+}
+
 export async function setupVite(server: Server, app: Express) {
   const serverOptions = {
     middlewareMode: true,
@@ -33,6 +55,12 @@ export async function setupVite(server: Server, app: Express) {
 
   app.use("*", async (req, res, next) => {
     const url = req.originalUrl;
+    const pathname = req.path || "/";
+
+    if (!isSpaRoute(pathname)) {
+      res.status(404).end();
+      return;
+    }
 
     try {
       const clientTemplate = path.resolve(
