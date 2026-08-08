@@ -18,7 +18,7 @@ interface ConversationListProps {
   currentConversationId: number | null;
   onSelectConversation: (id: number) => void;
   onNewConversation: () => void;
-  mode?: "chat" | "therapist";
+  mode?: "chat" | "coach";
 }
 
 export function ConversationList({ 

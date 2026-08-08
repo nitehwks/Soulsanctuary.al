@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Send, Users, ArrowLeft, Plus, MessageSquare } from "lucide-react";
+import { Send, Users, ArrowLeft, Plus, MessageSquare, LogOut, HeartHandshake, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -11,7 +11,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient, getApiUrl } from "@/lib/queryClient";
 import type { Group, GroupMember, GroupMessage } from "@shared/schema";
 
 interface GroupChatRoomProps {
@@ -21,9 +21,16 @@ interface GroupChatRoomProps {
   onLeave: () => void;
 }
 
+interface CrisisInfo {
+  severity: string;
+  resources: { name: string; phone?: string; text?: string; website?: string; description: string }[];
+  hidden: boolean;
+}
+
 export function GroupChatRoom({ group, anonUserHash, displayName, onLeave }: GroupChatRoomProps) {
   const [input, setInput] = useState("");
   const [showMembers, setShowMembers] = useState(false);
+  const [crisisInfo, setCrisisInfo] = useState<CrisisInfo | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -45,13 +52,43 @@ export function GroupChatRoom({ group, anonUserHash, displayName, onLeave }: Gro
       });
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/groups', group.id, 'messages'] });
+      if (data?.crisis) {
+        setCrisisInfo(data.crisis);
+      }
+      if (data?.piiRedacted) {
+        toast({
+          title: "Privacy protected",
+          description: "Personal contact info was removed from your message before posting."
+        });
+      }
     },
     onError: (error: any) => {
       toast({
         title: "Error",
         description: error.message || "Failed to send message",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const leaveGroupMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('POST', `/api/groups/${group.id}/leave`, {
+        anonUserHash
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/groups'] });
+      toast({ title: "You left the group" });
+      onLeave();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to leave group",
         variant: "destructive"
       });
     }
@@ -123,7 +160,53 @@ export function GroupChatRoom({ group, anonUserHash, displayName, onLeave }: Gro
           >
             <Users className="h-4 w-4" />
           </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => leaveGroupMutation.mutate()}
+            disabled={leaveGroupMutation.isPending}
+            title="Leave group"
+            data-testid="button-leave-group-permanently"
+          >
+            <LogOut className="h-4 w-4" />
+          </Button>
         </div>
+
+        {crisisInfo && (
+          <div className="border-b border-rose-500/30 bg-rose-500/10 px-4 py-3" data-testid="banner-crisis-resources">
+            <div className="flex items-start gap-3">
+              <HeartHandshake className="h-5 w-5 text-rose-400 shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0 space-y-1">
+                <p className="text-sm font-medium text-rose-300">
+                  {crisisInfo.hidden
+                    ? "Your message was held privately, but we want you to have support right now."
+                    : "It sounds like you may be going through something difficult. Support is available."}
+                </p>
+                {crisisInfo.resources.length > 0 && (
+                  <ul className="text-xs text-rose-200/90 space-y-0.5">
+                    {crisisInfo.resources.map((r, i) => (
+                      <li key={i}>
+                        <span className="font-medium">{r.name}</span>
+                        {r.phone && <span> — call {r.phone}</span>}
+                        {r.text && <span> — text {r.text}</span>}
+                        {r.website && <span> — {r.website}</span>}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 shrink-0 text-rose-300"
+                onClick={() => setCrisisInfo(null)}
+                data-testid="button-dismiss-crisis-banner"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
 
         <div className="flex-1 flex overflow-hidden">
           <ScrollArea className="flex-1 px-4 py-4" ref={scrollRef}>
@@ -275,10 +358,19 @@ export function GroupList({ onSelectGroup }: GroupListProps) {
   const [newGroupCategory, setNewGroupCategory] = useState("general");
   const [joiningGroupId, setJoiningGroupId] = useState<number | null>(null);
   const [displayNameInput, setDisplayNameInput] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const { toast } = useToast();
 
   const { data: groups = [], isLoading } = useQuery<Group[]>({
-    queryKey: ['/api/groups'],
+    queryKey: ['/api/groups', 'list', selectedCategory],
+    queryFn: async () => {
+      const path = selectedCategory === 'all'
+        ? '/api/groups'
+        : `/api/groups?category=${encodeURIComponent(selectedCategory)}`;
+      const res = await fetch(getApiUrl(path), { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to load groups');
+      return res.json();
+    }
   });
 
   const createGroupMutation = useMutation({
@@ -429,6 +521,20 @@ export function GroupList({ onSelectGroup }: GroupListProps) {
           <Plus className="h-4 w-4 mr-2" />
           Create Group
         </Button>
+      </div>
+
+      <div className="flex gap-2 mb-6 flex-wrap" data-testid="filter-group-categories">
+        {[{ value: "all", label: "All" }, ...categories].map(cat => (
+          <Button
+            key={cat.value}
+            variant={selectedCategory === cat.value ? "default" : "outline"}
+            size="sm"
+            onClick={() => setSelectedCategory(cat.value)}
+            data-testid={`filter-category-${cat.value}`}
+          >
+            {cat.label}
+          </Button>
+        ))}
       </div>
 
       {showCreateDialog && (

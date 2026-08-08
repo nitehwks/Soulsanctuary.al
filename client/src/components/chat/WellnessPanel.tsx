@@ -180,7 +180,7 @@ export function WellnessPanel({ isOpen, onClose, userId }: WellnessPanelProps) {
         initial={{ x: 300, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         exit={{ x: 300, opacity: 0 }}
-        className="w-80 h-full bg-card border-l border-border flex flex-col"
+        className="absolute right-0 top-0 bottom-0 z-30 w-80 max-w-[85vw] md:static md:max-w-none h-full bg-card border-l border-border flex flex-col"
         data-testid="wellness-panel"
       >
         <div className="p-4 border-b border-border flex items-center justify-between">
@@ -228,7 +228,7 @@ export function WellnessPanel({ isOpen, onClose, userId }: WellnessPanelProps) {
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
                     <Label htmlFor="therapist-mode" className="text-sm font-medium">
-                      Therapist Mode
+                      Coach Mode
                     </Label>
                     <p className="text-xs text-muted-foreground">
                       Track mood patterns and receive supportive guidance
@@ -249,7 +249,7 @@ export function WellnessPanel({ isOpen, onClose, userId }: WellnessPanelProps) {
                     className="p-3 bg-rose-500/10 rounded-lg border border-rose-500/20"
                   >
                     <p className="text-xs text-rose-300">
-                      Therapist mode is active. I'll track your emotional patterns across conversations and offer gentle support when appropriate.
+                      Coach mode is active. I'll track your emotional patterns across conversations and offer gentle support when appropriate.
                     </p>
                   </motion.div>
                 )}
@@ -261,7 +261,7 @@ export function WellnessPanel({ isOpen, onClose, userId }: WellnessPanelProps) {
                 <div className="text-center py-8">
                   <Heart className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
                   <p className="text-sm text-muted-foreground mb-2">
-                    Therapist mode is disabled
+                    Coach mode is disabled
                   </p>
                   <p className="text-xs text-muted-foreground mb-4">
                     Enable it in Settings to track your emotional wellness
@@ -272,7 +272,7 @@ export function WellnessPanel({ isOpen, onClose, userId }: WellnessPanelProps) {
                     onClick={() => setActiveTab('settings')}
                     data-testid="button-enable-therapist"
                   >
-                    Enable Therapist Mode
+                    Enable Coach Mode
                   </Button>
                 </div>
               ) : (

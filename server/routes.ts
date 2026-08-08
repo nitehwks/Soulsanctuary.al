@@ -32,11 +32,52 @@ import { updateUserProfile, getProfileSummary, generateCoachingPlan, getEnhanced
 import { processMessageForLearning } from "./lib/contextualLearning";
 import { setupAuth, isAuthenticated } from "./clerkAuth";
 import OpenAI from "openai";
+import { z } from "zod";
 
 const openai = new OpenAI({
   baseURL: process.env.AI_INTEGRATIONS_OPENROUTER_BASE_URL,
   apiKey: process.env.AI_INTEGRATIONS_OPENROUTER_API_KEY,
 });
+
+const setupContactSchema = z.object({
+  email: z.string().email().optional(),
+  phone: z.string().min(7).max(30).optional(),
+});
+
+const feedbackCreateSchema = z.object({
+  category: z.enum(["feature", "bug", "coaching", "general"]).default("general"),
+  rating: z.number().int().min(1).max(5).nullable().optional(),
+  subject: z.string().max(160).nullable().optional(),
+  message: z.string().min(1).max(5000),
+});
+
+function normalizePhone(raw?: string): string | null {
+  if (!raw) return null;
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  return trimmed.replace(/\s+/g, " ");
+}
+
+function parseFeedbackMeta(originalContent: string | null): {
+  category: "feature" | "bug" | "coaching" | "general";
+  rating: number | null;
+  subject: string | null;
+} {
+  if (!originalContent) {
+    return { category: "general", rating: null, subject: null };
+  }
+
+  try {
+    const parsed = JSON.parse(originalContent);
+    return {
+      category: parsed?.category ?? "general",
+      rating: typeof parsed?.rating === "number" ? parsed.rating : null,
+      subject: typeof parsed?.subject === "string" ? parsed.subject : null,
+    };
+  } catch {
+    return { category: "general", rating: null, subject: null };
+  }
+}
 
 function generateConversationTitle(content: string): string {
   const cleanContent = content.trim().replace(/\s+/g, ' ');
@@ -112,6 +153,12 @@ async function extractFactsFromMessage(content: string, userId: string, sentimen
     { regex: /(?:my address is|i live at)\s+([^,.]+)/i, category: "Address" },
     { regex: /(?:i need|i want|looking for)\s+([^,.!?]+)/i, category: "Need" },
     { regex: /(?:the problem is|my issue is|i'm having trouble with)\s+([^,.!?]+)/i, category: "Issue" },
+    { regex: /(?:i am|i'm|i tend to be|people say i'm|people say i am)\s+(kind|kindhearted|generous|patient|impatient|anxious|calm|organized|disorganized|creative|logical|sensitive|stubborn|quiet|outgoing|social|reserved|supportive|protective|curious|driven|hardworking|lazy|thoughtful|confident|insecure|optimistic|pessimistic|empathetic|compassionate|disciplined|shy|energetic|restless|overwhelmed|spiritual|faithful|critical|independent|reliable|responsible)(?:\s+[^,.!?]*)?/i, category: "Character" },
+    { regex: /(?:i have|i'm having|i've been having|i'm dealing with|i suffer from|i struggle with)\s+([^,.!?]*(?:pain|headache|migraine|nausea|fatigue|tiredness|insomnia|sleep|anxiety|panic|depression|stress|dizziness|cough|fever|symptom|symptoms|cramps|numbness|chest tightness|heart racing|ache)[^,.!?]*)/i, category: "Symptom" },
+    { regex: /(?:i feel|i've been feeling|lately i feel|recently i feel)\s+([^,.!?]+)/i, category: "Mood" },
+    { regex: /(?:i keep|i usually|i often|i tend to|i always|i never)\s+([^,.!?]+)/i, category: "Habit" },
+    { regex: /(?:i'm worried about|i'm concerned about|concerned about|worried about)\s+([^,.!?]+)/i, category: "Concern" },
+    { regex: /(?:my goal is|i want to|i hope to|i'm trying to)\s+([^,.!?]+)/i, category: "Goal" },
   ];
 
   const sourceContext = content.substring(0, 200);
@@ -261,6 +308,214 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/setup/contact", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.userId as string;
+      const user = req.user;
+      const context = await storage.getUserContextByUser(userId);
+      const prefs = await storage.getUserPreferences(userId);
+
+      const phoneContext = context.find((c) => c.category.toLowerCase() === "phone");
+      const email = user?.email || null;
+      const phone = phoneContext?.value || null;
+
+      res.json({
+        email,
+        phone,
+        storeContactInfo: prefs?.storeContactInfo ?? true,
+        hasContact: Boolean((prefs?.storeContactInfo ?? true) && (email || phone)),
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/setup/contact", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.userId as string;
+      const parsed = setupContactSchema.safeParse(req.body ?? {});
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid setup data" });
+      }
+
+      const current = await storage.getUser(userId);
+      if (!current) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      const existingPrefs = (await storage.getUserPreferences(userId)) || {
+        userId,
+        storeContactInfo: true,
+        privacyLevel: "balanced",
+        therapistModeEnabled: false,
+        autoCoachingEnabled: true,
+        faithSupportEnabled: true,
+        faithOfferDeclines: 0,
+        lastFaithDeclineAt: null,
+      };
+
+      const nextEmail = parsed.data.email ?? current.email ?? null;
+      const nextPhone = normalizePhone(parsed.data.phone);
+
+      await storage.upsertUser({
+        id: current.id,
+        username: current.username,
+        password: current.password,
+        name: current.name,
+        email: nextEmail,
+        firstName: current.firstName,
+        lastName: current.lastName,
+        profileImageUrl: current.profileImageUrl,
+      });
+
+      await storage.upsertUserPreferences({
+        ...existingPrefs,
+        userId,
+        storeContactInfo: true,
+      });
+
+      if (nextPhone) {
+        await storage.upsertUserContextWithSentiment(
+          userId,
+          "Phone",
+          nextPhone,
+          95,
+          "neutral",
+          "Setup contact information",
+        );
+      }
+
+      res.json({
+        email: nextEmail,
+        phone: nextPhone,
+        storeContactInfo: true,
+        hasContact: Boolean(nextEmail || nextPhone),
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/setup/contact", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.userId as string;
+      const user = req.user;
+
+      const existingPrefs = (await storage.getUserPreferences(userId)) || {
+        userId,
+        storeContactInfo: false,
+        privacyLevel: "private",
+        therapistModeEnabled: false,
+        autoCoachingEnabled: true,
+        faithSupportEnabled: true,
+        faithOfferDeclines: 0,
+        lastFaithDeclineAt: null,
+      };
+
+      await storage.upsertUserPreferences({
+        ...existingPrefs,
+        userId,
+        storeContactInfo: false,
+      });
+
+      const userContext = await storage.getUserContextByUser(userId);
+      const contactsToDelete = userContext.filter((entry) => {
+        const category = entry.category.toLowerCase();
+        return category === "phone" || category === "email";
+      });
+
+      for (const entry of contactsToDelete) {
+        await storage.deleteUserContextById(entry.id);
+      }
+
+      res.json({
+        email: user?.email || null,
+        phone: null,
+        storeContactInfo: false,
+        hasContact: false,
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/feedback", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.userId as string;
+      const feedbackConversations = (await storage.getConversationsByUser(userId))
+        .filter((c) => c.mode === "feedback")
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+      const items = await Promise.all(
+        feedbackConversations.map(async (conversation) => {
+          const messages = await storage.getMessagesByConversation(conversation.id);
+          const firstMessage = messages[0];
+          if (!firstMessage) return null;
+
+          const meta = parseFeedbackMeta(firstMessage.originalContent || null);
+          return {
+            id: conversation.id,
+            userId,
+            category: meta.category,
+            rating: meta.rating,
+            subject: meta.subject || conversation.title || null,
+            message: firstMessage.content,
+            status: "submitted",
+            createdAt: firstMessage.timestamp,
+          };
+        }),
+      );
+
+      res.json(items.filter(Boolean));
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/feedback", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.userId as string;
+      const parsed = feedbackCreateSchema.safeParse(req.body ?? {});
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid feedback payload" });
+      }
+
+      const feedback = parsed.data;
+      const fallbackTitle = `Feedback: ${feedback.category}`;
+      const title = feedback.subject?.trim() || fallbackTitle;
+
+      const conversation = await storage.createConversation({
+        userId,
+        title,
+        mode: "feedback",
+      });
+
+      const message = await storage.createMessage({
+        conversationId: conversation.id,
+        role: "user",
+        content: feedback.message.trim(),
+        originalContent: JSON.stringify({
+          category: feedback.category,
+          rating: feedback.rating ?? null,
+          subject: feedback.subject?.trim() || null,
+        }),
+      });
+
+      res.json({
+        id: conversation.id,
+        userId,
+        category: feedback.category,
+        rating: feedback.rating ?? null,
+        subject: feedback.subject?.trim() || null,
+        message: message.content,
+        status: "submitted",
+        createdAt: message.timestamp,
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.post("/api/conversations", async (req, res) => {
     try {
       const data = insertConversationSchema.parse(req.body);
@@ -291,7 +546,10 @@ export async function registerRoutes(
       let conversations = await storage.getConversationsByUser(userId);
       
       if (mode) {
-        conversations = conversations.filter(c => c.mode === mode);
+        // "coach" also matches legacy conversations stored with mode "therapist"
+        conversations = conversations.filter(c =>
+          c.mode === mode || (mode === "coach" && c.mode === "therapist")
+        );
       }
       
       res.json(conversations);
@@ -344,8 +602,8 @@ export async function registerRoutes(
       }
 
       const userPrefs = await storage.getUserPreferences(userId);
-      // Enable therapist mode if explicitly requested via mode parameter or user preferences
-      let therapistMode = mode === "therapist" || (userPrefs?.therapistModeEnabled ?? false);
+      // Enable coach mode if explicitly requested via mode parameter ("therapist" accepted for legacy clients) or user preferences
+      let therapistMode = mode === "coach" || mode === "therapist" || (userPrefs?.therapistModeEnabled ?? false);
       
       // Auto-coaching: Check if we know enough about the user to automatically enable coaching mode
       if (!therapistMode && userPrefs?.autoCoachingEnabled !== false) {
@@ -613,6 +871,46 @@ Continue to be a caring, supportive presence. Focus on therapeutic techniques an
 **REMEMBER: You are also a general-purpose AI assistant.** You can help with any questions or tasks.`;
         }
       }
+
+      const integratedExpertiseFramework = `
+## INTEGRATED EXPERTISE FRAMEWORK (ALWAYS APPLY)
+You are not a single-topic assistant. You are an integrated care guide across ALL domains:
+
+1) MENTAL HEALTH:
+- Use evidence-based skills (CBT, DBT, ACT, mindfulness, grounding, breathing).
+- Name emotional patterns and offer practical next-step regulation tools.
+
+2) FAITH & SPIRITUAL CARE:
+${faithEnabled
+  ? `- Offer prayer, scripture, and spiritual encouragement when welcome.
+- Emphasize grace, dignity, hope, and God's forgiveness.
+- If they are struggling with shame, normalize confession + restoration language.`
+  : `- Respect their faith preference setting and avoid explicit religious language.
+- Preserve warmth, compassion, dignity, and meaning-focused support.`}
+
+3) ADDICTION RECOVERY (SUBSTANCE + BEHAVIORAL):
+- Recognize drug/alcohol and behavioral addictions (shopping, gambling, sexual compulsivity, pornography, other compulsive patterns).
+- Offer BOTH options when relevant:
+  - 12-step compatible practices (surrender, accountability, one-day-at-a-time)
+  - SMART-style alternatives (urge surfing, thought disputation, practical coping plans)
+- Treat slips/relapse with compassion: slips are data, not identity.
+- Reinforce repair actions immediately after slips (support contact, trigger plan, return to recovery routine).
+
+4) CRISIS SAFETY:
+- Continuously assess for self-harm, suicide risk, violence risk, abuse, coercion, and severe instability.
+- If elevated risk appears, shift to safety-first tone and provide crisis resources.
+- Keep language non-judgmental, calm, direct, and protective.
+
+## HOW TO BLEND THESE AREAS IN EACH RESPONSE
+- First: validate emotion and reduce shame.
+- Second: identify likely driver (mental health stress, addiction urge, relational rupture, spiritual distress, safety risk).
+- Third: offer 1 immediate stabilizing action.
+- Fourth: offer 1 deeper recovery path (12-step and/or SMART alternative when addiction is relevant).
+${faithEnabled ? `- Fifth: if welcomed, offer brief prayer/scripture and invite turning this burden over to God.` : `- Fifth: reinforce values-based commitment and practical accountability.`}
+- Sixth: end with a clear, small next step they can do now.
+
+Never reduce people to one issue. Always hold their full humanity: psychological, spiritual, behavioral, and safety needs.
+`;
       
       const basePrompt = therapistMode 
         ? `You are SoulSanctuary AI, ${faithEnabled ? `a compassionate counselor, performance coach, and spiritual guide. **BE A TRUSTED CONFIDANT** - a caring companion who walks with people on their journey toward healing and wholeness.` : `a compassionate counselor and performance coach focused on evidence-based therapeutic support with warmth and care.`}
@@ -702,7 +1000,10 @@ ${faithEnabled ? `### THE JESUS APPROACH
 - Notice what they're NOT saying as much as what they are
 - Trust your instincts when something feels off
 - Sometimes silence and presence are more healing than words
-- Guide toward independence, not dependence on you${faithGuidance}`
+- Guide toward independence, not dependence on you
+
+${integratedExpertiseFramework}
+${faithGuidance}`
         : `You are SoulSanctuary AI - a caring Christian AI companion who provides spiritual support, prayer, and guidance.
 
 ## YOUR IDENTITY
@@ -1944,6 +2245,34 @@ Guidelines:
     }
   });
 
+  // Leave group (anonymous)
+  app.post("/api/groups/:id/leave", async (req, res) => {
+    try {
+      const groupId = parseInt(req.params.id);
+      const { anonUserHash } = req.body;
+      
+      if (isNaN(groupId)) {
+        return res.status(400).json({ error: "Invalid group ID" });
+      }
+      
+      if (!anonUserHash) {
+        return res.status(400).json({ error: "anonUserHash is required" });
+      }
+      
+      const member = await storage.getGroupMember(groupId, anonUserHash);
+      if (!member) {
+        return res.status(404).json({ error: "You are not a member of this group" });
+      }
+      
+      await storage.removeGroupMember(groupId, anonUserHash);
+      await storage.decrementGroupMemberCount(groupId);
+      
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Get group members
   app.get("/api/groups/:id/members", async (req, res) => {
     try {
@@ -1985,20 +2314,44 @@ Guidelines:
         return res.status(403).json({ error: "You must join the group first" });
       }
       
+      // Crisis detection & PII redaction - same pipeline as 1:1 chat.
+      // Redact contact info aggressively in groups since they are shared anonymous spaces.
+      const redactionResult = redactPII(message, { redactEmails: true, redactPhones: true });
+      const cleanMessage = redactionResult.redactedContent;
+      const sentimentResult = analyzeSentiment(message);
+      const crisisAssessment = detectCrisis(message, sentimentResult.score);
+      
+      // High/critical severity messages are hidden from the group (moderated),
+      // and the poster receives crisis resources immediately in the response.
+      const shouldModerate = crisisAssessment.severity === "high" || crisisAssessment.severity === "critical";
+      
       // Create message
       const groupMessage = await storage.createGroupMessage({
         groupId,
         anonUserHash,
-        message,
+        message: cleanMessage,
         replyToId: replyToId || null,
-        moderated: false
+        moderated: shouldModerate,
+        moderationReason: shouldModerate
+          ? `Crisis detected (${crisisAssessment.crisisType ?? "general_distress"}, severity: ${crisisAssessment.severity})`
+          : null
       });
       
       // Update counters and activity
       await storage.incrementGroupMessageCount(groupId);
       await storage.updateGroupMemberActivity(groupId, anonUserHash);
       
-      res.json(groupMessage);
+      res.json({
+        ...groupMessage,
+        piiRedacted: redactionResult.wasRedacted,
+        // Surface resources whenever the assessment recommends more than "continue"
+        // (covers moderate/"offer_resources" as well as high/critical)
+        crisis: crisisAssessment.recommendedAction !== "continue" ? {
+          severity: crisisAssessment.severity,
+          resources: crisisAssessment.crisisResources ?? [],
+          hidden: shouldModerate
+        } : null
+      });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

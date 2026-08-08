@@ -1,5 +1,6 @@
 import { Layout } from "@/components/layout/Layout";
 import { ChatInterface } from "@/components/chat/ChatInterface";
+import { FeedbackWorkspace } from "@/components/feedback/FeedbackWorkspace";
 import { PrivacyShield } from "@/components/chat/PrivacyShield";
 import { KnowledgeGraph } from "@/components/dashboard/KnowledgeGraph";
 import { MemoryPanel } from "@/components/chat/MemoryPanel";
@@ -7,7 +8,7 @@ import { KnowledgePanel } from "@/components/chat/KnowledgePanel";
 import { motion } from "framer-motion";
 import { 
   ChevronRight, Database, ShieldCheck, Activity, LogOut, User, 
-  MessageSquare, Heart, Brain, CheckCircle2, Sparkles, Menu, Settings
+  MessageSquare, Heart, Brain, CheckCircle2, Sparkles, Menu, Settings, MessageSquareQuote
 } from "lucide-react";
 import { Link } from "wouter";
 import { useState, useEffect } from "react";
@@ -19,14 +20,15 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 
-type ChatMode = "chat" | "therapist";
+type AppMode = "chat" | "coach" | "feedback";
+const OPEN_FEEDBACK_MODE_EVENT = "soulsanctuary:open-feedback-mode";
 
 export default function Home() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [showKnowledge, setShowKnowledge] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showMobileStatus, setShowMobileStatus] = useState(false);
-  const [mode, setMode] = useState<ChatMode>("chat");
+  const [mode, setMode] = useState<AppMode>("chat");
   const [dbStatus, setDbStatus] = useState<"connected" | "disconnected" | "checking">("checking");
   const [activeModels, setActiveModels] = useState<string[]>([]);
   const { user, isGuest, logout } = useAuth();
@@ -43,6 +45,20 @@ export default function Home() {
     checkDbStatus();
     const interval = setInterval(checkDbStatus, 30000);
     return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const onOpenFeedbackMode = () => setMode("feedback");
+    window.addEventListener(OPEN_FEEDBACK_MODE_EVENT, onOpenFeedbackMode);
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("mode") === "feedback") {
+      setMode("feedback");
+    }
+
+    return () => {
+      window.removeEventListener(OPEN_FEEDBACK_MODE_EVENT, onOpenFeedbackMode);
+    };
   }, []);
 
   const handleLogout = () => {
@@ -62,23 +78,31 @@ export default function Home() {
                         <span className="px-1.5 md:px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[9px] md:text-[10px] font-sans font-medium">BETA</span>
                     </h1>
                     
-                    <Tabs value={mode} onValueChange={(v) => setMode(v as ChatMode)} className="ml-1 md:ml-4">
-                      <TabsList className="h-9 md:h-10 bg-primary/10 border-2 border-primary/20 p-0.5 md:p-1">
+                    <Tabs value={mode} onValueChange={(v) => setMode(v as AppMode)} className="ml-1 md:ml-4">
+                      <TabsList className="h-9 md:h-10 grid grid-cols-3 bg-primary/10 border-2 border-primary/20 p-0.5 md:p-1 min-w-[12rem] md:min-w-[16rem]">
                         <TabsTrigger 
                           value="chat" 
-                          className="text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2 gap-1.5 md:gap-2 font-semibold data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-md transition-all"
+                          className="w-full text-[11px] sm:text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2 gap-1.5 md:gap-2 font-semibold data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-md transition-all"
                           data-testid="tab-chat-mode"
                         >
                           <MessageSquare className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                          <span className="hidden xs:inline">Chat</span>
+                          <span>Chat</span>
                         </TabsTrigger>
                         <TabsTrigger 
-                          value="therapist" 
-                          className="text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2 gap-1.5 md:gap-2 font-semibold data-[state=active]:bg-rose-500 data-[state=active]:text-white data-[state=active]:shadow-md transition-all"
-                          data-testid="tab-therapist-mode"
+                          value="coach" 
+                          className="w-full text-[11px] sm:text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2 gap-1.5 md:gap-2 font-semibold data-[state=active]:bg-rose-500 data-[state=active]:text-white data-[state=active]:shadow-md transition-all"
+                          data-testid="tab-coach-mode"
                         >
                           <Heart className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                          <span className="hidden xs:inline">Care</span>
+                          <span>Coach</span>
+                        </TabsTrigger>
+                        <TabsTrigger
+                          value="feedback"
+                          className="w-full text-[11px] sm:text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2 gap-1.5 md:gap-2 font-semibold data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-md transition-all"
+                          data-testid="tab-feedback-mode"
+                        >
+                          <MessageSquareQuote className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                          <span>Feedback</span>
                         </TabsTrigger>
                       </TabsList>
                     </Tabs>
@@ -136,18 +160,32 @@ export default function Home() {
                 </div>
             </div>
             
-            {mode === "therapist" && (
+            {mode === "coach" && (
               <div className="bg-gradient-to-r from-amber-500/10 via-rose-500/10 to-purple-500/10 border-b border-amber-500/20 px-3 md:px-6 py-1.5 md:py-2">
                 <div className="flex items-center gap-2 text-[10px] md:text-xs text-amber-700 dark:text-amber-400">
                   <Heart className="h-3 w-3 md:h-3.5 md:w-3.5 shrink-0" />
-                  <span className="hidden sm:inline">Supportive Care Mode - Combining faith, therapy, and coaching to support your journey</span>
-                  <span className="sm:hidden">Supportive Care Mode</span>
+                  <span className="hidden sm:inline">Coach Mode - Combining faith, therapy, and coaching to support your journey</span>
+                  <span className="sm:hidden">Coach Mode</span>
                   <span className="ml-auto text-[9px] md:text-[10px] opacity-70 italic hidden md:inline">"Come to me, all you who are weary..." - Matthew 11:28</span>
                 </div>
               </div>
             )}
+
+            {mode === "feedback" && (
+              <div className="bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-yellow-500/10 border-b border-amber-500/20 px-3 md:px-6 py-1.5 md:py-2">
+                <div className="flex items-center gap-2 text-[10px] md:text-xs text-amber-700 dark:text-amber-400">
+                  <MessageSquareQuote className="h-3 w-3 md:h-3.5 md:w-3.5 shrink-0" />
+                  <span className="hidden sm:inline">Feedback Mode - Share ideas, report issues, and help us improve</span>
+                  <span className="sm:hidden">Feedback Mode</span>
+                </div>
+              </div>
+            )}
             
-            <ChatInterface mode={mode} onModelsUsed={setActiveModels} />
+            {mode === "feedback" ? (
+              <FeedbackWorkspace />
+            ) : (
+              <ChatInterface mode={mode} onModelsUsed={setActiveModels} />
+            )}
         </div>
 
         <motion.div 
@@ -211,8 +249,10 @@ export default function Home() {
                         </div>
                         <div className="p-3 bg-background border border-border rounded-lg flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                                {mode === "therapist" ? (
+                                {mode === "coach" ? (
                                   <Heart className="w-4 h-4 text-rose-500" />
+                                ) : mode === "feedback" ? (
+                                  <MessageSquareQuote className="w-4 h-4 text-amber-500" />
                                 ) : (
                                   <MessageSquare className="w-4 h-4 text-blue-500" />
                                 )}
@@ -220,9 +260,11 @@ export default function Home() {
                             </div>
                             <span className={cn(
                               "text-[10px] px-2 py-0.5 rounded capitalize",
-                              mode === "therapist" 
+                              mode === "coach" 
                                 ? "bg-rose-500/10 text-rose-500" 
-                                : "bg-blue-500/10 text-blue-500"
+                                : mode === "feedback"
+                                  ? "bg-amber-500/10 text-amber-500"
+                                  : "bg-blue-500/10 text-blue-500"
                             )}>
                               {mode}
                             </span>
@@ -374,8 +416,10 @@ export default function Home() {
                 </div>
                 <div className="p-3 bg-background border border-border rounded-lg flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    {mode === "therapist" ? (
+                    {mode === "coach" ? (
                       <Heart className="w-4 h-4 text-rose-500" />
+                    ) : mode === "feedback" ? (
+                      <MessageSquareQuote className="w-4 h-4 text-amber-500" />
                     ) : (
                       <MessageSquare className="w-4 h-4 text-blue-500" />
                     )}
@@ -383,9 +427,11 @@ export default function Home() {
                   </div>
                   <span className={cn(
                     "text-[10px] px-2 py-0.5 rounded capitalize",
-                    mode === "therapist" 
+                    mode === "coach" 
                       ? "bg-rose-500/10 text-rose-500" 
-                      : "bg-blue-500/10 text-blue-500"
+                      : mode === "feedback"
+                        ? "bg-amber-500/10 text-amber-500"
+                        : "bg-blue-500/10 text-blue-500"
                   )}>
                     {mode}
                   </span>

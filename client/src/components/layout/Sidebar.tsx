@@ -1,4 +1,4 @@
-import { Home, Shield, Settings, Activity, Users, BarChart3, Stethoscope, Flag, Heart } from "lucide-react";
+import { Home, Shield, Settings, Activity, Users, BarChart3, Flag, Heart } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -12,7 +12,6 @@ export function Sidebar() {
     { href: "/", icon: Home, labelKey: "nav.chat" },
     { href: "/groups", icon: Users, labelKey: "nav.groups" },
     { href: "/analytics", icon: BarChart3, labelKey: "nav.analytics" },
-    { href: "/clinician", icon: Stethoscope, labelKey: "nav.clinician" },
     { href: "/feature-flags", icon: Flag, labelKey: "nav.featureFlags" },
     { href: "/dashboard", icon: Activity, labelKey: "nav.activity" },
     { href: "/settings", icon: Settings, labelKey: "nav.settings" },

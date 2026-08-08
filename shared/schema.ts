@@ -383,7 +383,8 @@ export const insertConversationSchema = createInsertSchema(conversations).omit({
   updatedAt: true,
 }).extend({
   title: z.string().nullable().optional(),
-  mode: z.enum(["chat", "therapist"]).optional().default("chat"),
+  // "therapist" kept for backward compatibility with conversations stored before the coach rename
+  mode: z.enum(["chat", "coach", "therapist", "feedback"]).optional().default("chat"),
 });
 
 export const insertMessageSchema = createInsertSchema(messages).omit({

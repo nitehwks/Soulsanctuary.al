@@ -137,6 +137,7 @@ export interface IStorage {
   createUserContext(context: InsertUserContext): Promise<UserContext>;
   getUserContextByUser(userId: string): Promise<UserContext[]>;
   updateUserContext(id: number, value: string, confidence: number): Promise<UserContext | undefined>;
+  deleteUserContextById(id: number): Promise<boolean>;
   upsertUserContext(userId: string, category: string, value: string, confidence: number): Promise<UserContext>;
   upsertUserContextWithSentiment(userId: string, category: string, value: string, confidence: number, sentiment: string, sourceContext: string): Promise<UserContext>;
   
@@ -238,6 +239,7 @@ export interface IStorage {
   getGroups(category?: string): Promise<Group[]>;
   updateGroup(id: number, updates: Partial<Group>): Promise<Group | undefined>;
   incrementGroupMemberCount(id: number): Promise<Group | undefined>;
+  decrementGroupMemberCount(id: number): Promise<Group | undefined>;
   incrementGroupMessageCount(id: number): Promise<Group | undefined>;
   
   // Group Member methods
@@ -245,6 +247,7 @@ export interface IStorage {
   getGroupMember(groupId: number, anonUserHash: string): Promise<GroupMember | undefined>;
   getGroupMembers(groupId: number): Promise<GroupMember[]>;
   updateGroupMemberActivity(groupId: number, anonUserHash: string): Promise<GroupMember | undefined>;
+  removeGroupMember(groupId: number, anonUserHash: string): Promise<boolean>;
   
   // Group Message methods
   createGroupMessage(message: InsertGroupMessage): Promise<GroupMessage>;
@@ -325,6 +328,31 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  private shouldAppendUserContext(category: string): boolean {
+    return new Set([
+      'Need',
+      'Issue',
+      'Interest',
+      'Project',
+      'Role',
+      'Location',
+      'Company',
+      'Character',
+      'Symptom',
+      'Concern',
+      'Need',
+      'Challenge',
+      'Goal',
+      'Habit',
+      'Strength',
+      'Relationship',
+      'Emotion',
+      'Mood',
+      'Attitude',
+      'Coping',
+    ]).has(category);
+  }
+
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
@@ -482,17 +510,39 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
+  async deleteUserContextById(id: number): Promise<boolean> {
+    const result = await db.delete(userContext).where(eq(userContext.id, id));
+    return Number(result.rowCount ?? 0) > 0;
+  }
+
   async upsertUserContext(userId: string, category: string, value: string, confidence: number): Promise<UserContext> {
     const existing = await db.select().from(userContext)
-      .where(and(eq(userContext.userId, userId), eq(userContext.category, category)));
-    
+      .where(and(eq(userContext.userId, userId), eq(userContext.category, category), eq(userContext.value, value)));
+
     if (existing.length > 0) {
       const [updated] = await db.update(userContext)
-        .set({ value, confidence, updatedAt: new Date() })
+        .set({ confidence, updatedAt: new Date() })
         .where(eq(userContext.id, existing[0].id))
         .returning();
       return updated;
+    } else if (this.shouldAppendUserContext(category)) {
+      const [created] = await db.insert(userContext)
+        .values({ userId, category, value, confidence })
+        .returning();
+      return created;
     } else {
+      const latest = await db.select().from(userContext)
+        .where(and(eq(userContext.userId, userId), eq(userContext.category, category)))
+        .orderBy(desc(userContext.updatedAt));
+
+      if (latest.length > 0) {
+        const [updated] = await db.update(userContext)
+          .set({ value, confidence, updatedAt: new Date() })
+          .where(eq(userContext.id, latest[0].id))
+          .returning();
+        return updated;
+      }
+
       const [created] = await db.insert(userContext)
         .values({ userId, category, value, confidence })
         .returning();
@@ -502,15 +552,32 @@ export class DatabaseStorage implements IStorage {
 
   async upsertUserContextWithSentiment(userId: string, category: string, value: string, confidence: number, sentiment: string, sourceContext: string): Promise<UserContext> {
     const existing = await db.select().from(userContext)
-      .where(and(eq(userContext.userId, userId), eq(userContext.category, category)));
-    
+      .where(and(eq(userContext.userId, userId), eq(userContext.category, category), eq(userContext.value, value)));
+
     if (existing.length > 0) {
       const [updated] = await db.update(userContext)
-        .set({ value, confidence, sentiment, sourceContext, updatedAt: new Date() })
+        .set({ confidence, sentiment, sourceContext, updatedAt: new Date() })
         .where(eq(userContext.id, existing[0].id))
         .returning();
       return updated;
+    } else if (this.shouldAppendUserContext(category)) {
+      const [created] = await db.insert(userContext)
+        .values({ userId, category, value, confidence, sentiment, sourceContext })
+        .returning();
+      return created;
     } else {
+      const latest = await db.select().from(userContext)
+        .where(and(eq(userContext.userId, userId), eq(userContext.category, category)))
+        .orderBy(desc(userContext.updatedAt));
+
+      if (latest.length > 0) {
+        const [updated] = await db.update(userContext)
+          .set({ value, confidence, sentiment, sourceContext, updatedAt: new Date() })
+          .where(eq(userContext.id, latest[0].id))
+          .returning();
+        return updated;
+      }
+
       const [created] = await db.insert(userContext)
         .values({ userId, category, value, confidence, sentiment, sourceContext })
         .returning();
@@ -1031,6 +1098,14 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
+  async decrementGroupMemberCount(id: number): Promise<Group | undefined> {
+    const [updated] = await db.update(groups)
+      .set({ memberCount: sql`GREATEST(${groups.memberCount} - 1, 0)`, updatedAt: new Date() })
+      .where(eq(groups.id, id))
+      .returning();
+    return updated;
+  }
+
   async incrementGroupMessageCount(id: number): Promise<Group | undefined> {
     const [updated] = await db.update(groups)
       .set({ messageCount: sql`${groups.messageCount} + 1`, updatedAt: new Date() })
@@ -1063,6 +1138,13 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(groupMembers.groupId, groupId), eq(groupMembers.anonUserHash, anonUserHash)))
       .returning();
     return updated;
+  }
+
+  async removeGroupMember(groupId: number, anonUserHash: string): Promise<boolean> {
+    const result = await db.delete(groupMembers)
+      .where(and(eq(groupMembers.groupId, groupId), eq(groupMembers.anonUserHash, anonUserHash)))
+      .returning();
+    return result.length > 0;
   }
 
   // Group Message methods

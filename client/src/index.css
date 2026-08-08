@@ -431,12 +431,3 @@
   }
 }
 
-/* Native apps use the relay-based social buttons (NativeSocialSignIn) instead
-   of Clerk's built-in ones, which break on the capacitor:// WebView origin
-   and because Google blocks OAuth inside embedded WebViews. */
-.platform-ios .cl-socialButtonsBlockButton,
-.platform-ios .cl-dividerRow,
-.platform-android .cl-socialButtonsBlockButton,
-.platform-android .cl-dividerRow {
-  display: none !important;
-}

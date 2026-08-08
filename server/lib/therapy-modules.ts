@@ -244,6 +244,71 @@ export const THERAPY_EXERCISES: Record<string, TherapyExercise> = {
       "Which of these truths do you most need to hear today? Say it again, letting it sink deep into your heart."
     ],
     completionPrompt: "Which truth resonated most deeply with you? How might you carry it with you today?"
+  },
+
+  recovery_urge_surfing: {
+    name: "Urge Surfing for Cravings",
+    type: "mindfulness",
+    duration: "5-10 minutes",
+    steps: [
+      "Cravings rise and fall like waves. You do not have to obey them.",
+      "Pause and name the urge: 'I am having a craving right now.'",
+      "Rate the urge intensity from 0-10.",
+      "Notice where you feel it in your body (chest, stomach, jaw, hands).",
+      "Breathe slowly: inhale 4 counts, exhale 6 counts.",
+      "Imagine riding the wave instead of fighting it. Let it peak and pass.",
+      "Tell yourself: 'This is a moment. It will pass. I can choose my next right action.'",
+      "Choose one replacement action now: drink water, walk 5 minutes, text support, or pray."
+    ],
+    completionPrompt: "What happened to the urge after you rode the wave for a few minutes?"
+  },
+
+  recovery_smart_check: {
+    name: "SMART Recovery Style ABC Check",
+    type: "cbt",
+    duration: "10 minutes",
+    steps: [
+      "Use this practical check when an urge, slip risk, or shame spiral appears:",
+      "A - Activating event: What happened right before the urge?",
+      "B - Belief: What thought are you believing? (Example: 'I already messed up, so why try')",
+      "C - Consequence: What feeling/urge/action follows that thought?",
+      "D - Dispute: Is that thought fully true? What is a more accurate thought?",
+      "E - Effective new response: What healthier action fits your values right now?",
+      "Keep it concrete: one thought, one reframe, one next action."
+    ],
+    completionPrompt: "What belief did you challenge, and what action are you choosing next?"
+  },
+
+  recovery_12_step_surrender: {
+    name: "12-Step Reflection and Surrender",
+    type: "prayer",
+    duration: "5-10 minutes",
+    steps: [
+      "You are not alone. Recovery is lived one day, one moment at a time.",
+      "Step 1 reflection: 'Where am I powerless right now? What has this cost me?'",
+      "Step 2 reflection: 'What gives me hope that change is possible?'",
+      "Step 3 prayer: 'God, I turn this over to You. Lead me in the next right step.'",
+      "Say out loud one honest sentence: 'I need help, and I am willing to receive it.'",
+      "Choose one accountable action now: contact sponsor/support person, attend a meeting, remove access to the behavior/substance.",
+      "End with grace: 'God, thank You for mercy today. Help me walk in honesty and courage.'"
+    ],
+    completionPrompt: "What did you turn over to God, and what is your next right step today?"
+  },
+
+  recovery_slip_compassion: {
+    name: "After a Slip: Compassionate Reset",
+    type: "act",
+    duration: "5-8 minutes",
+    steps: [
+      "A slip is not the end of recovery. It is data, not identity.",
+      "Pause shame language. Replace 'I am a failure' with 'I had a setback and I can repair.'",
+      "Name the sequence: trigger -> thought -> urge -> action.",
+      "Identify one prevention change for next time (time, place, device, person, routine).",
+      "Practice self-forgiveness: 'I am still worthy of care, structure, and recovery support.'",
+      "If faith helps you: pray, 'God, thank You for forgiveness. Restore me and guide my steps.'",
+      "Re-enter recovery now: hydrate, rest, reach out, and return to your plan today."
+    ],
+    completionPrompt: "What is one concrete adjustment you will make before the next vulnerable moment?"
   }
 };
 
@@ -287,6 +352,11 @@ export const SCRIPTURE_VERSES = {
     { verse: "I have loved you with an everlasting love; I have drawn you with unfailing kindness.", reference: "Jeremiah 31:3" },
     { verse: "Neither death nor life, neither angels nor demons, can separate us from the love of God.", reference: "Romans 8:38-39" },
     { verse: "See what great love the Father has lavished on us, that we should be called children of God!", reference: "1 John 3:1" }
+  ],
+  recovery: [
+    { verse: "My grace is sufficient for you, for my power is made perfect in weakness.", reference: "2 Corinthians 12:9" },
+    { verse: "If we confess our sins, he is faithful and just and will forgive us our sins and purify us from all unrighteousness.", reference: "1 John 1:9" },
+    { verse: "No temptation has overtaken you except what is common to mankind. And God is faithful; he will not let you be tempted beyond what you can bear.", reference: "1 Corinthians 10:13" }
   ]
 };
 
@@ -312,7 +382,13 @@ export function selectTherapyModule(trigger: string, userPreferences?: string[])
     prayer: ["spiritual_centering", "scripture_meditation", "serenity_prayer"],
     scripture: ["scripture_meditation", "psalm_comfort", "faith_affirmations"],
     comfort: ["psalm_comfort", "gratitude_blessing"],
-    act: ["act_values_clarification"]
+    act: ["act_values_clarification"],
+    addiction_recovery: [
+      "recovery_urge_surfing",
+      "recovery_smart_check",
+      "recovery_12_step_surrender",
+      "recovery_slip_compassion"
+    ]
   };
 
   const exercises = moduleMap[trigger];

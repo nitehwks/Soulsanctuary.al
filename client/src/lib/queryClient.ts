@@ -50,11 +50,10 @@ async function authHeaders(): Promise<Record<string, string>> {
       const token = await clerkTokenGetter();
       if (token) return { Authorization: `Bearer ${token}` };
     } catch {
-      // Fall through to the stored token (local dev account).
+      // No fallback: authentication uses Clerk tokens only.
     }
   }
-  const token = localStorage.getItem("clerkSessionToken");
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  return {};
 }
 
 async function fetchWithTimeout(

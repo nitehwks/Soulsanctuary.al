@@ -13,6 +13,9 @@ const config: CapacitorConfig = {
       '*.replit.dev',
       'soulsanctuary.app',
       'replit.com',
+      '*.ngrok-free.app',
+      '*.ngrok.app',
+      '*.ts.net',
       '*.clerk.accounts.dev',
       '*.accounts.dev',
       '*.clerk.dev',
@@ -21,7 +24,9 @@ const config: CapacitorConfig = {
       'clerk.com',
       '*.clerk.com',
       'accounts.google.com',
-      'appleid.apple.com'
+      'appleid.apple.com',
+      'github.com',
+      '*.github.com'
     ]
   },
   ios: {

@@ -4,10 +4,8 @@ import { queryClient, setClerkTokenGetter } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { Button } from "@/components/ui/button";
 import { useEffect } from "react";
-import { useAuth, signInWithLocalAccount } from "@/hooks/useAuth";
-import { initDeepLinkHandler } from "@/lib/deepLink";
+import { useAuth } from "@/hooks/useAuth";
 import { applyPlatformClasses } from "@/lib/platform";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
@@ -22,25 +20,33 @@ import ClinicianDashboard from "@/pages/ClinicianDashboard";
 import FeatureFlags from "@/pages/FeatureFlags";
 import Sales from "@/pages/Sales";
 import { OAuthCallback } from "@/components/auth/OAuthCallback";
-import { PendingOAuthHandler } from "@/components/auth/PendingOAuthHandler";
-import { NativeSocialSignIn } from "@/components/auth/NativeSocialSignIn";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Loader2 } from "lucide-react";
 
-const clerkKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined;
-const isClerkConfigured = !!clerkKey && !clerkKey.includes("your_clerk") && !clerkKey.includes("...");
-const clerkSignInRedirectUrl = import.meta.env.VITE_CLERK_SIGN_IN_REDIRECT_URL as string | undefined;
-const clerkSignUpRedirectUrl = import.meta.env.VITE_CLERK_SIGN_UP_REDIRECT_URL as string | undefined;
+function resolveHttpBaseUrl(): string {
+  const runtimeConfig =
+    (typeof window !== "undefined" && (window as any).SOULSANCTUARY_CONFIG) || {};
+  const runtimeApiUrl = runtimeConfig.API_URL as string | undefined;
+  const envApiUrl = import.meta.env.VITE_API_URL as string | undefined;
+  const origin = typeof window !== "undefined" ? window.location.origin : undefined;
 
-// Always return to the app's own origin after sign-in. On web that's the
-// current domain; in the native apps the OAuth flow runs inside the Capacitor
-// WebView, whose origin (capacitor://localhost) is registered with the WebView,
-// so a same-origin "/" redirect loads correctly. A custom URL scheme like
-// com.soulsanctuary.ai:// only works for OS-level app opens (external browser
-// flows) — the WebView cannot load it and shows a white page instead.
-function getClerkRedirectUrl(_envUrl: string | undefined): string {
-  return "/";
+  const candidates = [origin, runtimeApiUrl, envApiUrl];
+  for (const candidate of candidates) {
+    if (candidate && /^https?:\/\//i.test(candidate)) {
+      return candidate.replace(/\/$/, "");
+    }
+  }
+
+  return "https://localhost";
 }
+
+function toAbsoluteUrl(path: string): string {
+  const base = resolveHttpBaseUrl();
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  return `${base}${normalizedPath}`;
+}
+
+const AUTH_HOME_REDIRECT = toAbsoluteUrl("/");
 
 function AppRouter() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -56,16 +62,14 @@ function AppRouter() {
   }, [getToken]);
 
   // OAuth callback route must be reachable regardless of current auth state.
-  if (window.location.pathname === "/oauth/callback") {
+  const authCallbackPath = window.location.pathname;
+  if (
+    authCallbackPath === "/oauth/callback" ||
+    authCallbackPath === "/sso-callback" ||
+    authCallbackPath.endsWith("/oauth/callback") ||
+    authCallbackPath.endsWith("/sso-callback")
+  ) {
     return <OAuthCallback />;
-  }
-
-  // If the app was reloaded after a native OAuth deep link, process the stored
-  // callback URL. This is more reliable than navigating to /oauth/callback in
-  // Capacitor, which can fail to resolve as a static file.
-  const pendingOAuth = typeof window !== "undefined" && localStorage.getItem("pendingOAuthCallback");
-  if (pendingOAuth) {
-    return <PendingOAuthHandler />;
   }
 
   if (isLoading) {
@@ -81,34 +85,34 @@ function AppRouter() {
       <Switch>
         <Route path="/sign-in/*?">
           <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4 gap-4">
-            <NativeSocialSignIn />
             <SignIn
               routing="path"
               path="/sign-in"
-              fallbackRedirectUrl={getClerkRedirectUrl(clerkSignInRedirectUrl)}
-              forceRedirectUrl={getClerkRedirectUrl(clerkSignInRedirectUrl)}
-              signUpFallbackRedirectUrl={getClerkRedirectUrl(clerkSignUpRedirectUrl)}
-              signUpForceRedirectUrl={getClerkRedirectUrl(clerkSignUpRedirectUrl)}
+              oauthFlow="redirect"
+              signUpUrl={toAbsoluteUrl("/sign-up")}
+              withSignUp={true}
+              transferable={true}
+              fallbackRedirectUrl={AUTH_HOME_REDIRECT}
+              forceRedirectUrl={AUTH_HOME_REDIRECT}
+              signUpFallbackRedirectUrl={AUTH_HOME_REDIRECT}
+              signUpForceRedirectUrl={AUTH_HOME_REDIRECT}
             />
-            <Button variant="secondary" onClick={signInWithLocalAccount}>
-              Use Local Account
-            </Button>
+            <div id="clerk-captcha" />
           </div>
         </Route>
         <Route path="/sign-up/*?">
           <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4 gap-4">
-            <NativeSocialSignIn />
             <SignUp
               routing="path"
               path="/sign-up"
-              fallbackRedirectUrl={getClerkRedirectUrl(clerkSignUpRedirectUrl)}
-              forceRedirectUrl={getClerkRedirectUrl(clerkSignUpRedirectUrl)}
-              signInFallbackRedirectUrl={getClerkRedirectUrl(clerkSignInRedirectUrl)}
-              signInForceRedirectUrl={getClerkRedirectUrl(clerkSignInRedirectUrl)}
+              oauthFlow="redirect"
+              signInUrl={toAbsoluteUrl("/sign-in")}
+              fallbackRedirectUrl={AUTH_HOME_REDIRECT}
+              forceRedirectUrl={AUTH_HOME_REDIRECT}
+              signInFallbackRedirectUrl={AUTH_HOME_REDIRECT}
+              signInForceRedirectUrl={AUTH_HOME_REDIRECT}
             />
-            <Button variant="secondary" onClick={signInWithLocalAccount}>
-              Use Local Account
-            </Button>
+            <div id="clerk-captcha" />
           </div>
         </Route>
         <Route path="/sales" component={Sales} />
@@ -138,7 +142,6 @@ function AppRouter() {
 function App() {
   useEffect(() => {
     applyPlatformClasses();
-    initDeepLinkHandler();
   }, []);
 
   return (

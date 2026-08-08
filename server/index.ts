@@ -72,34 +72,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// Native OAuth relay. Clerk's API only redirects back to http(s) URLs, but the
-// iOS WebView origin is capacitor://localhost, which Clerk rejects. So native
-// social sign-in uses this page as its redirect_url: it bounces the OAuth
-// result (__clerk_status etc.) into the app via its custom URL scheme, where
-// the deep-link handler completes the Clerk sign-in.
-app.get("/auth/callback", (_req, res) => {
-  res.setHeader("Content-Type", "text/html; charset=utf-8");
-  res.send(`<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Returning to SoulSanctuary</title>
-</head>
-<body style="margin:0;background:#1a1625;color:#e8e4f3;font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center">
-  <div>
-    <p>Returning to SoulSanctuary&hellip;</p>
-    <p><a id="open-app" style="color:#8f5bff" href="#">Tap here if the app doesn&rsquo;t open</a></p>
-  </div>
-  <script>
-    var target = "com.soulsanctuary.ai://oauth/callback" + window.location.search;
-    document.getElementById("open-app").href = target;
-    window.location.replace(target);
-  </script>
-</body>
-</html>`);
-});
-
 // Now apply JSON middleware for all other routes
 app.use(
   express.json({

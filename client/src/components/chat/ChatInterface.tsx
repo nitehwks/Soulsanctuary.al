@@ -38,7 +38,7 @@ interface SmartReply {
 }
 
 interface ChatInterfaceProps {
-  mode?: "chat" | "therapist";
+  mode?: "chat" | "coach";
   onModelsUsed?: (models: string[]) => void;
 }
 
@@ -200,7 +200,7 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
   }, [userId, isUserLoading, mode]);
 
   useEffect(() => {
-    if (!userId || mode !== "therapist") return;
+    if (!userId || mode !== "coach") return;
     
     const checkCoachingEligibility = async () => {
       try {
@@ -446,7 +446,7 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
   };
 
   return (
-    <div className="flex h-full bg-background relative">
+    <div className="flex h-full min-h-0 bg-background relative">
       <AnimatePresence initial={false}>
         {showSidebar && (
           <motion.div
@@ -480,7 +480,7 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
             {messages.length > 0 ? `${messages.length} messages` : "Start chatting"}
           </span>
           <div className="ml-auto flex items-center gap-1">
-            {mode === "therapist" && (
+            {mode === "coach" && (
               <Button
                 variant={showCoaching ? "secondary" : "ghost"}
                 size="icon"
@@ -528,7 +528,7 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
           <div className="max-w-3xl mx-auto space-y-8 pb-4">
             {messages.length === 0 && (
               <div className="space-y-6">
-                {showProfile && mode === "therapist" ? (
+                {showProfile && mode === "coach" ? (
                   <div className="max-w-xl mx-auto">
                     <PsychologicalProfileCard
                       profile={profileData}
@@ -540,18 +540,18 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
                   </div>
                 ) : (
                   <div className="text-center py-10 md:py-20 px-2">
-                    <div className="text-3xl md:text-4xl mb-3 md:mb-4">{mode === "therapist" ? "🎯" : "💬"}</div>
+                    <div className="text-3xl md:text-4xl mb-3 md:mb-4">{mode === "coach" ? "🎯" : "💬"}</div>
                     <h3 className="text-base md:text-lg font-medium mb-2">
-                      {mode === "therapist" 
+                      {mode === "coach" 
                         ? "Welcome to Your Sanctuary" 
                         : "Welcome to SoulSanctuary"}
                     </h3>
                     <p className="text-xs md:text-sm text-muted-foreground max-w-md mx-auto">
-                      {mode === "therapist" 
+                      {mode === "coach" 
                         ? "I'm here to walk alongside you with faith, wisdom, and proven practices. Together, we'll work toward your healing and growth."
                         : "Your story matters to me. I'm here to truly know you - your joys, struggles, and dreams."}
                     </p>
-                    {mode === "therapist" && coachingEligible && !showProfile && (
+                    {mode === "coach" && coachingEligible && !showProfile && (
                       <div className="mt-4">
                         <Button
                           variant="outline"
@@ -567,7 +567,7 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
                         </Button>
                       </div>
                     )}
-                    {mode === "therapist" && (
+                    {mode === "coach" && (
                       <div className="mt-6 flex flex-wrap gap-2 justify-center">
                         {["Set Goals", "Explore Patterns", "Boost Motivation", "Self-Discovery"].map((topic) => (
                           <button
@@ -858,12 +858,12 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
       )}
 
       <AnimatePresence>
-        {showCoaching && mode === "therapist" && (
+        {showCoaching && mode === "coach" && (
           <motion.div
-            initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 320, opacity: 1 }}
-            exit={{ width: 0, opacity: 0 }}
-            className="border-l border-border bg-card/50 h-full overflow-y-auto"
+            initial={{ x: 60, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: 60, opacity: 0 }}
+            className="absolute right-0 top-0 bottom-0 z-30 w-80 max-w-[85vw] md:static md:max-w-none border-l border-border bg-card md:bg-card/50 h-full overflow-y-auto"
           >
             <CoachingHighlights 
               userId={userId}

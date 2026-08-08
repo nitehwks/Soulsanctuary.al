@@ -195,6 +195,12 @@ const LOW_KEYWORDS = [
   "frustrated", "hurt", "pain", "suffering"
 ];
 
+const ADDICTION_RISK_KEYWORDS = [
+  "addiction", "addicted", "craving", "cravings", "relapse", "slip",
+  "substance", "drug", "alcohol", "drinking again", "porn", "sex addiction",
+  "gambling", "betting", "shopping addiction", "compulsive shopping"
+];
+
 const HARMFUL_THINKING_PATTERNS: Record<string, string[]> = {
   racism: [
     "those people", "all of them are", "they're all the same",
@@ -226,7 +232,33 @@ const THERAPY_TRIGGERS: Record<string, string[]> = {
   dbt_distress: ["overwhelming", "can't cope", "intense emotions", "out of control", "going to explode"],
   cbt_thoughts: ["negative thoughts", "can't stop thinking", "worst case", "catastrophizing", "ruminating"],
   mindfulness: ["racing thoughts", "can't relax", "tense", "wound up", "need to calm down"],
-  breathing: ["short of breath", "heart racing", "sweating", "shaking", "trembling"]
+  breathing: ["short of breath", "heart racing", "sweating", "shaking", "trembling"],
+  addiction_recovery: [
+    "addiction",
+    "addicted",
+    "craving",
+    "cravings",
+    "urge to use",
+    "urge to drink",
+    "relapse",
+    "slip",
+    "sober",
+    "sobriety",
+    "withdrawal",
+    "drug use",
+    "substance",
+    "alcohol",
+    "drinking again",
+    "porn",
+    "pornography",
+    "sex addiction",
+    "compulsive sex",
+    "gambling",
+    "betting",
+    "shopping addiction",
+    "compulsive shopping",
+    "buying binge"
+  ]
 };
 
 function matchesWithWordBoundary(content: string, keyword: string): boolean {
@@ -340,6 +372,18 @@ export function detectCrisis(content: string, sentimentScore?: number): CrisisAs
         triggers.push(keyword);
         severity = "moderate";
         crisisType = "general_distress";
+      }
+    }
+  }
+
+  // Escalate addiction-risk language to moderate so support resources are surfaced early.
+  if (severity === "none") {
+    for (const keyword of ADDICTION_RISK_KEYWORDS) {
+      if (lowerContent.includes(keyword)) {
+        triggers.push(`addiction-risk: ${keyword}`);
+        severity = "moderate";
+        crisisType = "general_distress";
+        break;
       }
     }
   }

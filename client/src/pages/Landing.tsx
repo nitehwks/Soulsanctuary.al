@@ -3,7 +3,6 @@ import { Card } from "@/components/ui/card";
 import { Shield, Brain, Heart, Lock, BookOpen, Sparkles, Cross, HandHeart, AlertTriangle } from "lucide-react";
 import { motion } from "framer-motion";
 import heroImage from "@assets/IMG_0630_1765623983997.jpeg";
-import { signInWithLocalAccount } from "@/hooks/useAuth";
 
 export default function Landing() {
   const handleLogin = () => {
@@ -14,10 +13,6 @@ export default function Landing() {
     localStorage.setItem('guestMode', 'true');
     localStorage.setItem('guestUserId', 'guest-' + Date.now());
     window.location.reload();
-  };
-
-  const handleLocalAccount = () => {
-    signInWithLocalAccount();
   };
 
   return (
@@ -63,9 +58,6 @@ export default function Landing() {
               </Button>
               <Button size="lg" variant="outline" onClick={handleGuestAccess} className="w-full sm:w-auto touch-target" data-testid="button-guest-hero">
                 Try as Guest
-              </Button>
-              <Button size="lg" variant="secondary" onClick={handleLocalAccount} className="w-full sm:w-auto touch-target" data-testid="button-local-hero">
-                Use Local Account
               </Button>
             </div>
           </motion.div>
@@ -230,9 +222,6 @@ export default function Landing() {
             </Button>
             <Button size="lg" variant="outline" onClick={handleGuestAccess} data-testid="button-guest-bottom">
               Try as Guest
-            </Button>
-            <Button size="lg" variant="secondary" onClick={handleLocalAccount} data-testid="button-local-bottom">
-              Use Local Account
             </Button>
           </div>
         </div>

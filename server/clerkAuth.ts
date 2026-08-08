@@ -15,12 +15,6 @@ const clerkClient = createClerkClient({
   secretKey: process.env.CLERK_SECRET_KEY,
 });
 
-function isDevPlaceholder(key?: string): boolean {
-  return !key || key.includes("your_clerk") || key.includes("...");
-}
-
-export const DEV_AUTH_TOKEN = "dev-token";
-
 function extractBearerToken(req: any): string | undefined {
   const authHeader = req.headers.authorization;
   if (typeof authHeader === "string" && authHeader.startsWith("Bearer ")) {
@@ -56,48 +50,14 @@ async function getOrCreateLocalUser(clerkUserId: string) {
 }
 
 export function setupAuth(app: Express) {
+  void app;
   // Clerk does not require server-side session middleware.
   // The client sends a short-lived JWT in the Authorization header.
-
-  // Development/local bypass: native Capacitor dev builds cannot reliably share
-  // cross-origin session cookies, so issue a hardcoded bearer token.
-  // Enabled when Clerk keys are placeholders or when ALLOW_LOCAL_AUTH is set.
-  if (isDevPlaceholder(process.env.CLERK_SECRET_KEY) || process.env.ALLOW_LOCAL_AUTH === "true") {
-    app.post("/api/dev-login", async (_req, res) => {
-      const devUserId = "dev-user-001";
-      await storage.upsertUser({
-        id: devUserId,
-        email: "dev@local.test",
-        firstName: "Local",
-        lastName: "Dev",
-        profileImageUrl: null,
-      });
-      res.json({ token: DEV_AUTH_TOKEN, user: await storage.getUser(devUserId) });
-    });
-  }
 }
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
   try {
     const token = extractBearerToken(req);
-
-    // Dev/local fallback for native Capacitor builds and local testing.
-    if (
-      (isDevPlaceholder(process.env.CLERK_SECRET_KEY) || process.env.ALLOW_LOCAL_AUTH === "true") &&
-      token === DEV_AUTH_TOKEN
-    ) {
-      const devUserId = "dev-user-001";
-      await storage.upsertUser({
-        id: devUserId,
-        email: "dev@local.test",
-        firstName: "Local",
-        lastName: "Dev",
-        profileImageUrl: null,
-      });
-      (req as any).userId = devUserId;
-      (req as any).user = await storage.getUser(devUserId);
-      return next();
-    }
 
     if (!token) {
       return res.status(401).json({ message: "Unauthorized" });

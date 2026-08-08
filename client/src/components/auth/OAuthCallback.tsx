@@ -1,48 +1,44 @@
 import { useEffect, useState } from "react";
-import { useClerk } from "@clerk/clerk-react";
+import { useAuth, useClerk } from "@clerk/clerk-react";
 import { Loader2 } from "lucide-react";
 
 /**
  * OAuth Callback Handler
- *
- * Native OAuth flows (Sign in with Apple, Google, etc.) redirect back to the
- * app via a custom URL scheme. The deep link handler forwards those parameters
- * to this route so Clerk can complete the sign-in and exchange the OAuth code.
+ * Standard Clerk OAuth callback route for social sign-in and sign-up.
  */
 export function OAuthCallback() {
   const clerk = useClerk();
   const [error, setError] = useState<string | null>(null);
+  const [completed, setCompleted] = useState(false);
+  const { isLoaded, isSignedIn } = useAuth();
 
   useEffect(() => {
-    console.log("[OAuthCallback] mounted. location:", window.location.href);
     if (!clerk) {
-      console.warn("[OAuthCallback] Clerk instance not available yet");
       return;
     }
 
-    if (!window.location.search.includes("__clerk_status")) {
-      console.error("[OAuthCallback] Missing Clerk callback params");
-      setError("Missing sign-in information. Please try again.");
-      return;
-    }
-
-    // Clerk will read __clerk_status and other params from the current URL.
-    // Do not pass redirectUrl here: the current URL can contain a stale
-    // custom-scheme redirect_url, which Clerk's API rejects.
     clerk
       .handleRedirectCallback({})
       .then(() => {
-        console.log("[OAuthCallback] handleRedirectCallback succeeded");
-        // Give Clerk a moment to update auth state, then send the user home.
-        setTimeout(() => {
-          window.location.href = "/";
-        }, 100);
+        setCompleted(true);
       })
       .catch((err) => {
-        console.error("[OAuthCallback] handleRedirectCallback failed:", err);
-        setError("We couldn't complete the sign-in. Please try again.");
+        console.error("[OAuthCallback] redirect callback failed:", err);
+        const detail = err?.errors?.[0]?.longMessage || err?.errors?.[0]?.message || err?.message;
+        setError(
+          detail
+            ? `We couldn't complete the sign-in: ${detail}`
+            : "We couldn't complete the sign-in. Please try again.",
+        );
       });
   }, [clerk]);
+
+  useEffect(() => {
+    if (!completed) return;
+    if (!isLoaded || !isSignedIn) return;
+
+    window.location.replace("/");
+  }, [completed, isLoaded, isSignedIn]);
 
   if (error) {
     return (

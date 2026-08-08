@@ -1,4 +1,4 @@
-import { Home, Users, BarChart3, Stethoscope, Settings, Menu, X } from "lucide-react";
+import { Home, Users, BarChart3, Settings, Menu, X } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
@@ -9,7 +9,6 @@ const navItems = [
   { href: "/", icon: Home, labelKey: "nav.chat" },
   { href: "/groups", icon: Users, labelKey: "nav.groups" },
   { href: "/analytics", icon: BarChart3, labelKey: "nav.analytics" },
-  { href: "/clinician", icon: Stethoscope, labelKey: "nav.clinician" },
   { href: "/settings", icon: Settings, labelKey: "nav.settings" },
 ];
 

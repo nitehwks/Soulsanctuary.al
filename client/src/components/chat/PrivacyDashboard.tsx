@@ -160,7 +160,7 @@ export function PrivacyDashboard({ isOpen, onClose, userId }: PrivacyDashboardPr
         initial={{ opacity: 0, x: 300 }}
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: 300 }}
-        className="fixed right-0 top-0 h-full w-[400px] bg-background border-l border-border shadow-2xl z-50 flex flex-col"
+        className="fixed right-0 top-0 h-full w-[400px] max-w-[100vw] bg-background border-l border-border shadow-2xl z-50 flex flex-col"
         data-testid="privacy-dashboard"
       >
         <div className="p-4 border-b border-border flex items-center justify-between bg-gradient-to-r from-emerald-500/10 to-teal-500/10">
