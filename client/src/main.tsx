@@ -1,72 +1,62 @@
 import { createRoot } from "react-dom/client";
-import { ClerkProvider } from "@clerk/clerk-react";
+import { ClerkProvider } from "@clerk/react";
+import { publishableKeyFromHost } from "@clerk/react/internal";
+import { shadcn } from "@clerk/themes";
+import { useLocation } from "wouter";
 import App from "./App";
 import "./index.css";
 import "./i18n";
-import { isNativeApp } from "./lib/platform";
-import { appSchemeUrlToPath } from "./lib/nativeAuth";
 
-// Native deep-link entry: soulsanctuary://some/path?query routes the webview
-// to /some/path?query. This is how an OAuth flow that escaped to the system
-// browser gets pulled back into the app (see client/src/lib/nativeAuth.ts).
-if (isNativeApp()) {
-  import("@capacitor/app").then(({ App: CapacitorApp }) => {
-    CapacitorApp.addListener("appUrlOpen", ({ url }) => {
-      const path = appSchemeUrlToPath(url);
-      if (path) {
-        window.history.pushState({}, "", path);
-        window.dispatchEvent(new PopStateEvent("popstate"));
-      }
-    });
-  });
-}
-
-const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined;
+const clerkPublishableKey = publishableKeyFromHost(
+  window.location.hostname,
+  import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
+);
+const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
 
 if (!clerkPublishableKey || clerkPublishableKey.includes("your_clerk")) {
-  console.warn(
-    "[Clerk] VITE_CLERK_PUBLISHABLE_KEY is not configured. Authentication will not work until it is set in .env.local.",
+  throw new Error(
+    "Missing VITE_CLERK_PUBLISHABLE_KEY. Replit-managed Clerk is not configured.",
   );
 }
 
-function getAllowedRedirectOrigins(): string[] {
-  const origins = new Set<string>([
-    "http://localhost",
-    "https://localhost",
-    "http://localhost:5001",
-    "https://localhost:5001",
-  ]);
-
-  const runtimeConfig =
-    (typeof window !== "undefined" && (window as any).SOULSANCTUARY_CONFIG) || {};
-  const runtimeApiUrl = runtimeConfig.API_URL as string | undefined;
-  const envApiUrl = import.meta.env.VITE_API_URL as string | undefined;
-  const candidates = [runtimeApiUrl, envApiUrl];
-
-  for (const candidate of candidates) {
-    if (!candidate) continue;
-    try {
-      const url = new URL(candidate);
-      if (url.protocol === "http:" || url.protocol === "https:") {
-        origins.add(url.origin);
-      }
-    } catch {
-      // Ignore malformed URLs
-    }
-  }
-
-  return Array.from(origins);
+function ClerkRoot() {
+  const [, setLocation] = useLocation();
+  return (
+    <ClerkProvider
+      publishableKey={clerkPublishableKey}
+      proxyUrl={clerkProxyUrl}
+      signInUrl="/sign-in"
+      signUpUrl="/sign-up"
+      appearance={{
+        theme: shadcn,
+        variables: {
+          colorPrimary: "#7c3aed",
+          borderRadius: "0.75rem",
+          fontFamily: "Inter, system-ui, sans-serif",
+        },
+      }}
+      localization={{
+        signIn: {
+          start: {
+            title: "Welcome back",
+            subtitle: "Sign in to continue to SoulSanctuary",
+          },
+        },
+        signUp: {
+          start: {
+            title: "Create your account",
+            subtitle: "Begin your SoulSanctuary journey",
+          },
+        },
+      }}
+      routerPush={(to) => setLocation(to)}
+      routerReplace={(to) => setLocation(to, { replace: true })}
+    >
+      <App />
+    </ClerkProvider>
+  );
 }
 
-const allowedRedirectOrigins = getAllowedRedirectOrigins();
-
 createRoot(document.getElementById("root")!).render(
-  <ClerkProvider
-    publishableKey={clerkPublishableKey || ""}
-    signInUrl="/sign-in"
-    signUpUrl="/sign-up"
-    allowedRedirectOrigins={allowedRedirectOrigins}
-  >
-    <App />
-  </ClerkProvider>,
+  <ClerkRoot />,
 );

@@ -1,10 +1,19 @@
 import express, { type Request, Response, NextFunction } from "express";
+import cors from "cors";
+import { clerkMiddleware } from "@clerk/express";
+import { publishableKeyFromHost } from "@clerk/shared/keys";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+import {
+  CLERK_PROXY_PATH,
+  clerkProxyMiddleware,
+  getClerkProxyHost,
+} from "./middlewares/clerkProxyMiddleware";
 
 const app = express();
 const httpServer = createServer(app);
+app.set("trust proxy", 1);
 
 declare module "http" {
   interface IncomingMessage {
@@ -12,67 +21,9 @@ declare module "http" {
   }
 }
 
-// Allow Capacitor app origins, local web clients, and Replit deployments.
-const allowedOrigins = new Set([
-  "capacitor://localhost",
-  "ionic://localhost",
-  "http://localhost",
-  "https://localhost",
-  `http://localhost:${process.env.PORT || 5001}`,
-  `https://localhost:${process.env.PORT || 5001}`,
-]);
+app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
+app.use(cors({ credentials: true, origin: true }));
 
-// Optional exact frontend URL (e.g. your Replit deployment URL).
-if (process.env.FRONTEND_URL) {
-  try {
-    allowedOrigins.add(new URL(process.env.FRONTEND_URL).origin);
-  } catch {
-    // ignore invalid FRONTEND_URL
-  }
-}
-
-const allowedOriginPatterns = [
-  /^https:\/\/[a-z0-9-]+\.[a-z0-9-]+\.replit\.dev$/i,
-  /^https:\/\/[a-z0-9-]+\.replit\.app$/i,
-];
-
-function isAllowedOrigin(origin: string): boolean {
-  if (allowedOrigins.has(origin)) return true;
-  return allowedOriginPatterns.some((pattern) => pattern.test(origin));
-}
-
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  const allowAnyOrigin = process.env.NODE_ENV !== "production";
-  const originAllowed =
-    allowAnyOrigin || !origin || isAllowedOrigin(origin);
-
-  res.setHeader("Vary", "Origin");
-  if (origin && originAllowed) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-    res.setHeader("Access-Control-Allow-Credentials", "true");
-    res.setHeader(
-      "Access-Control-Allow-Methods",
-      "GET, POST, PUT, PATCH, DELETE, OPTIONS",
-    );
-    res.setHeader(
-      "Access-Control-Allow-Headers",
-      "Content-Type, Authorization",
-    );
-    res.setHeader("Access-Control-Max-Age", "86400");
-  }
-  if (req.method === "OPTIONS") {
-    if (origin && !originAllowed) {
-      res.sendStatus(403);
-      return;
-    }
-    res.sendStatus(204);
-    return;
-  }
-  next();
-});
-
-// Now apply JSON middleware for all other routes
 app.use(
   express.json({
     verify: (req, _res, buf) => {
@@ -82,6 +33,14 @@ app.use(
 );
 
 app.use(express.urlencoded({ extended: false }));
+app.use(
+  clerkMiddleware((req) => ({
+    publishableKey: publishableKeyFromHost(
+      getClerkProxyHost(req) ?? "",
+      process.env.CLERK_PUBLISHABLE_KEY,
+    ),
+  })),
+);
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {

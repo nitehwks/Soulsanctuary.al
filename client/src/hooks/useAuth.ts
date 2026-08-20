@@ -1,5 +1,7 @@
-import { useUser, useAuth as useClerkAuth } from "@clerk/clerk-react";
+import { useUser, useAuth as useClerkAuth } from "@clerk/react";
 import { useEffect, useState } from "react";
+import { getApiUrl } from "@/lib/queryClient";
+import { isNativeApp } from "@/lib/platform";
 
 interface GuestUser {
   id: string;
@@ -23,8 +25,10 @@ type User = AuthUser | GuestUser;
 
 export function useAuth() {
   const [guestUser, setGuestUser] = useState<GuestUser | null>(null);
+  const [localUser, setLocalUser] = useState<AuthUser | null>(null);
+  const [localUserLoaded, setLocalUserLoaded] = useState(false);
   const { isSignedIn, user: clerkUser, isLoaded } = useUser();
-  const { signOut } = useClerkAuth();
+  const { signOut, getToken } = useClerkAuth();
 
   useEffect(() => {
     const guestMode = localStorage.getItem("guestMode");
@@ -42,17 +46,49 @@ export function useAuth() {
     }
   }, []);
 
-  let authUser: AuthUser | null = clerkUser
-    ? {
-        id: clerkUser.id,
-        firstName: clerkUser.firstName,
-        lastName: clerkUser.lastName,
-        email: clerkUser.primaryEmailAddress?.emailAddress || null,
-        profileImageUrl: clerkUser.imageUrl,
-      }
-    : null;
+  useEffect(() => {
+    if (!isLoaded) return;
+    if (!isSignedIn || !clerkUser) {
+      setLocalUser(null);
+      setLocalUserLoaded(true);
+      return;
+    }
 
-  const user: User | null = authUser || guestUser || null;
+    let cancelled = false;
+    setLocalUserLoaded(false);
+
+    void (async () => {
+      const headers: Record<string, string> = {};
+      if (isNativeApp()) {
+        const token = await getToken();
+        if (token) headers.Authorization = `Bearer ${token}`;
+      }
+
+      const response = await fetch(getApiUrl("/api/auth/user"), {
+        credentials: "include",
+        headers,
+      });
+      if (!response.ok) {
+        throw new Error(`Unable to load signed-in user (${response.status})`);
+      }
+
+      const user = (await response.json()) as AuthUser;
+      if (!cancelled) setLocalUser(user);
+    })()
+      .catch((error) => {
+        console.error("[Auth] Failed to load the application user:", error);
+        if (!cancelled) setLocalUser(null);
+      })
+      .finally(() => {
+        if (!cancelled) setLocalUserLoaded(true);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [clerkUser, getToken, isLoaded, isSignedIn]);
+
+  const user: User | null = localUser || guestUser || null;
 
   const logout = async () => {
     if (guestUser) {
@@ -69,7 +105,7 @@ export function useAuth() {
 
   return {
     user,
-    isLoading: !isLoaded,
+    isLoading: !isLoaded || (!!isSignedIn && !localUserLoaded),
     isAuthenticated: !!user,
     isGuest: !!guestUser,
     logout,

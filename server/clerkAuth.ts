@@ -1,5 +1,5 @@
 import type { Express, RequestHandler } from "express";
-import { createClerkClient, verifyToken } from "@clerk/backend";
+import { clerkClient, getAuth } from "@clerk/express";
 import { storage } from "./storage";
 import {
   validateSecondFactorToken,
@@ -10,7 +10,7 @@ import {
 // Paths exempt from second-factor enforcement: the 2FA endpoints themselves
 // (a user mid-challenge must be able to reach them) and the admin API
 // (which has its own, stronger key-based auth).
-const TWO_FA_EXEMPT_PREFIXES = ["/api/2fa", "/api/admin"];
+const TWO_FA_EXEMPT_PREFIXES = ["/api/auth/user", "/api/2fa", "/api/admin"];
 
 declare global {
   namespace Express {
@@ -21,68 +21,64 @@ declare global {
   }
 }
 
-const clerkClient = createClerkClient({
-  secretKey: process.env.CLERK_SECRET_KEY,
-});
-
-function extractBearerToken(req: any): string | undefined {
-  const authHeader = req.headers.authorization;
-  if (typeof authHeader === "string" && authHeader.startsWith("Bearer ")) {
-    return authHeader.slice(7);
-  }
-  return undefined;
-}
-
 async function getOrCreateLocalUser(clerkUserId: string) {
-  let user = await storage.getUser(clerkUserId);
+  const bindingKey = `clerk:${clerkUserId}`;
+  let user =
+    (await storage.getUser(clerkUserId)) ??
+    (await storage.getUserByUsername(bindingKey));
   if (!user) {
-    try {
-      const clerkUser = await clerkClient.users.getUser(clerkUserId);
-      user = await storage.upsertUser({
-        id: clerkUserId,
-        email: clerkUser.emailAddresses[0]?.emailAddress || null,
-        firstName: clerkUser.firstName,
-        lastName: clerkUser.lastName,
-        profileImageUrl: clerkUser.imageUrl,
-      });
-    } catch {
-      // If we can't reach Clerk, create a minimal local record so the app works.
-      user = await storage.upsertUser({
-        id: clerkUserId,
-        email: null,
-        firstName: "User",
-        lastName: null,
-        profileImageUrl: null,
-      });
+    const clerkUser = await clerkClient.users.getUser(clerkUserId);
+    const primaryEmail = clerkUser.primaryEmailAddress;
+    const verifiedEmail =
+      primaryEmail?.verification?.status === "verified"
+        ? primaryEmail.emailAddress.trim().toLowerCase()
+        : null;
+
+    // Preserve existing application data when an existing user signs into the
+    // new managed Clerk tenant with the same verified email address.
+    if (verifiedEmail) {
+      const existingUser = await storage.getUserByEmail(verifiedEmail);
+      if (existingUser) {
+        user = await storage.upsertUser({
+          id: existingUser.id,
+          username: bindingKey,
+          password: existingUser.password,
+          name: existingUser.name,
+          email: verifiedEmail,
+          firstName: clerkUser.firstName ?? existingUser.firstName,
+          lastName: clerkUser.lastName ?? existingUser.lastName,
+          profileImageUrl:
+            clerkUser.imageUrl ?? existingUser.profileImageUrl,
+        });
+      }
     }
+    user ??= await storage.upsertUser({
+      id: clerkUserId,
+      username: bindingKey,
+      email: verifiedEmail,
+      firstName: clerkUser.firstName,
+      lastName: clerkUser.lastName,
+      profileImageUrl: clerkUser.imageUrl,
+    });
   }
   return user;
 }
 
 export function setupAuth(app: Express) {
   void app;
-  // Clerk does not require server-side session middleware.
-  // The client sends a short-lived JWT in the Authorization header.
+  // Clerk middleware is mounted once in server/index.ts before all routes.
 }
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
   try {
-    const token = extractBearerToken(req);
-
-    if (!token) {
+    const auth = getAuth(req);
+    const clerkUserId = auth.userId;
+    if (!clerkUserId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const payload = await verifyToken(token, {
-      secretKey: process.env.CLERK_SECRET_KEY,
-    });
-
-    const userId = payload.sub;
-    if (!userId) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
-    const user = await getOrCreateLocalUser(userId);
+    const user = await getOrCreateLocalUser(clerkUserId);
+    const userId = user.id;
     (req as any).userId = userId;
     (req as any).user = user;
 

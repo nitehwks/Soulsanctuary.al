@@ -1,2 +1,1 @@
-- [Native OAuth URL schemes](native-oauth-schemes.md) — custom-scheme redirects only work for external-browser flows; in-webview Clerk OAuth must redirect same-origin "/" or the WebView white-screens.
 - [Capacitor CLI needs Node 22](capacitor-node-version.md) — resolved July 2026 by installing the nodejs-22 module; keep workspace Node >=22 for cap sync.

@@ -238,7 +238,37 @@ export async function registerRoutes(
   
   await setupAuth(app);
 
-  app.get("/api/auth/user", isAuthenticated, async (req: any, res) => {
+  // Clerk is the single authentication boundary for every application API.
+  // Admin endpoints keep their separate key-based root of trust.
+  app.use((req: any, res, next) => {
+    if (!req.path.startsWith("/api") || req.path.startsWith("/api/admin")) {
+      return next();
+    }
+
+    return isAuthenticated(req, res, () => {
+      const userId = req.userId as string;
+
+      // Existing clients still include userId in a few payloads and queries.
+      // Ignore those values and always bind the request to the authenticated
+      // local application user.
+      if (req.body && typeof req.body === "object" && !Array.isArray(req.body)) {
+        req.body.userId = userId;
+      }
+      if (req.query && "userId" in req.query) {
+        req.query.userId = userId;
+      }
+      next();
+    });
+  });
+
+  app.param("userId", (req: any, res, next, requestedUserId) => {
+    if (requestedUserId !== req.userId) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+    next();
+  });
+
+  app.get("/api/auth/user", async (req: any, res) => {
     try {
       const user = req.user || (await storage.getUser(req.userId));
       res.json(user);
@@ -248,42 +278,23 @@ export async function registerRoutes(
     }
   });
   
-  app.get("/api/users", async (req, res) => {
+  app.get("/api/users", async (req: any, res) => {
     try {
-      const users = await storage.getAllUsers();
-      res.json(users);
+      res.json(req.user ? [req.user] : []);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
   });
 
-  app.get("/api/users/:id", async (req, res) => {
+  app.get("/api/users/:id", async (req: any, res) => {
     try {
+      if (req.params.id !== req.userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
       const user = await storage.getUser(req.params.id);
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }
-      res.json(user);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  app.post("/api/users", async (req, res) => {
-    try {
-      const result = createUserSchema.safeParse(req.body);
-      if (!result.success) {
-        return res.status(400).json({ error: result.error.errors[0].message });
-      }
-      
-      const { name, email } = result.data;
-      
-      const existingUser = await storage.getUserByEmail(email);
-      if (existingUser) {
-        return res.status(400).json({ error: "A user with this email already exists" });
-      }
-      
-      const user = await storage.createUserWithNameEmail(name, email);
       res.json(user);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -478,9 +489,12 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/conversations", async (req, res) => {
+  app.post("/api/conversations", async (req: any, res) => {
     try {
-      const data = insertConversationSchema.parse(req.body);
+      const data = insertConversationSchema.parse({
+        ...req.body,
+        userId: req.userId,
+      });
       const conversation = await storage.createConversation(data);
       res.json(conversation);
     } catch (error: any) {
@@ -488,12 +502,15 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/conversations/:id", async (req, res) => {
+  app.get("/api/conversations/:id", async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
       const conversation = await storage.getConversation(id);
       if (!conversation) {
         return res.status(404).json({ error: "Conversation not found" });
+      }
+      if (conversation.userId !== req.userId) {
+        return res.status(403).json({ message: "Forbidden" });
       }
       res.json(conversation);
     } catch (error: any) {
@@ -501,9 +518,9 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/conversations", async (req, res) => {
+  app.get("/api/conversations", async (req: any, res) => {
     try {
-      const userId = req.query.userId as string || "anonymous";
+      const userId = req.userId as string;
       const mode = req.query.mode as string || undefined;
       let conversations = await storage.getConversationsByUser(userId);
       
@@ -520,9 +537,16 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/messages/:conversationId", async (req, res) => {
+  app.get("/api/messages/:conversationId", async (req: any, res) => {
     try {
       const conversationId = parseInt(req.params.conversationId);
+      const conversation = await storage.getConversation(conversationId);
+      if (!conversation) {
+        return res.status(404).json({ error: "Conversation not found" });
+      }
+      if (conversation.userId !== req.userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
       const messages = await storage.getMessagesByConversation(conversationId);
       res.json(messages);
     } catch (error: any) {
@@ -544,13 +568,20 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/chat", async (req, res) => {
+  app.post("/api/chat", async (req: any, res) => {
     try {
       const { conversationId, content, userId = "anonymous", mode, attachment } = req.body;
 
       // Allow empty content if there's an attachment
       if (!conversationId || (!content && !attachment)) {
         return res.status(400).json({ error: "conversationId and content (or attachment) are required" });
+      }
+      const ownedConversation = await storage.getConversation(Number(conversationId));
+      if (!ownedConversation) {
+        return res.status(404).json({ error: "Conversation not found" });
+      }
+      if (ownedConversation.userId !== req.userId) {
+        return res.status(403).json({ message: "Forbidden" });
       }
 
       // Build message content including attachment context
@@ -1792,10 +1823,26 @@ Guidelines:
     }
   });
 
-  app.put("/api/coaching/plan/:planId/step/:stepId", async (req, res) => {
+  app.put("/api/coaching/plan/:planId/step/:stepId", async (req: any, res) => {
     try {
+      const planId = parseInt(req.params.planId);
       const stepId = parseInt(req.params.stepId);
       const { status, notes } = req.body;
+
+      if (isNaN(planId) || isNaN(stepId)) {
+        return res.status(400).json({ error: "Invalid plan or step ID" });
+      }
+
+      const ownedPlans = await storage.getCoachingPlans(req.userId);
+      const ownedPlan = ownedPlans.find((plan) => plan.id === planId);
+      if (!ownedPlan) {
+        return res.status(404).json({ error: "Coaching plan not found" });
+      }
+
+      const planSteps = await storage.getCoachingPlanSteps(planId);
+      if (!planSteps.some((step) => step.id === stepId)) {
+        return res.status(404).json({ error: "Coaching plan step not found" });
+      }
       
       const updates: any = {};
       if (status) updates.status = status;
@@ -2035,18 +2082,21 @@ Guidelines:
   });
 
   // Voice Message API Endpoints
-  app.post("/api/voice/messages", async (req, res) => {
+  app.post("/api/voice/messages", async (req: any, res) => {
     try {
-      const { conversationId, messageId, userId, audioData, transcript, duration, sentimentScore } = req.body;
-      
-      if (!userId) {
-        return res.status(400).json({ error: "userId is required" });
+      const { conversationId, messageId, audioData, transcript, duration, sentimentScore } = req.body;
+      const conversation = await storage.getConversation(Number(conversationId));
+      if (!conversation) {
+        return res.status(404).json({ error: "Conversation not found" });
+      }
+      if (conversation.userId !== req.userId) {
+        return res.status(403).json({ message: "Forbidden" });
       }
       
       const voiceMessage = await storage.createVoiceMessage({
         conversationId,
         messageId,
-        userId,
+        userId: req.userId,
         audioData,
         transcript,
         duration,
@@ -2060,11 +2110,18 @@ Guidelines:
     }
   });
 
-  app.get("/api/voice/messages/:conversationId", async (req, res) => {
+  app.get("/api/voice/messages/:conversationId", async (req: any, res) => {
     try {
       const conversationId = parseInt(req.params.conversationId);
       if (isNaN(conversationId)) {
         return res.status(400).json({ error: "Invalid conversation ID" });
+      }
+      const conversation = await storage.getConversation(conversationId);
+      if (!conversation) {
+        return res.status(404).json({ error: "Conversation not found" });
+      }
+      if (conversation.userId !== req.userId) {
+        return res.status(403).json({ message: "Forbidden" });
       }
       
       const voiceMessages = await storage.getVoiceMessagesByConversation(conversationId);
@@ -2074,7 +2131,7 @@ Guidelines:
     }
   });
 
-  app.patch("/api/voice/messages/:id/transcript", async (req, res) => {
+  app.patch("/api/voice/messages/:id/transcript", async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
       const { transcript } = req.body;
@@ -2085,6 +2142,11 @@ Guidelines:
       
       if (!transcript) {
         return res.status(400).json({ error: "transcript is required" });
+      }
+
+      const ownedVoiceMessages = await storage.getVoiceMessagesByUser(req.userId);
+      if (!ownedVoiceMessages.some((message) => message.id === id)) {
+        return res.status(404).json({ error: "Voice message not found" });
       }
       
       const updated = await storage.updateVoiceMessageTranscript(id, transcript);

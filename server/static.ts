@@ -7,7 +7,6 @@ const SPA_ROUTES = [
   "/sales",
   "/sign-in",
   "/sign-up",
-  "/oauth/callback",
   "/dashboard",
   "/settings",
   "/docs",

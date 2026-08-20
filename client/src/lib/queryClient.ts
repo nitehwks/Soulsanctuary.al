@@ -51,7 +51,9 @@ export function setClerkTokenGetter(getter: (() => Promise<string | null>) | nul
 }
 
 async function authHeaders(): Promise<Record<string, string>> {
-  if (clerkTokenGetter) {
+  // Web requests use Clerk's standard same-origin session cookie. Capacitor
+  // calls the published API cross-origin, so only native requests need a JWT.
+  if (isNativeApp() && clerkTokenGetter) {
     try {
       const token = await clerkTokenGetter();
       if (token) return { Authorization: `Bearer ${token}` };
