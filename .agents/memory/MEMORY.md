@@ -1,1 +1,2 @@
 - [Capacitor CLI needs Node 22](capacitor-node-version.md) — resolved July 2026 by installing the nodejs-22 module; keep workspace Node >=22 for cap sync.
+- [Clerk in Capacitor iOS](clerk-capacitor-ios.md) — browser social auth cannot return to a bundled capacitor:// origin; use Clerk native-app support, not web-only redirects.
