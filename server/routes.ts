@@ -15,6 +15,9 @@ import {
   generatePsychologicalProfile
 } from "./lib/coaching-analyzer";
 import { logConsentChange, logDataExport, logDataModification } from "./lib/audit-logger";
+import { buildFeedbackItems } from "./lib/feedback";
+import { registerAdminRoutes } from "./admin-routes";
+import { register2faRoutes } from "./twofa-routes";
 import { detectCrisis, detectTherapyTrigger, formatCrisisResources, CrisisAssessment } from "./lib/crisis-detection";
 import { selectTherapyModule, formatTherapyExercise, THERAPY_EXERCISES, getRelevantScripture } from "./lib/therapy-modules";
 import { wrapResponseWithSafety, generateDisclaimer, generateConsentText, formatPastoralGuidanceContext } from "./lib/safety-wrapper";
@@ -56,27 +59,6 @@ function normalizePhone(raw?: string): string | null {
   const trimmed = raw.trim();
   if (!trimmed) return null;
   return trimmed.replace(/\s+/g, " ");
-}
-
-function parseFeedbackMeta(originalContent: string | null): {
-  category: "feature" | "bug" | "coaching" | "general";
-  rating: number | null;
-  subject: string | null;
-} {
-  if (!originalContent) {
-    return { category: "general", rating: null, subject: null };
-  }
-
-  try {
-    const parsed = JSON.parse(originalContent);
-    return {
-      category: parsed?.category ?? "general",
-      rating: typeof parsed?.rating === "number" ? parsed.rating : null,
-      subject: typeof parsed?.subject === "string" ? parsed.subject : null,
-    };
-  } catch {
-    return { category: "general", rating: null, subject: null };
-  }
 }
 
 function generateConversationTitle(content: string): string {
@@ -446,27 +428,7 @@ export async function registerRoutes(
         .filter((c) => c.mode === "feedback")
         .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
-      const items = await Promise.all(
-        feedbackConversations.map(async (conversation) => {
-          const messages = await storage.getMessagesByConversation(conversation.id);
-          const firstMessage = messages[0];
-          if (!firstMessage) return null;
-
-          const meta = parseFeedbackMeta(firstMessage.originalContent || null);
-          return {
-            id: conversation.id,
-            userId,
-            category: meta.category,
-            rating: meta.rating,
-            subject: meta.subject || conversation.title || null,
-            message: firstMessage.content,
-            status: "submitted",
-            createdAt: firstMessage.timestamp,
-          };
-        }),
-      );
-
-      res.json(items.filter(Boolean));
+      res.json(await buildFeedbackItems(feedbackConversations));
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -2642,6 +2604,14 @@ Guidelines:
       res.status(500).json({ error: error.message });
     }
   });
+
+  // Admin API: challenge-response auth anchored in the admin_keys DB table.
+  // Safe to register on the public deployment - no registered key, no token.
+  registerAdminRoutes(app);
+
+  // Two-factor auth (TOTP + trusted devices). Enforcement itself lives in
+  // isAuthenticated (server/clerkAuth.ts); these are the management routes.
+  register2faRoutes(app);
 
   return httpServer;
 }

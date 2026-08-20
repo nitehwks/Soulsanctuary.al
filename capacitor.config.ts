@@ -9,6 +9,7 @@ const config: CapacitorConfig = {
     iosScheme: 'https',
     hostname: 'localhost',
     allowNavigation: [
+      'localhost',
       '*.replit.app',
       '*.replit.dev',
       'soulsanctuary.app',

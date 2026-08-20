@@ -7,16 +7,14 @@ import { MemoryPanel } from "@/components/chat/MemoryPanel";
 import { KnowledgePanel } from "@/components/chat/KnowledgePanel";
 import { motion } from "framer-motion";
 import { 
-  ChevronRight, Database, ShieldCheck, Activity, LogOut, User, 
-  MessageSquare, Heart, Brain, CheckCircle2, Sparkles, Menu, Settings, MessageSquareQuote
+  Database, ShieldCheck, Activity, 
+  MessageSquare, Heart, CheckCircle2, Menu, MessageSquareQuote
 } from "lucide-react";
-import { Link } from "wouter";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/hooks/useAuth";
 import { getApiUrl } from "@/lib/queryClient";
+import { openAppMenu, OPEN_KNOWLEDGE_EVENT, OPEN_STATUS_EVENT } from "@/components/layout/AppMenu";
 import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 
@@ -26,12 +24,10 @@ const OPEN_FEEDBACK_MODE_EVENT = "soulsanctuary:open-feedback-mode";
 export default function Home() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [showKnowledge, setShowKnowledge] = useState(false);
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showMobileStatus, setShowMobileStatus] = useState(false);
   const [mode, setMode] = useState<AppMode>("chat");
   const [dbStatus, setDbStatus] = useState<"connected" | "disconnected" | "checking">("checking");
   const [activeModels, setActiveModels] = useState<string[]>([]);
-  const { user, isGuest, logout } = useAuth();
 
   useEffect(() => {
     const checkDbStatus = async () => {
@@ -49,7 +45,11 @@ export default function Home() {
 
   useEffect(() => {
     const onOpenFeedbackMode = () => setMode("feedback");
+    const onOpenKnowledge = () => setShowKnowledge(true);
+    const onOpenStatus = () => setShowMobileStatus(true);
     window.addEventListener(OPEN_FEEDBACK_MODE_EVENT, onOpenFeedbackMode);
+    window.addEventListener(OPEN_KNOWLEDGE_EVENT, onOpenKnowledge);
+    window.addEventListener(OPEN_STATUS_EVENT, onOpenStatus);
 
     const params = new URLSearchParams(window.location.search);
     if (params.get("mode") === "feedback") {
@@ -58,12 +58,10 @@ export default function Home() {
 
     return () => {
       window.removeEventListener(OPEN_FEEDBACK_MODE_EVENT, onOpenFeedbackMode);
+      window.removeEventListener(OPEN_KNOWLEDGE_EVENT, onOpenKnowledge);
+      window.removeEventListener(OPEN_STATUS_EVENT, onOpenStatus);
     };
   }, []);
-
-  const handleLogout = () => {
-    logout();
-  };
 
   return (
     <Layout>
@@ -109,50 +107,13 @@ export default function Home() {
                   </div>
                   
                   <div className="flex items-center gap-1 md:gap-2">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-9 w-9 md:h-auto md:w-auto md:px-3 md:py-2"
-                          onClick={() => setShowKnowledge(true)}
-                          data-testid="button-what-i-know"
-                        >
-                          <Brain className="h-4 w-4 md:mr-2" />
-                          <span className="hidden md:inline text-xs">What I Know</span>
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>View all facts I've learned about you</TooltipContent>
-                    </Tooltip>
-
-                    <Link href="/addons" className="hidden sm:block">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="gap-2 text-xs"
-                        data-testid="button-addons"
-                      >
-                        <Sparkles className="h-4 w-4" />
-                        <span className="hidden lg:inline">Wellness Tools</span>
-                      </Button>
-                    </Link>
-                    
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      className="h-9 w-9 lg:hidden"
-                      onClick={() => setShowMobileStatus(true)}
-                      data-testid="button-mobile-status"
-                    >
-                      <Activity className="h-4 w-4" />
-                    </Button>
-                    
-                    <Button 
-                      variant="ghost" 
+                    <Button
+                      variant="ghost"
                       size="icon"
                       className="h-9 w-9"
-                      onClick={() => setShowMobileMenu(true)}
+                      onClick={openAppMenu}
                       data-testid="button-mobile-menu"
+                      aria-label="Open menu"
                     >
                       <Menu className="h-4 w-4" />
                     </Button>
@@ -291,74 +252,7 @@ export default function Home() {
         </motion.div>
         
         <KnowledgePanel isOpen={showKnowledge} onClose={() => setShowKnowledge(false)} />
-        
-        <Sheet open={showMobileMenu} onOpenChange={setShowMobileMenu}>
-          <SheetContent side="right" className="w-[85vw] max-w-sm p-0">
-            <SheetHeader className="p-4 border-b border-border">
-              <SheetTitle className="flex items-center gap-2">
-                {user?.profileImageUrl ? (
-                  <img src={user.profileImageUrl} alt="" className="w-8 h-8 rounded-full" />
-                ) : (
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    <User className="w-4 h-4 text-primary" />
-                  </div>
-                )}
-                <div className="text-left">
-                  <div className="text-sm font-medium">
-                    {user?.firstName || user?.lastName 
-                      ? `${user.firstName || ''} ${user.lastName || ''}`.trim()
-                      : user?.email || 'User'}
-                  </div>
-                  {isGuest && (
-                    <div className="text-[10px] text-amber-600">Guest Account</div>
-                  )}
-                </div>
-              </SheetTitle>
-              <SheetDescription className="sr-only">User menu and navigation</SheetDescription>
-            </SheetHeader>
-            <div className="p-4 space-y-2">
-              <Link href="/addons" onClick={() => setShowMobileMenu(false)}>
-                <Button variant="ghost" className="w-full justify-start gap-3 h-12" data-testid="mobile-menu-addons">
-                  <Sparkles className="h-5 w-5" />
-                  Wellness Tools
-                </Button>
-              </Link>
-              <Button 
-                variant="ghost" 
-                className="w-full justify-start gap-3 h-12"
-                onClick={() => {
-                  setShowKnowledge(true);
-                  setShowMobileMenu(false);
-                }}
-                data-testid="mobile-menu-knowledge"
-              >
-                <Brain className="h-5 w-5" />
-                What I Know About You
-              </Button>
-              <Link href="/settings" onClick={() => setShowMobileMenu(false)}>
-                <Button variant="ghost" className="w-full justify-start gap-3 h-12" data-testid="mobile-menu-settings">
-                  <Settings className="h-5 w-5" />
-                  Settings
-                </Button>
-              </Link>
-              <div className="pt-2 border-t border-border mt-4">
-                <Button 
-                  variant="ghost" 
-                  className="w-full justify-start gap-3 h-12 text-destructive"
-                  onClick={() => {
-                    handleLogout();
-                    setShowMobileMenu(false);
-                  }}
-                  data-testid="mobile-menu-logout"
-                >
-                  <LogOut className="h-5 w-5" />
-                  {isGuest ? "Exit Guest Mode" : "Sign Out"}
-                </Button>
-              </div>
-            </div>
-          </SheetContent>
-        </Sheet>
-        
+
         <Sheet open={showMobileStatus} onOpenChange={setShowMobileStatus}>
           <SheetContent side="right" className="w-[85vw] max-w-sm overflow-y-auto">
             <SheetHeader className="mb-4">

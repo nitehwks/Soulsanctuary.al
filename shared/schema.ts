@@ -31,6 +31,7 @@ export const conversations = pgTable("conversations", {
   userId: text("user_id").notNull().default("anonymous"),
   title: text("title"),
   mode: text("mode").notNull().default("chat"),
+  status: text("status"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -47,6 +48,14 @@ export const messages = pgTable("messages", {
   keyPhrases: text("key_phrases").array(),
   hasAttachment: boolean("has_attachment").default(false),
   attachmentType: text("attachment_type"),
+  // Crisis-detection metadata, written at message creation. These columns
+  // already exist in the production database; keep them in sync so
+  // `npm run db:push` does not try to drop them (that would erase crisis
+  // history — a safety feature).
+  crisisDetected: boolean("crisis_detected").default(false),
+  crisisLevel: integer("crisis_level").default(0),
+  crisisTriggers: text("crisis_triggers").array(),
+  requiresSafetyWrapper: boolean("requires_safety_wrapper").default(false),
   timestamp: timestamp("timestamp").defaultNow().notNull(),
 });
 
@@ -1108,3 +1117,78 @@ export type InsertCoachingPlanStep = z.infer<typeof insertCoachingPlanStepSchema
 
 export type ProgressReflection = typeof progressReflections.$inferSelect;
 export type InsertProgressReflection = z.infer<typeof insertProgressReflectionSchema>;
+
+// ---------------------------------------------------------------------------
+// Admin system (see docs/ADMIN.md). admin_keys is the only root of trust for
+// admin access: a request is admin only when it proves possession of an
+// Ed25519 private key whose public key is registered (and not revoked) here.
+// ---------------------------------------------------------------------------
+
+export const adminKeys = pgTable("admin_keys", {
+  id: serial("id").primaryKey(),
+  publicKey: text("public_key").notNull().unique(),  // base64 Ed25519 public key
+  label: text("label"),
+  contactEmail: text("contact_email"),               // contact metadata only, never auth
+  contactPhone: text("contact_phone"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  revokedAt: timestamp("revoked_at"),
+  lastUsedAt: timestamp("last_used_at"),
+});
+
+export const adminChallenges = pgTable("admin_challenges", {
+  nonce: text("nonce").primaryKey(),                 // base64 random 32 bytes
+  publicKey: text("public_key").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  usedAt: timestamp("used_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const adminSessions = pgTable("admin_sessions", {
+  token: text("token").primaryKey(),                 // base64 random 48 bytes
+  adminKeyId: integer("admin_key_id").references(() => adminKeys.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+});
+
+export const insertAdminKeySchema = createInsertSchema(adminKeys).omit({
+  id: true,
+  createdAt: true,
+  lastUsedAt: true,
+});
+
+export type AdminKey = typeof adminKeys.$inferSelect;
+export type InsertAdminKey = z.infer<typeof insertAdminKeySchema>;
+export type AdminChallenge = typeof adminChallenges.$inferSelect;
+export type AdminSession = typeof adminSessions.$inferSelect;
+
+// ---------------------------------------------------------------------------
+// Two-factor authentication (TOTP) + trusted devices
+// ---------------------------------------------------------------------------
+
+// One row per user who has started or completed TOTP enrollment. The secret
+// is stored AES-256-GCM encrypted (server/lib/encryption.ts). A row with
+// enabled = false means enrollment was started but never confirmed.
+export const userTwoFactor = pgTable("user_two_factor", {
+  userId: text("user_id").primaryKey(),
+  secret: text("secret").notNull(),
+  enabled: boolean("enabled").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  enabledAt: timestamp("enabled_at"),
+});
+
+// Second-factor bearer tokens. Only the SHA-256 hash is stored; the raw
+// token lives on the client. kind = "session" (12h, issued after every
+// successful OTP) or "device" (30d, the "trust this device" option).
+export const secondFactorTokens = pgTable("second_factor_tokens", {
+  id: serial("id").primaryKey(),
+  tokenHash: text("token_hash").notNull().unique(),
+  userId: text("user_id").notNull(),
+  kind: text("kind").notNull(),
+  label: text("label"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  lastUsedAt: timestamp("last_used_at"),
+  expiresAt: timestamp("expires_at").notNull(),
+});
+
+export type UserTwoFactor = typeof userTwoFactor.$inferSelect;
+export type SecondFactorToken = typeof secondFactorTokens.$inferSelect;

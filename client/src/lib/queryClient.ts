@@ -1,5 +1,6 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 import { isNativeApp } from "./platform";
+import { getTwoFactorHeaders, TWO_FA_REQUIRED_EVENT } from "./twofa";
 
 /**
  * Resolve an API path to a full URL.
@@ -27,6 +28,11 @@ export function getApiUrl(path: string): string {
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
+    // A 403 carrying 2fa_required means the user has TOTP enabled but this
+    // device/session has no valid second-factor token: surface the OTP gate.
+    if (res.status === 403 && text.includes("2fa_required") && typeof window !== "undefined") {
+      window.dispatchEvent(new Event(TWO_FA_REQUIRED_EVENT));
+    }
     throw new Error(`${res.status}: ${text}`);
   }
 }
@@ -63,7 +69,7 @@ async function fetchWithTimeout(
 ): Promise<Response> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
-  const headers = { ...(await authHeaders()), ...(init?.headers || {}) };
+  const headers = { ...(await authHeaders()), ...getTwoFactorHeaders(), ...(init?.headers || {}) };
   return fetch(input, { ...init, headers, signal: controller.signal }).finally(
     () => clearTimeout(timeout),
   );
