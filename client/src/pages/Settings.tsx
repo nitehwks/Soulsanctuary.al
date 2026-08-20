@@ -5,6 +5,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { TwoFactorCard } from "@/components/settings/TwoFactorCard";
 import { useTranslation } from "react-i18next";
 
 export default function SettingsPage() {
@@ -22,9 +23,14 @@ export default function SettingsPage() {
           <TabsList className="bg-muted/50 p-1">
             <TabsTrigger value="language" data-testid="tab-language">{t('settings.language')}</TabsTrigger>
             <TabsTrigger value="privacy" data-testid="tab-privacy">{t('settings.privacyTab')}</TabsTrigger>
+            <TabsTrigger value="security" data-testid="tab-security">Security</TabsTrigger>
             <TabsTrigger value="learning" data-testid="tab-learning">{t('settings.learningTab')}</TabsTrigger>
             <TabsTrigger value="integrations" data-testid="tab-integrations">{t('settings.integrationsTab')}</TabsTrigger>
           </TabsList>
+          
+          <TabsContent value="security" className="space-y-6 mt-6">
+            <TwoFactorCard />
+          </TabsContent>
           
           <TabsContent value="language" className="space-y-6 mt-6">
             <Card className="p-6 space-y-6 bg-card/40 border-border/50">

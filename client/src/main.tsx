@@ -3,6 +3,23 @@ import { ClerkProvider } from "@clerk/clerk-react";
 import App from "./App";
 import "./index.css";
 import "./i18n";
+import { isNativeApp } from "./lib/platform";
+import { appSchemeUrlToPath } from "./lib/nativeAuth";
+
+// Native deep-link entry: soulsanctuary://some/path?query routes the webview
+// to /some/path?query. This is how an OAuth flow that escaped to the system
+// browser gets pulled back into the app (see client/src/lib/nativeAuth.ts).
+if (isNativeApp()) {
+  import("@capacitor/app").then(({ App: CapacitorApp }) => {
+    CapacitorApp.addListener("appUrlOpen", ({ url }) => {
+      const path = appSchemeUrlToPath(url);
+      if (path) {
+        window.history.pushState({}, "", path);
+        window.dispatchEvent(new PopStateEvent("popstate"));
+      }
+    });
+  });
+}
 
 const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined;
 

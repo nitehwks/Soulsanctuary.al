@@ -7,3 +7,5 @@ vite.config.ts.*
 .env.local
 .env
 *.bak.*
+.admin-key
+*.swp

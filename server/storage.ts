@@ -58,6 +58,12 @@ import {
   type InsertClinicianSession,
   type FeatureFlag,
   type InsertFeatureFlag,
+  type AdminKey,
+  type InsertAdminKey,
+  type AdminChallenge,
+  type AdminSession,
+  type UserTwoFactor,
+  type SecondFactorToken,
   type Relationship,
   type InsertRelationship,
   type LifeEvent,
@@ -107,11 +113,16 @@ import {
   dispositionTrends,
   psychologicalProfile,
   goalProgress,
-  learningQueue
+  learningQueue,
+  adminKeys,
+  adminChallenges,
+  adminSessions,
+  userTwoFactor,
+  secondFactorTokens
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "../db/index";
-import { eq, and, desc, ilike, sql, gte, lt, count } from "drizzle-orm";
+import { eq, and, desc, ilike, sql, gte, gt, lt, isNull, count } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -125,8 +136,10 @@ export interface IStorage {
   createConversation(conversation: InsertConversation): Promise<Conversation>;
   getConversation(id: number): Promise<Conversation | undefined>;
   getConversationsByUser(userId: string): Promise<Conversation[]>;
+  getConversationsByMode(mode: string): Promise<Conversation[]>;
   getConversationCount(userId: string): Promise<number>;
   updateConversationTitle(id: number, title: string): Promise<Conversation | undefined>;
+  updateConversationStatus(id: number, status: string): Promise<Conversation | undefined>;
   
   createMessage(message: InsertMessage): Promise<Message>;
   getMessagesByConversation(conversationId: number): Promise<Message[]>;
@@ -253,6 +266,36 @@ export interface IStorage {
   createGroupMessage(message: InsertGroupMessage): Promise<GroupMessage>;
   getGroupMessages(groupId: number, limit?: number): Promise<GroupMessage[]>;
   moderateGroupMessage(id: number, reason: string): Promise<GroupMessage | undefined>;
+
+  // Admin methods (public-key authenticated; DB is the root of trust)
+  getAdminKeyByPublicKey(publicKey: string): Promise<AdminKey | undefined>;
+  listAdminKeys(): Promise<AdminKey[]>;
+  insertAdminKey(key: InsertAdminKey): Promise<AdminKey>;
+  revokeAdminKey(id: number): Promise<AdminKey | undefined>;
+  touchAdminKey(id: number): Promise<void>;
+  createAdminChallenge(nonce: string, publicKey: string, expiresAt: Date): Promise<void>;
+  consumeAdminChallenge(nonce: string): Promise<AdminChallenge | undefined>;
+  createAdminSession(token: string, adminKeyId: number, expiresAt: Date): Promise<void>;
+  deleteAdminSession(token: string): Promise<void>;
+  getValidAdminSession(token: string): Promise<{ session: AdminSession; key: AdminKey } | undefined>;
+  deleteExpiredAdminChallengesAndSessions(): Promise<void>;
+
+  // Two-factor authentication (TOTP) + trusted devices
+  getTwoFactor(userId: string): Promise<UserTwoFactor | undefined>;
+  upsertTwoFactorSecret(userId: string, encryptedSecret: string): Promise<UserTwoFactor>;
+  enableTwoFactor(userId: string): Promise<void>;
+  deleteTwoFactor(userId: string): Promise<void>;
+  createSecondFactorToken(tokenHash: string, userId: string, kind: string, label: string | null, expiresAt: Date): Promise<SecondFactorToken>;
+  getSecondFactorTokenByHash(tokenHash: string): Promise<SecondFactorToken | undefined>;
+  touchSecondFactorToken(id: number): Promise<void>;
+  listTrustedDevices(userId: string): Promise<SecondFactorToken[]>;
+  deleteSecondFactorToken(id: number, userId: string): Promise<boolean>;
+  deleteUserSecondFactorTokens(userId: string): Promise<void>;
+  deleteExpiredSecondFactorTokens(): Promise<void>;
+  listAuditLogs(limit: number, offset: number, action?: string): Promise<AuditLog[]>;
+  getModeratedGroupMessages(): Promise<GroupMessage[]>;
+  unmoderateGroupMessage(id: number): Promise<GroupMessage | undefined>;
+  deleteGroupMessage(id: number): Promise<boolean>;
   
   // Analytics methods
   createAnalyticsEvent(event: InsertAnalyticsEvent): Promise<AnalyticsEvent>;
@@ -416,6 +459,10 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(conversations).where(eq(conversations.userId, userId)).orderBy(desc(conversations.updatedAt));
   }
 
+  async getConversationsByMode(mode: string): Promise<Conversation[]> {
+    return await db.select().from(conversations).where(eq(conversations.mode, mode)).orderBy(desc(conversations.createdAt));
+  }
+
   async getConversationCount(userId: string): Promise<number> {
     const result = await db.select({ count: sql<number>`count(*)` })
       .from(conversations)
@@ -426,6 +473,14 @@ export class DatabaseStorage implements IStorage {
   async updateConversationTitle(id: number, title: string): Promise<Conversation | undefined> {
     const [updated] = await db.update(conversations)
       .set({ title, updatedAt: new Date() })
+      .where(eq(conversations.id, id))
+      .returning();
+    return updated;
+  }
+
+  async updateConversationStatus(id: number, status: string): Promise<Conversation | undefined> {
+    const [updated] = await db.update(conversations)
+      .set({ status, updatedAt: new Date() })
       .where(eq(conversations.id, id))
       .returning();
     return updated;
@@ -1166,6 +1221,173 @@ export class DatabaseStorage implements IStorage {
       .where(eq(groupMessages.id, id))
       .returning();
     return updated;
+  }
+
+  // Admin methods
+  async getAdminKeyByPublicKey(publicKey: string): Promise<AdminKey | undefined> {
+    const [key] = await db.select().from(adminKeys).where(eq(adminKeys.publicKey, publicKey));
+    return key;
+  }
+
+  async listAdminKeys(): Promise<AdminKey[]> {
+    return await db.select().from(adminKeys).orderBy(desc(adminKeys.createdAt));
+  }
+
+  async insertAdminKey(key: InsertAdminKey): Promise<AdminKey> {
+    const [created] = await db.insert(adminKeys).values(key).returning();
+    return created;
+  }
+
+  async revokeAdminKey(id: number): Promise<AdminKey | undefined> {
+    const [updated] = await db.update(adminKeys)
+      .set({ revokedAt: new Date() })
+      .where(eq(adminKeys.id, id))
+      .returning();
+    return updated;
+  }
+
+  async touchAdminKey(id: number): Promise<void> {
+    await db.update(adminKeys).set({ lastUsedAt: new Date() }).where(eq(adminKeys.id, id));
+  }
+
+  async createAdminChallenge(nonce: string, publicKey: string, expiresAt: Date): Promise<void> {
+    await db.insert(adminChallenges).values({ nonce, publicKey, expiresAt });
+  }
+
+  // Atomically marks the challenge used; returns it only if it was unused and unexpired.
+  async consumeAdminChallenge(nonce: string): Promise<AdminChallenge | undefined> {
+    const [updated] = await db.update(adminChallenges)
+      .set({ usedAt: new Date() })
+      .where(and(
+        eq(adminChallenges.nonce, nonce),
+        isNull(adminChallenges.usedAt),
+        gt(adminChallenges.expiresAt, new Date())
+      ))
+      .returning();
+    return updated;
+  }
+
+  async createAdminSession(token: string, adminKeyId: number, expiresAt: Date): Promise<void> {
+    await db.insert(adminSessions).values({ token, adminKeyId, expiresAt });
+  }
+
+  async deleteAdminSession(token: string): Promise<void> {
+    await db.delete(adminSessions).where(eq(adminSessions.token, token));
+  }
+
+  async getValidAdminSession(token: string): Promise<{ session: AdminSession; key: AdminKey } | undefined> {
+    const [row] = await db.select({ session: adminSessions, key: adminKeys })
+      .from(adminSessions)
+      .innerJoin(adminKeys, eq(adminSessions.adminKeyId, adminKeys.id))
+      .where(and(
+        eq(adminSessions.token, token),
+        gt(adminSessions.expiresAt, new Date()),
+        isNull(adminKeys.revokedAt)
+      ));
+    return row;
+  }
+
+  async deleteExpiredAdminChallengesAndSessions(): Promise<void> {
+    const now = new Date();
+    await db.delete(adminChallenges).where(lt(adminChallenges.expiresAt, now));
+    await db.delete(adminSessions).where(lt(adminSessions.expiresAt, now));
+  }
+
+  // Two-factor authentication (TOTP) + trusted devices
+
+  async getTwoFactor(userId: string): Promise<UserTwoFactor | undefined> {
+    const [row] = await db.select().from(userTwoFactor).where(eq(userTwoFactor.userId, userId));
+    return row;
+  }
+
+  async upsertTwoFactorSecret(userId: string, encryptedSecret: string): Promise<UserTwoFactor> {
+    const [row] = await db.insert(userTwoFactor)
+      .values({ userId, secret: encryptedSecret, enabled: false })
+      .onConflictDoUpdate({
+        target: userTwoFactor.userId,
+        set: { secret: encryptedSecret, enabled: false, enabledAt: null },
+      })
+      .returning();
+    return row;
+  }
+
+  async enableTwoFactor(userId: string): Promise<void> {
+    await db.update(userTwoFactor)
+      .set({ enabled: true, enabledAt: new Date() })
+      .where(eq(userTwoFactor.userId, userId));
+  }
+
+  async deleteTwoFactor(userId: string): Promise<void> {
+    await db.delete(userTwoFactor).where(eq(userTwoFactor.userId, userId));
+  }
+
+  async createSecondFactorToken(tokenHash: string, userId: string, kind: string, label: string | null, expiresAt: Date): Promise<SecondFactorToken> {
+    const [row] = await db.insert(secondFactorTokens)
+      .values({ tokenHash, userId, kind, label, expiresAt })
+      .returning();
+    return row;
+  }
+
+  async getSecondFactorTokenByHash(tokenHash: string): Promise<SecondFactorToken | undefined> {
+    const [row] = await db.select().from(secondFactorTokens)
+      .where(eq(secondFactorTokens.tokenHash, tokenHash));
+    return row;
+  }
+
+  async touchSecondFactorToken(id: number): Promise<void> {
+    await db.update(secondFactorTokens)
+      .set({ lastUsedAt: new Date() })
+      .where(eq(secondFactorTokens.id, id));
+  }
+
+  async listTrustedDevices(userId: string): Promise<SecondFactorToken[]> {
+    return await db.select().from(secondFactorTokens)
+      .where(and(
+        eq(secondFactorTokens.userId, userId),
+        eq(secondFactorTokens.kind, "device"),
+        gt(secondFactorTokens.expiresAt, new Date()),
+      ))
+      .orderBy(desc(secondFactorTokens.createdAt));
+  }
+
+  async deleteSecondFactorToken(id: number, userId: string): Promise<boolean> {
+    const result = await db.delete(secondFactorTokens)
+      .where(and(eq(secondFactorTokens.id, id), eq(secondFactorTokens.userId, userId)))
+      .returning();
+    return result.length > 0;
+  }
+
+  async deleteUserSecondFactorTokens(userId: string): Promise<void> {
+    await db.delete(secondFactorTokens).where(eq(secondFactorTokens.userId, userId));
+  }
+
+  async deleteExpiredSecondFactorTokens(): Promise<void> {
+    await db.delete(secondFactorTokens).where(lt(secondFactorTokens.expiresAt, new Date()));
+  }
+
+  async listAuditLogs(limit: number, offset: number, action?: string): Promise<AuditLog[]> {
+    const base = db.select().from(auditLogs);
+    const query = action ? base.where(eq(auditLogs.action, action)) : base;
+    return await query.orderBy(desc(auditLogs.id)).limit(limit).offset(offset);
+  }
+
+  async getModeratedGroupMessages(): Promise<GroupMessage[]> {
+    return await db.select().from(groupMessages)
+      .where(eq(groupMessages.moderated, true))
+      .orderBy(desc(groupMessages.createdAt));
+  }
+
+  async unmoderateGroupMessage(id: number): Promise<GroupMessage | undefined> {
+    const [updated] = await db.update(groupMessages)
+      .set({ moderated: false, moderationReason: null })
+      .where(eq(groupMessages.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteGroupMessage(id: number): Promise<boolean> {
+    const result = await db.delete(groupMessages).where(eq(groupMessages.id, id)).returning();
+    return result.length > 0;
   }
 
   // Analytics methods

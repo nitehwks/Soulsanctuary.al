@@ -1,12 +1,14 @@
 import { Switch, Route } from "wouter";
-import { useAuth as useClerkAuth, SignIn, SignUp } from "@clerk/clerk-react";
+import { useAuth as useClerkAuth, SignIn, SignUp, useSignIn, useSignUp } from "@clerk/clerk-react";
 import { queryClient, setClerkTokenGetter } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { useEffect, lazy, Suspense, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { applyPlatformClasses } from "@/lib/platform";
+import { applyPlatformClasses, isNativeApp } from "@/lib/platform";
+import { getOAuthCallbackUrl, getOAuthCompleteUrl } from "@/lib/nativeAuth";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import Dashboard from "@/pages/Dashboard";
@@ -20,8 +22,17 @@ import ClinicianDashboard from "@/pages/ClinicianDashboard";
 import FeatureFlags from "@/pages/FeatureFlags";
 import Sales from "@/pages/Sales";
 import { OAuthCallback } from "@/components/auth/OAuthCallback";
+import { TwoFactorGate } from "@/components/auth/TwoFactorGate";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Loader2 } from "lucide-react";
+
+// Admin dashboard: dynamically imported ONLY in admin builds (.admin-key
+// present at build time). The literal-false constant in user builds makes
+// Rollup drop the dynamic import, so no admin code or key material ever
+// reaches user/Android/published bundles.
+const AdminDashboard = __ADMIN_BUILD__
+  ? lazy(() => import("@/pages/AdminDashboard"))
+  : null;
 
 function resolveHttpBaseUrl(): string {
   const runtimeConfig =
@@ -47,6 +58,52 @@ function toAbsoluteUrl(path: string): string {
 }
 
 const AUTH_HOME_REDIRECT = toAbsoluteUrl("/");
+
+// On native, the Clerk component's built-in social buttons would start OAuth
+// with a callback on the app origin (https://localhost) — a dead end if the
+// flow ever leaves the webview. These buttons start OAuth with a PUBLIC
+// callback URL that can always find its way back into the app.
+function NativeOAuthButtons({ mode }: { mode: "sign-in" | "sign-up" }) {
+  const { signIn, isLoaded: signInLoaded } = useSignIn();
+  const { signUp, isLoaded: signUpLoaded } = useSignUp();
+  const [error, setError] = useState<string | null>(null);
+
+  const start = async (strategy: "oauth_google" | "oauth_apple") => {
+    setError(null);
+    const redirectUrl = getOAuthCallbackUrl();
+    const redirectUrlComplete = getOAuthCompleteUrl();
+    try {
+      if (mode === "sign-in" && signInLoaded && signIn) {
+        await signIn.authenticateWithRedirect({ strategy, redirectUrl, redirectUrlComplete });
+      } else if (mode === "sign-up" && signUpLoaded && signUp) {
+        await signUp.authenticateWithRedirect({ strategy, redirectUrl, redirectUrlComplete });
+      }
+    } catch (e: any) {
+      setError(e?.errors?.[0]?.longMessage || e?.message || "Could not start social sign-in.");
+    }
+  };
+
+  return (
+    <div className="w-full max-w-sm space-y-2">
+      <Button variant="outline" className="w-full" onClick={() => start("oauth_google")} data-testid="oauth-google">
+        Continue with Google
+      </Button>
+      <Button variant="outline" className="w-full" onClick={() => start("oauth_apple")} data-testid="oauth-apple">
+        Continue with Apple
+      </Button>
+      {error && <p className="text-sm text-red-500 text-center">{error}</p>}
+      <p className="text-xs text-muted-foreground text-center">or use email below</p>
+    </div>
+  );
+}
+
+// Hide the built-in social buttons on native (replaced above); untouched on web.
+const nativeAppearance = {
+  elements: {
+    socialButtons: { display: "none" },
+    dividerRow: { display: "none" },
+  },
+} as const;
 
 function AppRouter() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -85,10 +142,12 @@ function AppRouter() {
       <Switch>
         <Route path="/sign-in/*?">
           <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4 gap-4">
+            {isNativeApp() && <NativeOAuthButtons mode="sign-in" />}
             <SignIn
               routing="path"
               path="/sign-in"
               oauthFlow="redirect"
+              appearance={isNativeApp() ? nativeAppearance : undefined}
               signUpUrl={toAbsoluteUrl("/sign-up")}
               withSignUp={true}
               transferable={true}
@@ -102,10 +161,12 @@ function AppRouter() {
         </Route>
         <Route path="/sign-up/*?">
           <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4 gap-4">
+            {isNativeApp() && <NativeOAuthButtons mode="sign-up" />}
             <SignUp
               routing="path"
               path="/sign-up"
               oauthFlow="redirect"
+              appearance={isNativeApp() ? nativeAppearance : undefined}
               signInUrl={toAbsoluteUrl("/sign-in")}
               fallbackRedirectUrl={AUTH_HOME_REDIRECT}
               forceRedirectUrl={AUTH_HOME_REDIRECT}
@@ -134,6 +195,19 @@ function AppRouter() {
       <Route path="/clinician" component={ClinicianDashboard} />
       <Route path="/feature-flags" component={FeatureFlags} />
       <Route path="/sales" component={Sales} />
+      {AdminDashboard && (
+        <Route path="/admin">
+          <Suspense
+            fallback={
+              <div className="min-h-screen flex items-center justify-center bg-background">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              </div>
+            }
+          >
+            <AdminDashboard />
+          </Suspense>
+        </Route>
+      )}
       <Route component={NotFound} />
     </Switch>
   );
@@ -150,6 +224,7 @@ function App() {
         <Toaster />
         <ErrorBoundary>
           <AppRouter />
+          <TwoFactorGate />
         </ErrorBoundary>
       </TooltipProvider>
     </QueryClientProvider>
