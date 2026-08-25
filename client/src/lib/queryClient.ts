@@ -77,12 +77,20 @@ async function fetchWithTimeout(
   );
 }
 
+export async function apiFetch(
+  path: string,
+  init?: RequestInit,
+  timeoutMs = 8000,
+): Promise<Response> {
+  return fetchWithTimeout(getApiUrl(path), init, timeoutMs);
+}
+
 export async function apiRequest(
   method: string,
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
-  const res = await fetchWithTimeout(getApiUrl(url), {
+  const res = await apiFetch(url, {
     method,
     headers: data ? { "Content-Type": "application/json" } : {},
     body: data ? JSON.stringify(data) : undefined,
@@ -99,7 +107,7 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetchWithTimeout(getApiUrl(queryKey.join("/") as string), {
+    const res = await apiFetch(queryKey.join("/") as string, {
       credentials: "include",
     });
 

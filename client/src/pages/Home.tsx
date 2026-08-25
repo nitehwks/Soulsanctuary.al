@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { getApiUrl } from "@/lib/queryClient";
+import { apiFetch } from "@/lib/queryClient";
 import { openAppMenu, OPEN_KNOWLEDGE_EVENT, OPEN_STATUS_EVENT } from "@/components/layout/AppMenu";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -32,7 +32,7 @@ export default function Home() {
   useEffect(() => {
     const checkDbStatus = async () => {
       try {
-        const response = await fetch(getApiUrl('/api/users'));
+        const response = await apiFetch('/api/users');
         setDbStatus(response.ok ? "connected" : "disconnected");
       } catch {
         setDbStatus("disconnected");

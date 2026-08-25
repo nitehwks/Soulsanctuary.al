@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { getApiUrl } from "@/lib/queryClient";
+import { apiFetch } from "@/lib/queryClient";
 
 interface MoodObservation {
   id: number;
@@ -58,7 +58,7 @@ export function WellnessPanel({ isOpen, onClose, userId }: WellnessPanelProps) {
 
   const fetchPreferences = async () => {
     try {
-      const res = await fetch(getApiUrl(`/api/preferences/${userId}`));
+      const res = await apiFetch(`/api/preferences/${userId}`);
       if (res.ok) {
         const data = await res.json();
         setPreferences(data);
@@ -70,7 +70,7 @@ export function WellnessPanel({ isOpen, onClose, userId }: WellnessPanelProps) {
 
   const fetchMoods = async () => {
     try {
-      const res = await fetch(getApiUrl(`/api/mood/${userId}`));
+      const res = await apiFetch(`/api/mood/${userId}`);
       if (res.ok) {
         const data = await res.json();
         setMoods(data);
@@ -82,7 +82,7 @@ export function WellnessPanel({ isOpen, onClose, userId }: WellnessPanelProps) {
 
   const fetchAssessment = async () => {
     try {
-      const res = await fetch(getApiUrl(`/api/wellness/${userId}`));
+      const res = await apiFetch(`/api/wellness/${userId}`);
       if (res.ok) {
         const data = await res.json();
         setAssessment(data);
@@ -96,7 +96,7 @@ export function WellnessPanel({ isOpen, onClose, userId }: WellnessPanelProps) {
     if (!preferences) return;
     
     try {
-      const res = await fetch(getApiUrl(`/api/preferences/${userId}`), {
+      const res = await apiFetch(`/api/preferences/${userId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -117,7 +117,7 @@ export function WellnessPanel({ isOpen, onClose, userId }: WellnessPanelProps) {
   const generateAssessment = async () => {
     setIsGenerating(true);
     try {
-      const res = await fetch(getApiUrl(`/api/wellness/${userId}/generate`), {
+      const res = await apiFetch(`/api/wellness/${userId}/generate`, {
         method: 'POST'
       });
       if (res.ok) {

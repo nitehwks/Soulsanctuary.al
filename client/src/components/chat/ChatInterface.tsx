@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useVoiceChat } from "@/hooks/useVoiceChat";
 import { useKeyboard } from "@/hooks/useKeyboard";
-import { getApiUrl } from "@/lib/queryClient";
+import { apiFetch } from "@/lib/queryClient";
 import { ConversationList } from "./ConversationList";
 import { WellnessPanel } from "./WellnessPanel";
 import { PrivacyDashboard } from "./PrivacyDashboard";
@@ -129,7 +129,7 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
     if (!userId) return;
     
     try {
-      const response = await fetch(getApiUrl('/api/conversations'), {
+      const response = await apiFetch('/api/conversations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -156,7 +156,7 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
   const loadConversation = async (id: number) => {
     try {
       setConversationId(id);
-      const messagesResponse = await fetch(getApiUrl(`/api/messages/${id}`));
+      const messagesResponse = await apiFetch(`/api/messages/${id}`);
       if (messagesResponse.ok) {
         const loadedMessages = await messagesResponse.json();
         setMessages(loadedMessages);
@@ -179,7 +179,7 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
         setMessages([]);
         setConversationId(null);
         
-        const response = await fetch(getApiUrl(`/api/conversations?userId=${userId}&mode=${mode}`));
+        const response = await apiFetch(`/api/conversations?userId=${userId}&mode=${mode}`);
         if (response.ok) {
           const conversations = await response.json();
           if (conversations.length > 0) {
@@ -204,7 +204,7 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
     
     const checkCoachingEligibility = async () => {
       try {
-        const response = await fetch(getApiUrl(`/api/coaching/eligibility/${userId}`));
+        const response = await apiFetch(`/api/coaching/eligibility/${userId}`);
         if (response.ok) {
           const data = await response.json();
           setCoachingEligible(data.eligible);
@@ -222,7 +222,7 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
     
     setProfileLoading(true);
     try {
-      const response = await fetch(getApiUrl(`/api/coaching/profile/${userId}`));
+      const response = await apiFetch(`/api/coaching/profile/${userId}`);
       if (response.ok) {
         const data = await response.json();
         setProfileData(data);
@@ -352,7 +352,7 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
             });
           }
 
-          const uploadResponse = await fetch(getApiUrl('/api/attachments/upload'), {
+          const uploadResponse = await apiFetch('/api/attachments/upload', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -362,7 +362,7 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
               fileSize: fileToSend.size,
               fileData,
             })
-          });
+          }, 60_000);
 
           if (uploadResponse.ok) {
             attachmentData = await uploadResponse.json();
@@ -383,7 +383,7 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
         }
       }
 
-      const response = await fetch(getApiUrl('/api/chat'), {
+      const response = await apiFetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -392,7 +392,7 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
           userId,
           attachment: attachmentData
         })
-      });
+      }, 120_000);
 
       if (!response.ok) {
         throw new Error('Failed to send message');

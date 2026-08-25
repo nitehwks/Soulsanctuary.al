@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { getApiUrl } from "@/lib/queryClient";
+import { apiFetch } from "@/lib/queryClient";
 
 interface UserContext {
   id: number;
@@ -41,7 +41,7 @@ export function MemoryPanel() {
     
     try {
       setLoading(true);
-      const response = await fetch(getApiUrl(`/api/context/${userId}`));
+      const response = await apiFetch(`/api/context/${userId}`);
       if (response.ok) {
         const data = await response.json();
         setContextData(data);

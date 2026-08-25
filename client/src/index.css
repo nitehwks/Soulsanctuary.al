@@ -242,10 +242,6 @@
   opacity: 1 !important;
 }
 
-.cl-socialButtonsProviderIcon__apple path {
-  fill: #000 !important;
-}
-
 @media screen and (max-width: 480px) {
   :root {
     --radius: 0.5rem;

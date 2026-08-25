@@ -11,7 +11,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { apiRequest, queryClient, getApiUrl } from "@/lib/queryClient";
+import { apiFetch, apiRequest, queryClient } from "@/lib/queryClient";
 import type { Group, GroupMember, GroupMessage } from "@shared/schema";
 
 interface GroupChatRoomProps {
@@ -367,7 +367,7 @@ export function GroupList({ onSelectGroup }: GroupListProps) {
       const path = selectedCategory === 'all'
         ? '/api/groups'
         : `/api/groups?category=${encodeURIComponent(selectedCategory)}`;
-      const res = await fetch(getApiUrl(path), { credentials: 'include' });
+      const res = await apiFetch(path, { credentials: 'include' });
       if (!res.ok) throw new Error('Failed to load groups');
       return res.json();
     }
