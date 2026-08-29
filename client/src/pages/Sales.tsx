@@ -1,7 +1,30 @@
 import { useState, useEffect } from 'react';
+import { applyPageMeta } from "@/lib/seo";
 
 export default function Sales() {
   const [showPrayer, setShowPrayer] = useState(true);
+
+  useEffect(() => {
+    applyPageMeta({
+      title: "Get SoulSanctuary – AI Companion for Faith & Healing",
+      description:
+        "Process your heaviest emotions with an AI companion that prays with you, offers scripture, and delivers evidence-based therapeutic care. Start your journey today.",
+      canonical: "https://soulsanctuary.app/sales",
+      ogUrl: "https://soulsanctuary.app/sales",
+      structuredData: {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "@id": "https://soulsanctuary.app/sales#webpage",
+        "url": "https://soulsanctuary.app/sales",
+        "name": "Get SoulSanctuary – AI Companion for Faith & Healing",
+        "description":
+          "Process your heaviest emotions with an AI companion that prays with you, offers scripture, and delivers evidence-based therapeutic care.",
+        "isPartOf": { "@id": "https://soulsanctuary.app/#website" },
+        "about": { "@id": "https://soulsanctuary.app/#app" },
+        "inLanguage": "en-US",
+      },
+    });
+  }, []);
 
   return (
     <div style={{

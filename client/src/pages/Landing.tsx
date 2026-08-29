@@ -3,8 +3,32 @@ import { Card } from "@/components/ui/card";
 import { Shield, Brain, Heart, Lock, BookOpen, Sparkles, Cross, HandHeart, AlertTriangle } from "lucide-react";
 import { motion } from "framer-motion";
 import heroImage from "@assets/IMG_0630_1765623983997.jpeg";
+import { useEffect } from "react";
+import { applyPageMeta } from "@/lib/seo";
 
 export default function Landing() {
+  useEffect(() => {
+    applyPageMeta({
+      title: "SoulSanctuary – Find Your Sanctuary Within",
+      description:
+        "Your trusted confidant combining faith-based support with evidence-based therapy. Be lifted up, find healing, and grow in faith and strength.",
+      canonical: "https://soulsanctuary.app/",
+      ogUrl: "https://soulsanctuary.app/",
+      structuredData: {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "@id": "https://soulsanctuary.app/#webpage",
+        "url": "https://soulsanctuary.app/",
+        "name": "SoulSanctuary – Find Your Sanctuary Within",
+        "description":
+          "Your trusted confidant combining faith-based support with evidence-based therapy. Be lifted up, find healing, and grow in faith and strength.",
+        "isPartOf": { "@id": "https://soulsanctuary.app/#website" },
+        "about": { "@id": "https://soulsanctuary.app/#app" },
+        "inLanguage": "en-US",
+      },
+    });
+  }, []);
+
   const handleLogin = () => {
     window.location.href = "/sign-in";
   };

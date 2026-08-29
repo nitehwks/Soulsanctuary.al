@@ -4,15 +4,71 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content" />
 
-    <meta property="og:title" content="SoulSanctuary" />
-    <meta property="og:description" content="Find your sanctuary within. Privacy-first AI companion with therapeutic tools and secure conversations." />
+    <title>SoulSanctuary – Find Your Sanctuary Within</title>
+    <meta name="description" content="SoulSanctuary is a Christian faith-integrated AI companion combining evidence-based therapy with prayer, scripture, and compassionate support. Begin your healing journey today." />
+    <link rel="canonical" href="https://soulsanctuary.app/" />
+
+    <!-- Open Graph -->
+    <meta property="og:site_name" content="SoulSanctuary" />
+    <meta property="og:title" content="SoulSanctuary – Find Your Sanctuary Within" />
+    <meta property="og:description" content="SoulSanctuary is a Christian faith-integrated AI companion combining evidence-based therapy with prayer, scripture, and compassionate support. Begin your healing journey today." />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://replit.com/public/images/opengraph.png" />
+    <meta property="og:url" content="https://soulsanctuary.app/" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:image" content="https://soulsanctuary.app/opengraph.jpg" />
+
+    <!-- Twitter / X -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@replit" />
-    <meta name="twitter:title" content="SoulSanctuary" />
-    <meta name="twitter:description" content="Find your sanctuary within. Privacy-first AI companion with therapeutic tools and secure conversations." />
-    <meta name="twitter:image" content="https://replit.com/public/images/opengraph.png" />
+    <meta name="twitter:title" content="SoulSanctuary – Find Your Sanctuary Within" />
+    <meta name="twitter:description" content="SoulSanctuary is a Christian faith-integrated AI companion combining evidence-based therapy with prayer, scripture, and compassionate support. Begin your healing journey today." />
+    <meta name="twitter:image" content="https://soulsanctuary.app/opengraph.jpg" />
+    <meta name="twitter:image:alt" content="SoulSanctuary – Faith-integrated AI companion for healing and spiritual growth" />
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebSite",
+          "@id": "https://soulsanctuary.app/#website",
+          "url": "https://soulsanctuary.app/",
+          "name": "SoulSanctuary",
+          "description": "Christian faith-integrated AI companion combining evidence-based therapy with prayer, scripture, and compassionate support.",
+          "publisher": { "@id": "https://soulsanctuary.app/#organization" },
+          "inLanguage": "en-US"
+        },
+        {
+          "@type": "Organization",
+          "@id": "https://soulsanctuary.app/#organization",
+          "name": "SoulSanctuary",
+          "url": "https://soulsanctuary.app/",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://soulsanctuary.app/favicon.png"
+          },
+          "description": "SoulSanctuary provides a privacy-first AI companion that blends Christian faith principles with evidence-based therapeutic techniques to support emotional healing and spiritual growth.",
+          "sameAs": []
+        },
+        {
+          "@type": "SoftwareApplication",
+          "@id": "https://soulsanctuary.app/#app",
+          "name": "SoulSanctuary",
+          "url": "https://soulsanctuary.app/",
+          "applicationCategory": "HealthApplication",
+          "operatingSystem": "Web, iOS, Android",
+          "description": "Faith-integrated AI companion combining prayer, scripture, and evidence-based therapy (DBT, CBT, ACT, Mindfulness) for emotional healing and spiritual growth.",
+          "offers": {
+            "@type": "Offer",
+            "url": "https://soulsanctuary.app/sales",
+            "priceCurrency": "USD",
+            "availability": "https://schema.org/InStock"
+          },
+          "publisher": { "@id": "https://soulsanctuary.app/#organization" }
+        }
+      ]
+    }
+    </script>
 
     <!-- Runtime config must load before the React app so getApiUrl can read it. -->
     <script src="/runtime-config.js"></script>
@@ -24,6 +80,25 @@
   </head>
   <body>
     <div id="root"></div>
+
+    <!-- Static content for non-JS crawlers (AI bots, social bots) -->
+    <noscript>
+      <main>
+        <h1>SoulSanctuary – Find Your Sanctuary Within</h1>
+        <p>Your trusted confidant combining faith-based support with evidence-based therapy. Be lifted up, find healing, and grow in faith and strength.</p>
+        <p><em>"The Lord is close to the brokenhearted and saves those who are crushed in spirit." – Psalm 34:18</em></p>
+        <h2>What SoulSanctuary Offers</h2>
+        <ul>
+          <li>Faith-integrated AI companion with prayer and scripture support</li>
+          <li>Evidence-based therapy techniques: DBT, CBT, ACT, Mindfulness, Grounding</li>
+          <li>Private, encrypted conversations</li>
+          <li>Crisis detection and safety protocols</li>
+          <li>Available on Web, iOS, and Android</li>
+        </ul>
+        <p><a href="/sales">Learn more and get started</a></p>
+      </main>
+    </noscript>
+
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
