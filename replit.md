@@ -9,7 +9,7 @@ SoulSanctuary is a Christian faith-integrated AI companion - your trusted confid
 Preferred communication style: Simple, everyday language.
 
 ### User Identity Protocol
-- **Name Source**: User's name comes from their Replit Auth sign-up (firstName field)
+- **Name Source**: User's name comes from their Clerk sign-up (firstName field)
 - **Owner Exception**: Joe Abbott (joe_abbott@me.com) is always addressed as "Joe"
 - **All Other Users**: Use the name they provided during sign up
 - **Name Change Trigger**: Only "My name is [X]" updates the name in conversation
@@ -52,7 +52,7 @@ Build commands:
 ### System Design Choices
 **Data Storage:** The PostgreSQL database schema includes tables for Users, Conversations, Messages, and User Context. Messages include `wasObfuscated` and `originalContent` fields to support PII redaction.
 **Privacy & Security:** Features include AES-256-GCM encryption, tamper-evident audit logging, a privacy dashboard UI, granular consent management, GDPR-compliant data export and deletion, PII redaction for sensitive information, and configurable data retention policies.
-**Authentication:** A basic user authentication structure is in place, with anonymous user support as default.
+**Authentication:** Replit-managed Clerk provides sign-in and sessions. The local users table remains the source of application authorization and user-owned data.
 
 ## External Dependencies
 

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 96" role="img" aria-labelledby="title desc">
+  <title id="title">SoulSanctuary</title>
+  <desc id="desc">A purple sanctuary arch with a gold cross and the SoulSanctuary wordmark.</desc>
+  <defs>
+    <linearGradient id="arch" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8b5cf6"/>
+      <stop offset="1" stop-color="#5b21b6"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#arch)" d="M48 4C24 4 8 23 8 47v41h80V47C88 23 72 4 48 4Z"/>
+  <path fill="#fff" d="M48 18c-15 0-26 12-26 29v27h52V47c0-17-11-29-26-29Z" opacity=".96"/>
+  <path fill="#d4a72c" d="M43 29h10v14h13v10H53v21H43V53H30V43h13Z"/>
+  <text x="106" y="59" fill="#3b0764" font-family="Inter, Arial, sans-serif" font-size="30" font-weight="700">SoulSanctuary</text>
+</svg>

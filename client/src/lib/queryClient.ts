@@ -76,11 +76,7 @@ export async function apiFetch(
   init?: RequestInit,
   timeoutMs = 8000,
 ): Promise<Response> {
-  const response = await fetchWithTimeout(getApiUrl(path), init, timeoutMs);
-  if (response.status === 401 && typeof window !== "undefined") {
-    window.dispatchEvent(new Event("soulsanctuary:clerk-unauthorized"));
-  }
-  return response;
+  return fetchWithTimeout(getApiUrl(path), init, timeoutMs);
 }
 
 export async function apiRequest(

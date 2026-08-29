@@ -5,7 +5,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { apiFetch } from "@/lib/queryClient";
 import { formatDistanceToNow } from "date-fns";
-import { useAuth } from "@/hooks/useAuth";
+import { useUser } from "@clerk/react";
 
 interface Conversation {
   id: number;
@@ -29,8 +29,8 @@ export function ConversationList({
 }: ConversationListProps) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(false);
-  const { user } = useAuth();
-  const userId = user?.id;
+  const { user } = useUser();
+  const userId = user?.externalId ?? user?.id;
 
   useEffect(() => {
     if (!userId) {

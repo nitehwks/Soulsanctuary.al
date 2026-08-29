@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { useAuth } from "@/hooks/useAuth";
+import { useUser } from "@clerk/react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -33,7 +33,9 @@ const CATEGORY_META: Record<
 };
 
 export function FeedbackWorkspace() {
-  const { user } = useAuth();
+  const { user } = useUser();
+  const userId = user?.externalId ?? user?.id;
+  const userEmail = user?.primaryEmailAddress?.emailAddress ?? "";
   const { toast } = useToast();
   const [items, setItems] = useState<FeedbackItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,11 +55,11 @@ export function FeedbackWorkspace() {
   const [message, setMessage] = useState("");
 
   const loadFeedback = async () => {
-    if (!user?.id) return;
+    if (!userId) return;
     setLoading(true);
     setError(null);
     try {
-      const res = await apiRequest("GET", `/api/feedback?userId=${encodeURIComponent(user.id)}`);
+      const res = await apiRequest("GET", `/api/feedback?userId=${encodeURIComponent(userId)}`);
       const data = (await res.json()) as FeedbackItem[];
       setItems(data);
     } catch (e: any) {
@@ -69,24 +71,24 @@ export function FeedbackWorkspace() {
 
   useEffect(() => {
     loadFeedback();
-  }, [user?.id]);
+  }, [userId]);
 
   useEffect(() => {
     const loadContactSetup = async () => {
-      if (!user?.id) return;
+      if (!userId) return;
 
       setSetupLoading(true);
       try {
         const res = await apiRequest("GET", "/api/setup/contact");
         const data = (await res.json()) as { email?: string | null; phone?: string | null; storeContactInfo?: boolean };
         setSetupContact({
-          email: data.email || user.email || "",
+          email: data.email || userEmail,
           phone: data.phone || "",
         });
         setSetupStoreContact(data.storeContactInfo ?? true);
       } catch {
         setSetupContact({
-          email: user.email || "",
+          email: userEmail,
           phone: "",
         });
         setSetupStoreContact(true);
@@ -96,10 +98,10 @@ export function FeedbackWorkspace() {
     };
 
     loadContactSetup();
-  }, [user?.id, user?.email]);
+  }, [userId, userEmail]);
 
   const saveSetupContact = async () => {
-    if (!user?.id) return;
+    if (!userId) return;
 
     setSavingSetup(true);
     setError(null);
@@ -128,13 +130,13 @@ export function FeedbackWorkspace() {
   const hasSetupContact = Boolean(setupContact.email.trim() || setupContact.phone.trim());
 
   const clearSetupContact = async () => {
-    if (!user?.id) return;
+    if (!userId) return;
 
     setSavingSetup(true);
     setError(null);
     try {
       await apiRequest("DELETE", "/api/setup/contact");
-      setSetupContact({ email: user.email || "", phone: "" });
+      setSetupContact({ email: userEmail, phone: "" });
       setSetupStoreContact(false);
       toast({
         title: "Contact info removed",
@@ -148,12 +150,12 @@ export function FeedbackWorkspace() {
   };
 
   const submitFeedback = async () => {
-    if (!user?.id || !message.trim()) return;
+    if (!userId || !message.trim()) return;
     setSubmitting(true);
     setError(null);
     try {
       const res = await apiRequest("POST", "/api/feedback", {
-        userId: user.id,
+        userId,
         category,
         rating,
         subject: subject.trim() || null,

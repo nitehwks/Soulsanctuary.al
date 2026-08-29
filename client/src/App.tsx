@@ -1,10 +1,9 @@
 import { Switch, Route } from "wouter";
-import { useAuth as useClerkAuth, SignIn, SignUp } from "@clerk/react";
+import { useAuth as useClerkAuth, SignIn, SignUp, useClerk } from "@clerk/react";
 import { queryClient, setClerkTokenGetter } from "./lib/queryClient";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useAuth } from "@/hooks/useAuth";
 import { applyPlatformClasses, isNativeApp } from "@/lib/platform";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
@@ -23,11 +22,32 @@ import { Loader2 } from "lucide-react";
 import { useEffect, lazy, Suspense, useRef } from "react";
 
 const AdminDashboard = lazy(() => import("@/pages/AdminDashboard"));
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+function ClerkQueryClientCacheInvalidator() {
+  const { addListener } = useClerk();
+  const queryClient = useQueryClient();
+  const prevUserIdRef = useRef<string | null | undefined>(undefined);
+
+  useEffect(() => {
+    const unsubscribe = addListener(({ user }) => {
+      const userId = user?.id ?? null;
+      if (
+        prevUserIdRef.current !== undefined &&
+        prevUserIdRef.current !== userId
+      ) {
+        queryClient.clear();
+      }
+      prevUserIdRef.current = userId;
+    });
+    return unsubscribe;
+  }, [addListener, queryClient]);
+
+  return null;
+}
 
 function AppRouter() {
-  const { isAuthenticated, isLoading } = useAuth();
-  const { getToken, signOut, userId: clerkUserId } = useClerkAuth();
-  const previousClerkUserId = useRef<string | null | undefined>(undefined);
+  const { getToken, isLoaded, isSignedIn } = useClerkAuth();
 
   // Native API calls are cross-origin and need a fresh Clerk bearer token.
   // Web API calls use Clerk's same-origin session cookies instead.
@@ -37,33 +57,7 @@ function AppRouter() {
     return () => setClerkTokenGetter(null);
   }, [getToken]);
 
-  useEffect(() => {
-    if (
-      previousClerkUserId.current !== undefined &&
-      previousClerkUserId.current !== clerkUserId
-    ) {
-      queryClient.clear();
-    }
-    previousClerkUserId.current = clerkUserId;
-  }, [clerkUserId]);
-
-  useEffect(() => {
-    const handleUnauthorized = () => {
-      void signOut({ redirectUrl: "/sign-in" });
-    };
-    window.addEventListener(
-      "soulsanctuary:clerk-unauthorized",
-      handleUnauthorized,
-    );
-    return () => {
-      window.removeEventListener(
-        "soulsanctuary:clerk-unauthorized",
-        handleUnauthorized,
-      );
-    };
-  }, [signOut]);
-
-  if (isLoading) {
+  if (!isLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -71,16 +65,16 @@ function AppRouter() {
     );
   }
 
-  if (!isAuthenticated) {
+  if (!isSignedIn) {
     return (
       <Switch>
         <Route path="/sign-in/*?">
           <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4 gap-4">
             <SignIn
               routing="path"
-              path="/sign-in"
-              signUpUrl="/sign-up"
-              fallbackRedirectUrl="/"
+              path={`${basePath}/sign-in`}
+              signUpUrl={`${basePath}/sign-up`}
+              fallbackRedirectUrl={basePath || "/"}
             />
           </div>
         </Route>
@@ -88,9 +82,9 @@ function AppRouter() {
           <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4 gap-4">
             <SignUp
               routing="path"
-              path="/sign-up"
-              signInUrl="/sign-in"
-              fallbackRedirectUrl="/"
+              path={`${basePath}/sign-up`}
+              signInUrl={`${basePath}/sign-in`}
+              fallbackRedirectUrl={basePath || "/"}
             />
           </div>
         </Route>
@@ -136,6 +130,7 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <ClerkQueryClientCacheInvalidator />
       <TooltipProvider>
         <Toaster />
         <ErrorBoundary>

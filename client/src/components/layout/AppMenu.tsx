@@ -12,8 +12,8 @@ import {
   User,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
+import { useClerk, useUser } from "@clerk/react";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/hooks/useAuth";
 import {
   Sheet,
   SheetContent,
@@ -50,7 +50,8 @@ export function AppMenu({
   onOpenChange: (open: boolean) => void;
 }) {
   const [location, navigate] = useLocation();
-  const { user, logout } = useAuth();
+  const { user } = useUser();
+  const { signOut } = useClerk();
 
   const close = () => onOpenChange(false);
 
@@ -71,8 +72,8 @@ export function AppMenu({
       <SheetContent side="right" className="w-[85vw] max-w-sm p-0">
         <SheetHeader className="p-4 border-b border-border">
           <SheetTitle className="flex items-center gap-2">
-            {user?.profileImageUrl ? (
-              <img src={user.profileImageUrl} alt="" className="w-8 h-8 rounded-full" />
+            {user?.imageUrl ? (
+              <img src={user.imageUrl} alt="" className="w-8 h-8 rounded-full" />
             ) : (
               <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
                 <User className="w-4 h-4 text-primary" />
@@ -82,7 +83,7 @@ export function AppMenu({
               <div className="text-sm font-medium">
                 {user?.firstName || user?.lastName
                   ? `${user.firstName || ""} ${user.lastName || ""}`.trim()
-                  : user?.email || "User"}
+                  : user?.primaryEmailAddress?.emailAddress || "User"}
               </div>
             </div>
           </SheetTitle>
@@ -135,7 +136,7 @@ export function AppMenu({
               variant="ghost"
               className="w-full justify-start gap-3 h-12 text-destructive"
               onClick={() => {
-                logout();
+                void signOut({ redirectUrl: "/" });
                 close();
               }}
               data-testid="menu-logout"

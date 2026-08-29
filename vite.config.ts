@@ -7,7 +7,7 @@ import { metaImagesPlugin } from "./vite-plugin-meta-images";
 export default defineConfig({
   plugins: [
     react(),
-    tailwindcss(),
+    tailwindcss({ optimize: false }),
     metaImagesPlugin(),
   ],
   resolve: {

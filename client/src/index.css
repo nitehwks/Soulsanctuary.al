@@ -1,4 +1,6 @@
+@layer theme, base, clerk, components, utilities;
 @import "tailwindcss";
+@import "@clerk/themes/shadcn.css";
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
@@ -410,6 +412,11 @@
   .safe-top {
     padding-top: max(0.5rem, env(safe-area-inset-top));
   }
+}
+
+.cl-formFieldInput::placeholder {
+  color: hsl(270 10% 45%);
+  opacity: 1;
 }
 
 .keyboard-pad {

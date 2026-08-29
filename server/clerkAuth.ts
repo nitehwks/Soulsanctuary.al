@@ -19,66 +19,52 @@ function getClerkProvider(auth: ReturnType<typeof getAuth>): string {
     : "clerk";
 }
 
-async function getOrCreateLocalUser(clerkUserId: string, provider: string) {
-  const bindingKey = `clerk:${clerkUserId}`;
-  let user = await storage.getUserByIdentity(provider, clerkUserId);
-  // Existing development data predates issuer namespacing.
-  if (!user && provider !== "clerk") {
-    user = await storage.getUserByIdentity("clerk", clerkUserId);
+async function getOrCreateIdentityMappedUser(
+  clerkUserId: string,
+  provider: string,
+) {
+  const existingUser = await storage.getOrPromoteUserIdentity(
+    provider,
+    clerkUserId,
+  );
+  if (existingUser) return existingUser;
+
+  const clerkUser = await clerkClient.users.getUser(clerkUserId);
+  const primaryEmail = clerkUser.primaryEmailAddress;
+  const verifiedEmail =
+    primaryEmail?.verification?.status === "verified"
+      ? primaryEmail.emailAddress.trim().toLowerCase()
+      : null;
+
+  return storage.resolveOrCreateUserIdentity(provider, clerkUserId, {
+    email: verifiedEmail,
+    firstName: clerkUser.firstName,
+    lastName: clerkUser.lastName,
+    profileImageUrl: clerkUser.imageUrl,
+  });
+}
+
+async function getOrCreateLocalUser(auth: ReturnType<typeof getAuth>) {
+  const clerkUserId = auth.userId;
+  if (!clerkUserId) return undefined;
+
+  const provider = getClerkProvider(auth);
+  const sessionClaims = auth.sessionClaims as
+    | { userId?: unknown }
+    | undefined;
+  const claimedLocalUserId = sessionClaims?.userId;
+
+  if (
+    typeof claimedLocalUserId === "string" &&
+    claimedLocalUserId.length > 0
+  ) {
+    const user =
+      (await storage.getUser(claimedLocalUserId)) ??
+      (await storage.upsertUser({ id: claimedLocalUserId }));
+    return storage.linkUserIdentity(user.id, provider, clerkUserId);
   }
 
-  // Lazily move temporary Clerk bridge bindings to the identities table.
-  // A pre-existing subject mapping always wins, so no request can reassign a
-  // Clerk subject from one local profile to another.
-  if (!user) {
-    const legacyUser =
-      (await storage.getUserByUsername(bindingKey)) ??
-      (await storage.getUser(clerkUserId));
-    if (legacyUser) {
-      if (legacyUser.username === bindingKey) {
-        await storage.upsertUser({ ...legacyUser, username: null });
-      }
-      user = await storage.linkUserIdentity(
-        legacyUser.id,
-        provider,
-        clerkUserId,
-      );
-    }
-  }
-
-  if (!user) {
-    const clerkUser = await clerkClient.users.getUser(clerkUserId);
-    const primaryEmail = clerkUser.primaryEmailAddress;
-    const verifiedEmail =
-      primaryEmail?.verification?.status === "verified"
-        ? primaryEmail.emailAddress.trim().toLowerCase()
-        : null;
-
-    // Preserve existing application data when an existing user signs into the
-    // new managed Clerk tenant with the same verified email address.
-    if (verifiedEmail) {
-      const existingUser = await storage.getUserByEmail(verifiedEmail);
-      if (existingUser) {
-        // A verified email selects a legacy profile only during this initial
-        // migration. The persistent identity key is the Clerk subject.
-        user = await storage.linkUserIdentity(
-          existingUser.id,
-          provider,
-          clerkUserId,
-        );
-      }
-    }
-    if (!user) {
-      const newUser = await storage.upsertUser({
-        email: verifiedEmail,
-        firstName: clerkUser.firstName,
-        lastName: clerkUser.lastName,
-        profileImageUrl: clerkUser.imageUrl,
-      });
-      user = await storage.linkUserIdentity(newUser.id, provider, clerkUserId);
-    }
-  }
-  return user;
+  return getOrCreateIdentityMappedUser(clerkUserId, provider);
 }
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
@@ -89,13 +75,13 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const user = await getOrCreateLocalUser(
-      clerkUserId,
-      getClerkProvider(auth),
-    );
+    const user = await getOrCreateLocalUser(auth);
+    if (!user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
     req.clerkUserId = clerkUserId;
     req.userId = user.id;
-    (req as any).user = user;
+    req.user = user;
 
     next();
   } catch (error) {
@@ -105,6 +91,13 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
 };
 
 export const requireAdmin: RequestHandler = async (req, res, next) => {
+  if (!req.userId || !req.user) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  // Existing administrators are authorized by trusted Clerk public metadata;
+  // this preserves the pre-migration admin contract without adding a required
+  // local database column.
   try {
     const clerkUserId = req.clerkUserId ?? getAuth(req).userId;
     if (!clerkUserId) {
@@ -116,13 +109,12 @@ export const requireAdmin: RequestHandler = async (req, res, next) => {
       role?: unknown;
       isAdmin?: unknown;
     };
-    if (metadata.role !== "admin" && metadata.isAdmin !== true) {
-      return res.status(403).json({ message: "Forbidden" });
+    if (metadata.role === "admin" || metadata.isAdmin === true) {
+      return next();
     }
-
-    next();
   } catch (error) {
     console.error("Clerk admin authorization error:", error);
-    return res.status(403).json({ message: "Forbidden" });
   }
+
+  return res.status(403).json({ message: "Forbidden" });
 };

@@ -276,16 +276,6 @@ export async function registerRoutes(
     next();
   });
 
-  app.get("/api/auth/user", async (req: any, res) => {
-    try {
-      const user = req.user || (await storage.getUser(req.userId));
-      res.json(user);
-    } catch (error: any) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
-    }
-  });
-  
   app.get("/api/users", async (req: any, res) => {
     try {
       res.json(req.user ? [req.user] : []);

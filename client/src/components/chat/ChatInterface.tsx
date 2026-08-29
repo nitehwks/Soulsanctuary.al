@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
+import { useUser } from "@clerk/react";
 import { useVoiceChat } from "@/hooks/useVoiceChat";
 import { useKeyboard } from "@/hooks/useKeyboard";
 import { apiFetch } from "@/lib/queryClient";
@@ -66,9 +66,9 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const messageInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
-  const { user, isLoading: isUserLoading } = useAuth();
+  const { user, isLoaded: isUserLoaded } = useUser();
   const { height: keyboardHeight } = useKeyboard();
-  const userId = user?.id;
+  const userId = user?.externalId ?? user?.id;
 
   const handleVoiceError = useCallback((error: string) => {
     toast({
@@ -172,7 +172,7 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
   };
 
   useEffect(() => {
-    if (!userId || isUserLoading) return;
+    if (!userId || !isUserLoaded) return;
     
     const initConversation = async () => {
       try {
@@ -197,7 +197,7 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
     };
     
     initConversation();
-  }, [userId, isUserLoading, mode]);
+  }, [userId, isUserLoaded, mode]);
 
   useEffect(() => {
     if (!userId || mode !== "coach") return;

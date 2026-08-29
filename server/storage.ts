@@ -119,6 +119,17 @@ export interface IStorage {
 
   linkUserIdentity(userId: string, provider: string, providerUserId: string): Promise<User>;
 
+  getOrPromoteUserIdentity(
+    provider: string,
+    providerUserId: string,
+  ): Promise<User | undefined>;
+
+  resolveOrCreateUserIdentity(
+    provider: string,
+    providerUserId: string,
+    userData: UpsertUser,
+  ): Promise<User>;
+
   getUserByUsername(username: string): Promise<User | undefined>;
 
   getUserByEmail(email: string): Promise<User | undefined>;
@@ -521,6 +532,157 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to link user identity");
     }
     return user;
+  }
+
+  async getOrPromoteUserIdentity(
+    provider: string,
+    providerUserId: string,
+  ): Promise<User | undefined> {
+    return db.transaction(async (tx) => {
+      const bindingKey = `${provider}:${providerUserId}`;
+      await tx.execute(
+        sql`select pg_advisory_xact_lock(hashtext(${bindingKey}))`,
+      );
+
+      const getIdentityUser = async (identityProvider: string) => {
+        const [row] = await tx
+          .select({ user: users })
+          .from(userIdentities)
+          .innerJoin(users, eq(userIdentities.userId, users.id))
+          .where(
+            and(
+              eq(userIdentities.provider, identityProvider),
+              eq(userIdentities.providerUserId, providerUserId),
+            ),
+          );
+        return row?.user;
+      };
+
+      const currentUser = await getIdentityUser(provider);
+      if (currentUser) return currentUser;
+
+      if (provider !== "clerk") {
+        const genericUser = await getIdentityUser("clerk");
+        if (genericUser) {
+          await tx
+            .insert(userIdentities)
+            .values({
+              userId: genericUser.id,
+              provider,
+              providerUserId,
+            })
+            .onConflictDoNothing();
+          return genericUser;
+        }
+      }
+
+      const temporaryBindingKey = `clerk:${providerUserId}`;
+      const [legacyUser] = await tx
+        .select()
+        .from(users)
+        .where(
+          sql`${users.username} = ${temporaryBindingKey} OR ${users.id} = ${providerUserId}`,
+        );
+      if (!legacyUser) return undefined;
+
+      if (legacyUser.username === temporaryBindingKey) {
+        await tx
+          .update(users)
+          .set({ username: null, updatedAt: new Date() })
+          .where(eq(users.id, legacyUser.id));
+      }
+      await tx
+        .insert(userIdentities)
+        .values({
+          userId: legacyUser.id,
+          provider,
+          providerUserId,
+        })
+        .onConflictDoNothing();
+      return { ...legacyUser, username: null };
+    });
+  }
+
+  async resolveOrCreateUserIdentity(
+    provider: string,
+    providerUserId: string,
+    userData: UpsertUser,
+  ): Promise<User> {
+    return db.transaction(async (tx) => {
+      const bindingKey = `${provider}:${providerUserId}`;
+      await tx.execute(
+        sql`select pg_advisory_xact_lock(hashtext(${bindingKey}))`,
+      );
+
+      const getIdentityUser = async (identityProvider: string) => {
+        const [row] = await tx
+          .select({ user: users })
+          .from(userIdentities)
+          .innerJoin(users, eq(userIdentities.userId, users.id))
+          .where(
+            and(
+              eq(userIdentities.provider, identityProvider),
+              eq(userIdentities.providerUserId, providerUserId),
+            ),
+          );
+        return row?.user;
+      };
+
+      const currentUser = await getIdentityUser(provider);
+      if (currentUser) return currentUser;
+
+      if (provider !== "clerk") {
+        const genericUser = await getIdentityUser("clerk");
+        if (genericUser) {
+          await tx
+            .insert(userIdentities)
+            .values({
+              userId: genericUser.id,
+              provider,
+              providerUserId,
+            })
+            .onConflictDoNothing();
+          return genericUser;
+        }
+      }
+
+      let user: User | undefined;
+      const verifiedEmail =
+        typeof userData.email === "string"
+          ? userData.email.trim().toLowerCase()
+          : null;
+      if (verifiedEmail) {
+        await tx.execute(
+          sql`select pg_advisory_xact_lock(hashtext(${`email:${verifiedEmail}`}))`,
+        );
+        const [emailUser] = await tx
+          .select()
+          .from(users)
+          .where(sql`lower(${users.email}) = ${verifiedEmail}`);
+        user = emailUser;
+      }
+
+      if (!user) {
+        const [createdUser] = await tx
+          .insert(users)
+          .values({
+            ...userData,
+            email: verifiedEmail,
+          })
+          .returning();
+        user = createdUser;
+      }
+
+      await tx
+        .insert(userIdentities)
+        .values({
+          userId: user.id,
+          provider,
+          providerUserId,
+        })
+        .onConflictDoNothing();
+      return user;
+    });
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
