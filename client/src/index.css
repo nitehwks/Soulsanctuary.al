@@ -234,14 +234,6 @@
   }
 }
 
-/* Clerk's Apple provider asset can render white on the white social button. */
-.cl-socialButtonsProviderIcon__apple {
-  color: #000 !important;
-  fill: #000 !important;
-  filter: brightness(0) saturate(100%) !important;
-  opacity: 1 !important;
-}
-
 @media screen and (max-width: 480px) {
   :root {
     --radius: 0.5rem;

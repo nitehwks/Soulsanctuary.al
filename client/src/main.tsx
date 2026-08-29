@@ -34,26 +34,6 @@ function ClerkRoot() {
           borderRadius: "0.75rem",
           fontFamily: "Inter, system-ui, sans-serif",
         },
-        elements: {
-          socialButtonsBlockButton: {
-            backgroundColor: "#ffffff",
-            borderColor: "#d4d4d8",
-            color: "#18181b",
-          },
-          socialButtonsBlockButtonText: {
-            color: "#18181b",
-            fontWeight: "600",
-            opacity: "1",
-          },
-          socialButtonsProviderIcon: {
-            color: "#18181b",
-            display: "block",
-            flexShrink: "0",
-            height: "1.25rem",
-            opacity: "1",
-            width: "1.25rem",
-          },
-        },
       }}
       localization={{
         signIn: {
