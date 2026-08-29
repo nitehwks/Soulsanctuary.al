@@ -1,19 +1,36 @@
+/** Admin APIs use Clerk authentication plus an explicit metadata role check. */
+
 import type { Express } from "express";
 import { z } from "zod";
 import { storage } from "./storage";
 import { buildFeedbackItems } from "./lib/feedback";
-import { logAdminAction, requireAdmin } from "./lib/admin";
+import { requireAdmin } from "./clerkAuth";
+import { logSecurityEvent } from "./lib/audit-logger";
 
 const feedbackStatusSchema = z.object({
   status: z.enum(["submitted", "reviewed", "resolved"]),
 });
 
 export function registerAdminRoutes(app: Express) {
-  app.get("/api/admin/status", requireAdmin, (req: any, res) => {
-    res.json({ userId: req.userId, role: req.user.role });
+  const logAdminAction = async (
+    req: any,
+    action: string,
+    details: Record<string, unknown> = {},
+  ) => {
+    await logSecurityEvent(req.userId ?? "admin-unknown", action, {
+      clerkUserId: req.clerkUserId,
+      ip: req.ip,
+      ...details,
+    });
+  };
+
+  app.get("/api/admin/status", requireAdmin, async (req: any, res) => {
+    res.json({ userId: req.userId, clerkUserId: req.clerkUserId });
   });
 
-  app.get("/api/admin/feedback", requireAdmin, async (_req, res) => {
+  // --- Feedback (all users) + triage ---
+
+  app.get("/api/admin/feedback", requireAdmin, async (req, res) => {
     try {
       const feedbackConversations = await storage.getConversationsByMode("feedback");
       res.json(await buildFeedbackItems(feedbackConversations));
@@ -40,6 +57,8 @@ export function registerAdminRoutes(app: Express) {
     }
   });
 
+  // --- Audit log viewer ---
+
   app.get("/api/admin/logs", requireAdmin, async (req, res) => {
     try {
       const limit = Math.min(parseInt(req.query.limit as string) || 100, 500);
@@ -51,7 +70,9 @@ export function registerAdminRoutes(app: Express) {
     }
   });
 
-  app.get("/api/admin/moderation", requireAdmin, async (_req, res) => {
+  // --- Group moderation review queue ---
+
+  app.get("/api/admin/moderation", requireAdmin, async (req, res) => {
     try {
       res.json(await storage.getModeratedGroupMessages());
     } catch (error: any) {

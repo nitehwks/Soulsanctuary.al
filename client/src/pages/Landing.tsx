@@ -33,10 +33,6 @@ export default function Landing() {
     window.location.href = "/sign-in";
   };
 
-  const handleSignUp = () => {
-    window.location.href = "/sign-up";
-  };
-
   return (
     <div className="min-h-screen min-h-[100dvh] bg-gradient-to-br from-background via-background to-primary/5 flex flex-col overflow-x-hidden">
       <header className="border-b border-border/50 backdrop-blur-sm sticky top-0 z-50 bg-background/80">
@@ -77,9 +73,6 @@ export default function Landing() {
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4 sm:px-0 flex-wrap">
               <Button size="lg" onClick={handleLogin} className="w-full sm:w-auto touch-target" data-testid="button-login-hero">
                 Begin Your Journey
-              </Button>
-              <Button size="lg" variant="outline" onClick={handleSignUp} className="w-full sm:w-auto touch-target" data-testid="button-signup-hero">
-                Create Account
               </Button>
             </div>
           </motion.div>
@@ -241,9 +234,6 @@ export default function Landing() {
           <div className="flex gap-4 justify-center flex-wrap">
             <Button size="lg" onClick={handleLogin} data-testid="button-login-bottom">
               Sign In to Begin
-            </Button>
-            <Button size="lg" variant="outline" onClick={handleSignUp} data-testid="button-signup-bottom">
-              Create Account
             </Button>
           </div>
         </div>

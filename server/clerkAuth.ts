@@ -6,14 +6,26 @@ declare global {
   namespace Express {
     interface Request {
       userId?: string;
+      clerkUserId?: string;
       user?: any;
     }
   }
 }
 
-async function getOrCreateLocalUser(clerkUserId: string) {
+function getClerkProvider(auth: ReturnType<typeof getAuth>): string {
+  const issuer = (auth.sessionClaims as { iss?: unknown } | undefined)?.iss;
+  return typeof issuer === "string" && issuer.length > 0
+    ? `clerk:${issuer}`
+    : "clerk";
+}
+
+async function getOrCreateLocalUser(clerkUserId: string, provider: string) {
   const bindingKey = `clerk:${clerkUserId}`;
-  let user = await storage.getUserByIdentity("clerk", clerkUserId);
+  let user = await storage.getUserByIdentity(provider, clerkUserId);
+  // Existing development data predates issuer namespacing.
+  if (!user && provider !== "clerk") {
+    user = await storage.getUserByIdentity("clerk", clerkUserId);
+  }
 
   // Lazily move temporary Clerk bridge bindings to the identities table.
   // A pre-existing subject mapping always wins, so no request can reassign a
@@ -28,7 +40,7 @@ async function getOrCreateLocalUser(clerkUserId: string) {
       }
       user = await storage.linkUserIdentity(
         legacyUser.id,
-        "clerk",
+        provider,
         clerkUserId,
       );
     }
@@ -51,7 +63,7 @@ async function getOrCreateLocalUser(clerkUserId: string) {
         // migration. The persistent identity key is the Clerk subject.
         user = await storage.linkUserIdentity(
           existingUser.id,
-          "clerk",
+          provider,
           clerkUserId,
         );
       }
@@ -63,7 +75,7 @@ async function getOrCreateLocalUser(clerkUserId: string) {
         lastName: clerkUser.lastName,
         profileImageUrl: clerkUser.imageUrl,
       });
-      user = await storage.linkUserIdentity(newUser.id, "clerk", clerkUserId);
+      user = await storage.linkUserIdentity(newUser.id, provider, clerkUserId);
     }
   }
   return user;
@@ -77,14 +89,40 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const user = await getOrCreateLocalUser(clerkUserId);
-    const userId = user.id;
-    (req as any).userId = userId;
+    const user = await getOrCreateLocalUser(
+      clerkUserId,
+      getClerkProvider(auth),
+    );
+    req.clerkUserId = clerkUserId;
+    req.userId = user.id;
     (req as any).user = user;
 
     next();
   } catch (error) {
     console.error("Clerk auth error:", error);
     return res.status(401).json({ message: "Unauthorized" });
+  }
+};
+
+export const requireAdmin: RequestHandler = async (req, res, next) => {
+  try {
+    const clerkUserId = req.clerkUserId ?? getAuth(req).userId;
+    if (!clerkUserId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const clerkUser = await clerkClient.users.getUser(clerkUserId);
+    const metadata = clerkUser.publicMetadata as {
+      role?: unknown;
+      isAdmin?: unknown;
+    };
+    if (metadata.role !== "admin" && metadata.isAdmin !== true) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    next();
+  } catch (error) {
+    console.error("Clerk admin authorization error:", error);
+    return res.status(403).json({ message: "Forbidden" });
   }
 };

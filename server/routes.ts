@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { createHmac } from "crypto";
+import { createHash, createHmac } from "crypto";
 import { storage } from "./storage";
 import { insertConversationSchema, insertMessageSchema, insertUserContextSchema, insertUserPreferencesSchema, insertFeatureFlagSchema } from "@shared/schema";
 import { redactPII, analyzeSentiment, extractKeyPhrases } from "./lib/pii-redactor";
@@ -18,7 +18,6 @@ import {
 import { logConsentChange, logDataExport, logDataModification } from "./lib/audit-logger";
 import { buildFeedbackItems } from "./lib/feedback";
 import { registerAdminRoutes } from "./admin-routes";
-import { requireAdmin } from "./lib/admin";
 import { detectCrisis, detectTherapyTrigger, formatCrisisResources, CrisisAssessment } from "./lib/crisis-detection";
 import { selectTherapyModule, formatTherapyExercise, THERAPY_EXERCISES, getRelevantScripture } from "./lib/therapy-modules";
 import { wrapResponseWithSafety, generateDisclaimer, generateConsentText, formatPastoralGuidanceContext } from "./lib/safety-wrapper";
@@ -34,7 +33,7 @@ import { generateSmartReplies, type SmartReply } from "./lib/smart-replies";
 import { createAndStoreInsight, getAggregatedInsights } from "./lib/psychological-analyzer";
 import { updateUserProfile, getProfileSummary, generateCoachingPlan, getEnhancedProfileContext } from "./lib/profile-aggregator";
 import { processMessageForLearning } from "./lib/contextualLearning";
-import { isAuthenticated } from "./clerkAuth";
+import { isAuthenticated, requireAdmin } from "./clerkAuth";
 import OpenAI from "openai";
 import { z } from "zod";
 
@@ -318,7 +317,8 @@ export async function registerRoutes(
       const prefs = await storage.getUserPreferences(userId);
 
       const phoneContext = context.find((c) => c.category.toLowerCase() === "phone");
-      const email = user?.email || null;
+      const emailContext = context.find((c) => c.category.toLowerCase() === "email");
+      const email = emailContext?.value || user?.email || null;
       const phone = phoneContext?.value || null;
 
       res.json({
@@ -359,17 +359,6 @@ export async function registerRoutes(
       const nextEmail = parsed.data.email ?? current.email ?? null;
       const nextPhone = normalizePhone(parsed.data.phone);
 
-      await storage.upsertUser({
-        id: current.id,
-        username: current.username,
-        role: current.role,
-        name: current.name,
-        email: nextEmail,
-        firstName: current.firstName,
-        lastName: current.lastName,
-        profileImageUrl: current.profileImageUrl,
-      });
-
       await storage.upsertUserPreferences({
         ...existingPrefs,
         userId,
@@ -381,6 +370,16 @@ export async function registerRoutes(
           userId,
           "Phone",
           nextPhone,
+          95,
+          "neutral",
+          "Setup contact information",
+        );
+      }
+      if (parsed.data.email) {
+        await storage.upsertUserContextWithSentiment(
+          userId,
+          "Email",
+          parsed.data.email,
           95,
           "neutral",
           "Setup contact information",
@@ -592,6 +591,15 @@ export async function registerRoutes(
       if (ownedConversation.userId !== req.userId) {
         return res.status(403).json({ message: "Forbidden" });
       }
+      if (attachment?.id) {
+        const ownedAttachment = await storage.getAttachment(Number(attachment.id));
+        if (!ownedAttachment) {
+          return res.status(404).json({ error: "Attachment not found" });
+        }
+        if (ownedAttachment.userId !== req.userId) {
+          return res.status(403).json({ message: "Forbidden" });
+        }
+      }
 
       // Build message content including attachment context
       let messageContent = content || "";
@@ -649,7 +657,11 @@ export async function registerRoutes(
 
       // Link attachment to the created message if one was provided
       if (attachment && attachment.id) {
-        await storage.linkAttachmentToMessage(attachment.id, userMessage.id);
+        await storage.linkAttachmentToMessage(
+          Number(attachment.id),
+          userMessage.id,
+          req.userId,
+        );
       }
 
       await extractFactsFromMessage(fullContent, userId, sentimentResult.sentiment, redactionResult.extractedPII);
@@ -2169,7 +2181,7 @@ Guidelines:
     }
   });
 
-  // ============ GROUP CHAT API ============
+  // Group chat API
   
   // Create a new group
   app.post("/api/groups", async (req, res) => {
@@ -2181,7 +2193,7 @@ Guidelines:
       }
       
       // Generate unique group hash
-      const groupHash = require('crypto').createHash('sha256')
+      const groupHash = createHash('sha256')
         .update(name + Date.now() + Math.random())
         .digest('hex')
         .substring(0, 16);
@@ -2403,7 +2415,7 @@ Guidelines:
     }
   });
 
-  // ============= ANALYTICS ROUTES =============
+  // Analytics routes
   
   // Track analytics event
   app.post("/api/analytics/events", async (req, res) => {
@@ -2429,8 +2441,8 @@ Guidelines:
     }
   });
   
-  // Get analytics summary (admin only in production, available in dev)
-  app.get("/api/analytics/summary", async (req, res) => {
+  // Platform-wide analytics are restricted to Clerk-authorized administrators.
+  app.get("/api/analytics/summary", requireAdmin, async (req, res) => {
     try {
       const summary = await storage.getAnalyticsSummary();
       res.json(summary);
@@ -2441,7 +2453,7 @@ Guidelines:
   });
   
   // Get analytics events
-  app.get("/api/analytics/events", async (req, res) => {
+  app.get("/api/analytics/events", requireAdmin, async (req, res) => {
     try {
       const { category, limit } = req.query;
       const events = await storage.getAnalyticsEvents(
@@ -2455,7 +2467,7 @@ Guidelines:
     }
   });
 
-  // ============= CLINICIAN SESSION ROUTES =============
+  // Clinician session routes
   
   // Create clinician session
   app.post("/api/clinician/sessions", isAuthenticated, async (req: any, res) => {

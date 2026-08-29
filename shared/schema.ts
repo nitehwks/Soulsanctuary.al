@@ -6,7 +6,6 @@ import { z } from "zod";
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: text("username"),
-  role: text("role").notNull().default("user"),
   name: text("name"),
   email: text("email").unique(),
   firstName: text("first_name"),
@@ -376,15 +375,6 @@ export const learningQueue = pgTable("learning_queue", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  name: true,
-  email: true,
-  firstName: true,
-  lastName: true,
-  profileImageUrl: true,
-});
-
 export const insertConversationSchema = createInsertSchema(conversations).omit({
   id: true,
   createdAt: true,
@@ -415,7 +405,6 @@ export const insertUserContextSchema = createInsertSchema(userContext).omit({
 });
 
 export type User = typeof users.$inferSelect;
-export type InsertUser = z.infer<typeof insertUserSchema>;
 export type UpsertUser = typeof users.$inferInsert;
 export type UserIdentity = typeof userIdentities.$inferSelect;
 

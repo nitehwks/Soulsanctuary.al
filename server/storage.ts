@@ -114,154 +114,247 @@ import { eq, and, desc, ilike, sql, gte, lt, count } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
+
   getUserByIdentity(provider: string, providerUserId: string): Promise<User | undefined>;
+
   linkUserIdentity(userId: string, provider: string, providerUserId: string): Promise<User>;
+
   getUserByUsername(username: string): Promise<User | undefined>;
+
   getUserByEmail(email: string): Promise<User | undefined>;
+
   upsertUser(user: UpsertUser): Promise<User>;
-  
+
   createConversation(conversation: InsertConversation): Promise<Conversation>;
+
   getConversation(id: number): Promise<Conversation | undefined>;
+
   getConversationsByUser(userId: string): Promise<Conversation[]>;
+
   getConversationsByMode(mode: string): Promise<Conversation[]>;
+
   getConversationCount(userId: string): Promise<number>;
+
   updateConversationTitle(id: number, title: string): Promise<Conversation | undefined>;
+
   updateConversationStatus(id: number, status: string): Promise<Conversation | undefined>;
-  
+
   createMessage(message: InsertMessage): Promise<Message>;
+
   getMessagesByConversation(conversationId: number): Promise<Message[]>;
+
   getAllMessagesByUser(userId: string): Promise<Message[]>;
+
   searchMessages(userId: string, query: string): Promise<Message[]>;
+
   getLastMessageTimeForUser(userId: string): Promise<Date | null>;
-  
+
   createUserContext(context: InsertUserContext): Promise<UserContext>;
+
   getUserContextByUser(userId: string): Promise<UserContext[]>;
+
   updateUserContext(id: number, value: string, confidence: number): Promise<UserContext | undefined>;
+
   deleteUserContextById(id: number): Promise<boolean>;
+
   upsertUserContext(userId: string, category: string, value: string, confidence: number): Promise<UserContext>;
+
   upsertUserContextWithSentiment(userId: string, category: string, value: string, confidence: number, sentiment: string, sourceContext: string): Promise<UserContext>;
-  
+
   getUserPreferences(userId: string): Promise<UserPreferences | undefined>;
+
   upsertUserPreferences(prefs: InsertUserPreferences): Promise<UserPreferences>;
-  
+
   createMoodObservation(observation: InsertMoodObservation): Promise<MoodObservation>;
+
   getMoodObservationsByUser(userId: string): Promise<MoodObservation[]>;
+
   getMoodObservationsByTopic(userId: string, topic: string): Promise<MoodObservation[]>;
+
   getRecentMoodObservations(userId: string, limit?: number): Promise<MoodObservation[]>;
-  
+
   createWellnessAssessment(assessment: InsertWellnessAssessment): Promise<WellnessAssessment>;
+
   getLatestWellnessAssessment(userId: string): Promise<WellnessAssessment | undefined>;
+
   getWellnessAssessmentHistory(userId: string, limit?: number): Promise<WellnessAssessment[]>;
-  
+
   createPrivacyConsent(consent: InsertPrivacyConsent): Promise<PrivacyConsent>;
+
   getPrivacyConsents(userId: string): Promise<PrivacyConsent[]>;
+
   updatePrivacyConsent(userId: string, consentType: string, granted: boolean): Promise<PrivacyConsent | undefined>;
-  
+
   createDataExportRequest(request: InsertDataExportRequest): Promise<DataExportRequest>;
+
   getDataExportRequests(userId: string): Promise<DataExportRequest[]>;
+
   updateDataExportRequest(id: number, updates: Partial<DataExportRequest>): Promise<DataExportRequest | undefined>;
-  
+
   createDataDeletionRequest(request: InsertDataDeletionRequest): Promise<DataDeletionRequest>;
+
   getDataDeletionRequests(userId: string): Promise<DataDeletionRequest[]>;
+
   updateDataDeletionRequest(id: number, updates: Partial<DataDeletionRequest>): Promise<DataDeletionRequest | undefined>;
-  
+
   deleteUserMessages(userId: string): Promise<number>;
+
   deleteUserContext(userId: string): Promise<number>;
+
   deleteUserMoodData(userId: string): Promise<number>;
+
   deleteAllUserData(userId: string): Promise<void>;
-  
+
   getAuditLogs(userId: string, limit?: number): Promise<AuditLog[]>;
-  
+
   createUserGoal(goal: InsertUserGoal): Promise<UserGoal>;
+
   getUserGoals(userId: string): Promise<UserGoal[]>;
+
   updateUserGoal(id: number, updates: Partial<UserGoal>): Promise<UserGoal | undefined>;
-  
+
   createPersonalityInsight(insight: InsertPersonalityInsight): Promise<PersonalityInsight>;
+
   getPersonalityInsights(userId: string): Promise<PersonalityInsight[]>;
+
   getPersonalityInsight(userId: string, trait: string): Promise<PersonalityInsight | undefined>;
+
   updatePersonalityInsight(id: number, updates: Partial<PersonalityInsight>): Promise<PersonalityInsight | undefined>;
-  
+
   createMotivationPattern(pattern: InsertMotivationPattern): Promise<MotivationPattern>;
+
   getMotivationPatterns(userId: string): Promise<MotivationPattern[]>;
+
   getMotivationPatternByType(userId: string, patternType: string): Promise<MotivationPattern | undefined>;
+
   updateMotivationPattern(id: number, updates: Partial<MotivationPattern>): Promise<MotivationPattern | undefined>;
-  
+
   createCoachingSession(session: InsertCoachingSession): Promise<CoachingSession>;
+
   getCoachingSessions(userId: string, limit?: number): Promise<CoachingSession[]>;
-  
+
   getUserProbingState(userId: string): Promise<UserProbingState | undefined>;
+
   upsertUserProbingState(state: InsertUserProbingState): Promise<UserProbingState>;
+
   updateUserProbingState(userId: string, updates: Partial<UserProbingState>): Promise<UserProbingState | undefined>;
   
   // User Profile methods
+
   getUserProfile(userId: string): Promise<UserProfile | undefined>;
+
   upsertUserProfile(profile: InsertUserProfile): Promise<UserProfile>;
+
   updateUserProfile(userId: string, updates: Partial<UserProfile>): Promise<UserProfile | undefined>;
   
   // Message Insights methods
+
   createMessageInsight(insight: InsertMessageInsight): Promise<MessageInsight>;
+
   getMessageInsights(userId: string, limit?: number): Promise<MessageInsight[]>;
+
   getMessageInsightsByConversation(conversationId: number): Promise<MessageInsight[]>;
   
   // Coaching Plan methods
+
   createCoachingPlan(plan: InsertCoachingPlan): Promise<CoachingPlan>;
+
   getCoachingPlans(userId: string): Promise<CoachingPlan[]>;
+
   getActiveCoachingPlan(userId: string): Promise<CoachingPlan | undefined>;
+
   updateCoachingPlan(id: number, updates: Partial<CoachingPlan>): Promise<CoachingPlan | undefined>;
   
   // Coaching Plan Steps methods
+
   createCoachingPlanStep(step: InsertCoachingPlanStep): Promise<CoachingPlanStep>;
+
   getCoachingPlanSteps(planId: number): Promise<CoachingPlanStep[]>;
+
   updateCoachingPlanStep(id: number, updates: Partial<CoachingPlanStep>): Promise<CoachingPlanStep | undefined>;
   
   // Progress Reflections methods
+
   createProgressReflection(reflection: InsertProgressReflection): Promise<ProgressReflection>;
+
   getProgressReflections(userId: string, limit?: number): Promise<ProgressReflection[]>;
   
   // Attachment methods
+
   createAttachment(attachment: InsertAttachment): Promise<Attachment>;
+
   getAttachment(id: number): Promise<Attachment | undefined>;
+
   getAttachmentsByMessage(messageId: number): Promise<Attachment[]>;
+
   getAttachmentsByUser(userId: string): Promise<Attachment[]>;
+
   updateAttachmentAnalysis(id: number, analysisResult: string, keyInsights: string[]): Promise<Attachment | undefined>;
-  linkAttachmentToMessage(attachmentId: number, messageId: number): Promise<Attachment | undefined>;
+
+  linkAttachmentToMessage(attachmentId: number, messageId: number, userId: string): Promise<Attachment | undefined>;
   
   // Voice Message methods
+
   createVoiceMessage(voiceMessage: InsertVoiceMessage): Promise<VoiceMessage>;
+
   getVoiceMessagesByConversation(conversationId: number): Promise<VoiceMessage[]>;
+
   getVoiceMessagesByUser(userId: string): Promise<VoiceMessage[]>;
+
   updateVoiceMessageTranscript(id: number, transcript: string): Promise<VoiceMessage | undefined>;
   
   // Group methods
+
   createGroup(group: InsertGroup): Promise<Group>;
+
   getGroup(id: number): Promise<Group | undefined>;
+
   getGroupByHash(groupHash: string): Promise<Group | undefined>;
+
   getGroups(category?: string): Promise<Group[]>;
+
   updateGroup(id: number, updates: Partial<Group>): Promise<Group | undefined>;
+
   incrementGroupMemberCount(id: number): Promise<Group | undefined>;
+
   decrementGroupMemberCount(id: number): Promise<Group | undefined>;
+
   incrementGroupMessageCount(id: number): Promise<Group | undefined>;
   
   // Group Member methods
+
   createGroupMember(member: InsertGroupMember): Promise<GroupMember>;
+
   getGroupMember(groupId: number, anonUserHash: string): Promise<GroupMember | undefined>;
+
   getGroupMembers(groupId: number): Promise<GroupMember[]>;
+
   updateGroupMemberActivity(groupId: number, anonUserHash: string): Promise<GroupMember | undefined>;
+
   removeGroupMember(groupId: number, anonUserHash: string): Promise<boolean>;
   
   // Group Message methods
+
   createGroupMessage(message: InsertGroupMessage): Promise<GroupMessage>;
+
   getGroupMessages(groupId: number, limit?: number): Promise<GroupMessage[]>;
+
   moderateGroupMessage(id: number, reason: string): Promise<GroupMessage | undefined>;
 
   listAuditLogs(limit: number, offset: number, action?: string): Promise<AuditLog[]>;
+
   getModeratedGroupMessages(): Promise<GroupMessage[]>;
+
   unmoderateGroupMessage(id: number): Promise<GroupMessage | undefined>;
+
   deleteGroupMessage(id: number): Promise<boolean>;
   
   // Analytics methods
+
   createAnalyticsEvent(event: InsertAnalyticsEvent): Promise<AnalyticsEvent>;
+
   getAnalyticsEvents(category?: string, limit?: number): Promise<AnalyticsEvent[]>;
+
   getAnalyticsSummary(): Promise<{
     totalUsers: number;
     totalConversations: number;
@@ -270,66 +363,102 @@ export interface IStorage {
     avgMessagesPerConversation: number;
     topCategories: { category: string; count: number }[];
     recentActivity: { date: string; count: number }[];
+
   }>;
   
-  // Clinician session methods
+  // Feature Flag methods
+
   createClinicianSession(session: InsertClinicianSession): Promise<ClinicianSession>;
+
   getClinicianSessions(clinicianId: string): Promise<ClinicianSession[]>;
+
   getClinicianSession(id: number): Promise<ClinicianSession | undefined>;
+
   updateClinicianSession(id: number, updates: Partial<InsertClinicianSession>): Promise<ClinicianSession | undefined>;
+
   getClinicianSessionStats(clinicianId: string): Promise<{
     totalSessions: number;
     activeSessions: number;
     completedSessions: number;
     patientCount: number;
   }>;
-  
-  // Feature Flag methods
+
   createFeatureFlag(flag: InsertFeatureFlag): Promise<FeatureFlag>;
+
   getFeatureFlag(id: number): Promise<FeatureFlag | undefined>;
+
   getFeatureFlagByKey(key: string): Promise<FeatureFlag | undefined>;
+
   getAllFeatureFlags(): Promise<FeatureFlag[]>;
+
   updateFeatureFlag(id: number, updates: Partial<InsertFeatureFlag>): Promise<FeatureFlag | undefined>;
+
   deleteFeatureFlag(id: number): Promise<boolean>;
+
   isFeatureEnabled(key: string, userId?: string): Promise<boolean>;
   
   // Contextual Learning - Relationships
+
   createRelationship(rel: InsertRelationship): Promise<Relationship>;
+
   getRelationshipsByUser(userId: string): Promise<Relationship[]>;
+
   getRelationshipByName(userId: string, name: string): Promise<Relationship | undefined>;
+
   updateRelationship(id: number, updates: Partial<Relationship>): Promise<Relationship | undefined>;
+
   upsertRelationship(userId: string, name: string, relationship: string, updates?: Partial<InsertRelationship>): Promise<Relationship>;
   
   // Contextual Learning - Life Events
+
   createLifeEvent(event: InsertLifeEvent): Promise<LifeEvent>;
+
   getLifeEventsByUser(userId: string): Promise<LifeEvent[]>;
+
   getOngoingLifeEvents(userId: string): Promise<LifeEvent[]>;
+
   updateLifeEvent(id: number, updates: Partial<LifeEvent>): Promise<LifeEvent | undefined>;
   
   // Contextual Learning - Emotional Snapshots
+
   createEmotionalSnapshot(snapshot: InsertEmotionalSnapshot): Promise<EmotionalSnapshot>;
+
   getEmotionalSnapshotsByUser(userId: string, limit?: number): Promise<EmotionalSnapshot[]>;
+
   getEmotionalSnapshotsByConversation(conversationId: number): Promise<EmotionalSnapshot[]>;
   
   // Contextual Learning - Disposition Trends
+
   createDispositionTrend(trend: InsertDispositionTrend): Promise<DispositionTrend>;
+
   getDispositionTrendsByUser(userId: string, limit?: number): Promise<DispositionTrend[]>;
+
   getLatestDispositionTrend(userId: string): Promise<DispositionTrend | undefined>;
   
   // Contextual Learning - Psychological Profile
+
   getPsychologicalProfile(userId: string): Promise<PsychologicalProfile | undefined>;
+
   upsertPsychologicalProfile(profile: InsertPsychologicalProfile): Promise<PsychologicalProfile>;
   
   // Contextual Learning - Goal Progress
+
   createGoalProgress(progress: InsertGoalProgress): Promise<GoalProgress>;
+
   getGoalProgressByGoal(goalId: number): Promise<GoalProgress[]>;
+
   getGoalProgressByUser(userId: string, limit?: number): Promise<GoalProgress[]>;
   
   // Contextual Learning - Learning Queue
+
   createLearningQueueItem(item: InsertLearningQueueItem): Promise<LearningQueueItem>;
+
   getPendingLearningItems(userId: string): Promise<LearningQueueItem[]>;
+
   updateLearningQueueItem(id: number, updates: Partial<LearningQueueItem>): Promise<LearningQueueItem | undefined>;
+
   verifyLearningItem(id: number): Promise<LearningQueueItem | undefined>;
+
 }
 
 export class DatabaseStorage implements IStorage {
@@ -385,19 +514,20 @@ export class DatabaseStorage implements IStorage {
     await db
       .insert(userIdentities)
       .values({ userId, provider, providerUserId })
-      .onConflictDoNothing({
-        target: [userIdentities.provider, userIdentities.providerUserId],
-      });
+      .onConflictDoNothing();
 
     const user = await this.getUserByIdentity(provider, providerUserId);
-    if (!user) {
+    if (!user || user.id !== userId) {
       throw new Error("Failed to link user identity");
     }
     return user;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.username, username));
     return user;
   }
 
@@ -1056,10 +1186,10 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
-  async linkAttachmentToMessage(attachmentId: number, messageId: number): Promise<Attachment | undefined> {
+  async linkAttachmentToMessage(attachmentId: number, messageId: number, userId: string): Promise<Attachment | undefined> {
     const [updated] = await db.update(attachments)
       .set({ messageId })
-      .where(eq(attachments.id, attachmentId))
+      .where(and(eq(attachments.id, attachmentId), eq(attachments.userId, userId)))
       .returning();
     return updated;
   }
@@ -1598,6 +1728,7 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return updated;
   }
+
 }
 
 export const storage = new DatabaseStorage();

@@ -4,7 +4,6 @@ import { queryClient, setClerkTokenGetter } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useEffect, lazy, Suspense } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { applyPlatformClasses, isNativeApp } from "@/lib/platform";
 import NotFound from "@/pages/not-found";
@@ -21,12 +20,14 @@ import FeatureFlags from "@/pages/FeatureFlags";
 import Sales from "@/pages/Sales";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Loader2 } from "lucide-react";
+import { useEffect, lazy, Suspense, useRef } from "react";
 
 const AdminDashboard = lazy(() => import("@/pages/AdminDashboard"));
 
 function AppRouter() {
   const { isAuthenticated, isLoading } = useAuth();
-  const { getToken } = useClerkAuth();
+  const { getToken, signOut, userId: clerkUserId } = useClerkAuth();
+  const previousClerkUserId = useRef<string | null | undefined>(undefined);
 
   // Native API calls are cross-origin and need a fresh Clerk bearer token.
   // Web API calls use Clerk's same-origin session cookies instead.
@@ -35,6 +36,32 @@ function AppRouter() {
     setClerkTokenGetter(() => getToken());
     return () => setClerkTokenGetter(null);
   }, [getToken]);
+
+  useEffect(() => {
+    if (
+      previousClerkUserId.current !== undefined &&
+      previousClerkUserId.current !== clerkUserId
+    ) {
+      queryClient.clear();
+    }
+    previousClerkUserId.current = clerkUserId;
+  }, [clerkUserId]);
+
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      void signOut({ redirectUrl: "/sign-in" });
+    };
+    window.addEventListener(
+      "soulsanctuary:clerk-unauthorized",
+      handleUnauthorized,
+    );
+    return () => {
+      window.removeEventListener(
+        "soulsanctuary:clerk-unauthorized",
+        handleUnauthorized,
+      );
+    };
+  }, [signOut]);
 
   if (isLoading) {
     return (
