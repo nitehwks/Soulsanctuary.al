@@ -1,7 +1,6 @@
 import { createRoot } from "react-dom/client";
 import { ClerkProvider } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
-import { shadcn } from "@clerk/themes";
 import { useLocation } from "wouter";
 import App from "./App";
 import "./index.css";
@@ -27,28 +26,6 @@ function ClerkRoot() {
       proxyUrl={clerkProxyUrl}
       signInUrl="/sign-in"
       signUpUrl="/sign-up"
-      appearance={{
-        theme: shadcn,
-        variables: {
-          colorPrimary: "#7c3aed",
-          borderRadius: "0.75rem",
-          fontFamily: "Inter, system-ui, sans-serif",
-        },
-      }}
-      localization={{
-        signIn: {
-          start: {
-            title: "Welcome back",
-            subtitle: "Sign in to continue to SoulSanctuary",
-          },
-        },
-        signUp: {
-          start: {
-            title: "Create your account",
-            subtitle: "Begin your SoulSanctuary journey",
-          },
-        },
-      }}
       routerPush={(to) => setLocation(to)}
       routerReplace={(to) => setLocation(to, { replace: true })}
     >
