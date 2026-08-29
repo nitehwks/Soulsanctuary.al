@@ -6,7 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useEffect, lazy, Suspense } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { applyPlatformClasses } from "@/lib/platform";
+import { applyPlatformClasses, isNativeApp } from "@/lib/platform";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import Dashboard from "@/pages/Dashboard";
@@ -19,27 +19,19 @@ import Analytics from "@/pages/Analytics";
 import ClinicianDashboard from "@/pages/ClinicianDashboard";
 import FeatureFlags from "@/pages/FeatureFlags";
 import Sales from "@/pages/Sales";
-import { TwoFactorGate } from "@/components/auth/TwoFactorGate";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Loader2 } from "lucide-react";
 
-// Admin dashboard: dynamically imported ONLY in admin builds (.admin-key
-// present at build time). The literal-false constant in user builds makes
-// Rollup drop the dynamic import, so no admin code or key material ever
-// reaches user/Android/published bundles.
-const AdminDashboard = __ADMIN_BUILD__
-  ? lazy(() => import("@/pages/AdminDashboard"))
-  : null;
+const AdminDashboard = lazy(() => import("@/pages/AdminDashboard"));
 
 function AppRouter() {
   const { isAuthenticated, isLoading } = useAuth();
   const { getToken } = useClerkAuth();
 
-  // Give the API layer direct access to Clerk's getToken so every request
-  // uses a fresh session token. getToken auto-refreshes expired tokens,
-  // which is essential on mobile where the app stays open for long periods
-  // and a token cached at sign-in expires after ~60 seconds.
+  // Native API calls are cross-origin and need a fresh Clerk bearer token.
+  // Web API calls use Clerk's same-origin session cookies instead.
   useEffect(() => {
+    if (!isNativeApp()) return;
     setClerkTokenGetter(() => getToken());
     return () => setClerkTokenGetter(null);
   }, [getToken]);
@@ -94,19 +86,17 @@ function AppRouter() {
       <Route path="/clinician" component={ClinicianDashboard} />
       <Route path="/feature-flags" component={FeatureFlags} />
       <Route path="/sales" component={Sales} />
-      {AdminDashboard && (
-        <Route path="/admin">
-          <Suspense
-            fallback={
-              <div className="min-h-screen flex items-center justify-center bg-background">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
-              </div>
-            }
-          >
-            <AdminDashboard />
-          </Suspense>
-        </Route>
-      )}
+      <Route path="/admin">
+        <Suspense
+          fallback={
+            <div className="min-h-screen flex items-center justify-center bg-background">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          }
+        >
+          <AdminDashboard />
+        </Suspense>
+      </Route>
       <Route component={NotFound} />
     </Switch>
   );
@@ -123,7 +113,6 @@ function App() {
         <Toaster />
         <ErrorBoundary>
           <AppRouter />
-          <TwoFactorGate />
         </ErrorBoundary>
       </TooltipProvider>
     </QueryClientProvider>

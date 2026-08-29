@@ -3,9 +3,7 @@ import crypto from 'crypto';
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 16;
 const AUTH_TAG_LENGTH = 16;
-const SALT_LENGTH = 32;
 const KEY_LENGTH = 32;
-const ITERATIONS = 100000;
 
 function getEncryptionKey(): Buffer {
   const keyString = process.env.ENCRYPTION_KEY || process.env.SESSION_SECRET || 'trusthub-default-key-change-in-production';
@@ -82,20 +80,6 @@ export function generateSecureToken(length: number = 32): string {
   return crypto.randomBytes(length).toString('hex');
 }
 
-export function hashPassword(password: string): string {
-  const salt = crypto.randomBytes(SALT_LENGTH);
-  const hash = crypto.pbkdf2Sync(password, salt, ITERATIONS, KEY_LENGTH, 'sha512');
-  return `${salt.toString('hex')}:${hash.toString('hex')}`;
-}
-
-export function verifyPassword(password: string, storedHash: string): boolean {
-  const [saltHex, hashHex] = storedHash.split(':');
-  if (!saltHex || !hashHex) return false;
-
-  const salt = Buffer.from(saltHex, 'hex');
-  const hash = crypto.pbkdf2Sync(password, salt, ITERATIONS, KEY_LENGTH, 'sha512');
-  return hash.toString('hex') === hashHex;
-}
 
 export function maskSensitiveData(data: string, visibleStart: number = 2, visibleEnd: number = 2): string {
   if (data.length <= visibleStart + visibleEnd) {

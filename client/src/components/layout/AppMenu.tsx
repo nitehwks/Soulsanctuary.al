@@ -50,7 +50,7 @@ export function AppMenu({
   onOpenChange: (open: boolean) => void;
 }) {
   const [location, navigate] = useLocation();
-  const { user, isGuest, logout } = useAuth();
+  const { user, logout } = useAuth();
 
   const close = () => onOpenChange(false);
 
@@ -84,7 +84,6 @@ export function AppMenu({
                   ? `${user.firstName || ""} ${user.lastName || ""}`.trim()
                   : user?.email || "User"}
               </div>
-              {isGuest && <div className="text-[10px] text-amber-600">Guest Account</div>}
             </div>
           </SheetTitle>
           <SheetDescription className="sr-only">User menu and navigation</SheetDescription>
@@ -142,7 +141,7 @@ export function AppMenu({
               data-testid="menu-logout"
             >
               <LogOut className="h-5 w-5" />
-              {isGuest ? "Exit Guest Mode" : "Sign Out"}
+              Sign Out
             </Button>
           </div>
         </div>

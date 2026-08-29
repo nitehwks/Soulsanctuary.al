@@ -47,7 +47,6 @@ export function GroupChatRoom({ group, anonUserHash, displayName, onLeave }: Gro
   const sendMessageMutation = useMutation({
     mutationFn: async (message: string) => {
       const response = await apiRequest('POST', `/api/groups/${group.id}/messages`, {
-        anonUserHash,
         message
       });
       return response.json();
@@ -75,9 +74,7 @@ export function GroupChatRoom({ group, anonUserHash, displayName, onLeave }: Gro
 
   const leaveGroupMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest('POST', `/api/groups/${group.id}/leave`, {
-        anonUserHash
-      });
+      const response = await apiRequest('POST', `/api/groups/${group.id}/leave`);
       return response.json();
     },
     onSuccess: () => {
@@ -398,9 +395,8 @@ export function GroupList({ onSelectGroup }: GroupListProps) {
   });
 
   const joinGroupMutation = useMutation({
-    mutationFn: async ({ groupId, anonUserHash, displayName }: { groupId: number; anonUserHash: string; displayName: string }) => {
+    mutationFn: async ({ groupId, displayName }: { groupId: number; displayName: string }) => {
       const response = await apiRequest('POST', `/api/groups/${groupId}/join`, {
-        anonUserHash,
         displayName
       });
       return response.json();
@@ -414,29 +410,6 @@ export function GroupList({ onSelectGroup }: GroupListProps) {
     }
   });
 
-  const generateAnonHash = () => {
-    const array = new Uint8Array(16);
-    crypto.getRandomValues(array);
-    return Array.from(array, b => b.toString(16).padStart(2, '0')).join('');
-  };
-
-  const getStoredAnonHash = () => {
-    let hash = localStorage.getItem('groupAnonHash');
-    if (!hash) {
-      hash = generateAnonHash();
-      localStorage.setItem('groupAnonHash', hash);
-    }
-    return hash;
-  };
-
-  const getStoredDisplayName = () => {
-    return localStorage.getItem('groupDisplayName') || '';
-  };
-
-  const setStoredDisplayName = (name: string) => {
-    localStorage.setItem('groupDisplayName', name);
-  };
-
   const handleCreateGroup = () => {
     if (!newGroupName.trim()) return;
     createGroupMutation.mutate({
@@ -447,28 +420,21 @@ export function GroupList({ onSelectGroup }: GroupListProps) {
   };
 
   const handleJoinGroup = async (group: Group) => {
-    const anonHash = getStoredAnonHash();
-    const storedName = getStoredDisplayName();
-    
-    if (!storedName && !displayNameInput.trim()) {
+    if (!displayNameInput.trim()) {
       setJoiningGroupId(group.id);
       return;
     }
 
-    const displayName = storedName || displayNameInput.trim();
-    if (displayNameInput.trim()) {
-      setStoredDisplayName(displayNameInput.trim());
-    }
+    const displayName = displayNameInput.trim();
 
     try {
       const result = await joinGroupMutation.mutateAsync({
         groupId: group.id,
-        anonUserHash: anonHash,
         displayName
       });
       setJoiningGroupId(null);
       setDisplayNameInput("");
-      onSelectGroup(group, anonHash, result.member.displayName);
+      onSelectGroup(group, result.member.anonUserHash, result.member.displayName);
     } catch (error) {
       // Error handled by mutation
     }

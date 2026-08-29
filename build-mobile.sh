@@ -31,14 +31,6 @@ ANDROID_TARGET_SDK="35"
 ANDROID_BUILD_TOOLS="35.0.0"
 ANDROID_MIN_SDK="23"
 
-ADMIN_KEY_FILE=".admin-key"
-
-# Admin builds (key file present) are iOS-only: Android must NEVER receive
-# admin functionality. In admin mode the script syncs/builds iOS only.
-is_admin_build() {
-  [[ -f "$ADMIN_KEY_FILE" ]]
-}
-
 REQUIRED_ANDROID_PACKAGES=(
   "platform-tools"
   "platforms;android-${ANDROID_COMPILE_SDK}"
@@ -354,17 +346,6 @@ build_web() {
 }
 
 sync_capacitor() {
-  if is_admin_build; then
-    warn "ADMIN BUILD (.admin-key present) - syncing iOS only; Android stays on user mode."
-    if [[ -n "${DEVELOPER_DIR:-}" ]]; then
-      DEVELOPER_DIR="$DEVELOPER_DIR" npx cap sync ios
-    else
-      npx cap sync ios
-    fi
-    ok "Capacitor sync complete (iOS only, admin mode)"
-    return 0
-  fi
-
   log "Syncing Capacitor plugins and web assets to native projects..."
   if [[ -n "${DEVELOPER_DIR:-}" ]]; then
     DEVELOPER_DIR="$DEVELOPER_DIR" npx cap sync
@@ -448,49 +429,23 @@ main() {
 
   ensure_project_root
 
-  if is_admin_build; then
-    warn "ADMIN MODE: .admin-key detected - building admin bundle for iOS only."
-  else
-    info "USER MODE: no .admin-key - building standard user bundle (default)."
-  fi
-
   # Dependency installation
   install_homebrew
   install_node
   install_cocoapods
-  if is_admin_build; then
-    info "Admin build is iOS-only; skipping Android JDK/SDK setup."
-  else
-    install_openjdk
-    install_android_sdk
-  fi
+  install_openjdk
+  install_android_sdk
   setup_xcode || true
 
   # Environment
   check_env_file
 
-  # Build. Admin mode requires the explicit ADMIN_BUILD=1 opt-in so that a
-  # plain `npm run build` (web/deploy) can never produce an admin bundle.
-  if is_admin_build; then
-    export ADMIN_BUILD=1
-  fi
   build_web
   sync_capacitor
 
   # Native builds (best-effort; don't let one failure stop the other)
   build_ios || warn "iOS build did not complete."
-  if is_admin_build; then
-    warn "ADMIN BUILD - skipping Android entirely. Android builds must always run in user mode (no .admin-key)."
-    # The admin bundle now lives only inside the synced iOS project. Restore
-    # dist/ to a user-mode build so the on-disk web output never contains
-    # admin code or key material.
-    unset ADMIN_BUILD
-    log "Restoring dist/ to user mode (rebuilding web output without admin code)..."
-    npm run build
-    ok "dist/ restored to user-mode build"
-  else
-    build_android || error "Android build failed."
-  fi
+  build_android || error "Android build failed."
 
   echo
   echo -e "${GREEN}${BOLD}Build process finished.${NC}"

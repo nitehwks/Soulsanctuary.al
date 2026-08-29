@@ -1,22 +1,12 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, serial, timestamp, boolean, integer, jsonb, index } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, serial, timestamp, boolean, integer, jsonb, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-
-export const sessions = pgTable(
-  "sessions",
-  {
-    sid: varchar("sid").primaryKey(),
-    sess: jsonb("sess").notNull(),
-    expire: timestamp("expire").notNull(),
-  },
-  (table) => [index("IDX_session_expire").on(table.expire)],
-);
 
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: text("username"),
-  password: text("password"),
+  role: text("role").notNull().default("user"),
   name: text("name"),
   email: text("email").unique(),
   firstName: text("first_name"),
@@ -25,6 +15,25 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
+
+export const userIdentities = pgTable(
+  "user_identities",
+  {
+    id: serial("id").primaryKey(),
+    userId: varchar("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    provider: text("provider").notNull(),
+    providerUserId: text("provider_user_id").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("user_identities_provider_user_id_unique").on(
+      table.provider,
+      table.providerUserId,
+    ),
+  ],
+);
 
 export const conversations = pgTable("conversations", {
   id: serial("id").primaryKey(),
@@ -369,21 +378,11 @@ export const learningQueue = pgTable("learning_queue", {
 
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
-  password: true,
   name: true,
   email: true,
   firstName: true,
   lastName: true,
   profileImageUrl: true,
-});
-
-export const createUserSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  email: z.string().email("Please enter a valid email address"),
-  confirmEmail: z.string().email("Please confirm your email address"),
-}).refine((data) => data.email === data.confirmEmail, {
-  message: "Email addresses must match",
-  path: ["confirmEmail"],
 });
 
 export const insertConversationSchema = createInsertSchema(conversations).omit({
@@ -418,7 +417,7 @@ export const insertUserContextSchema = createInsertSchema(userContext).omit({
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type UpsertUser = typeof users.$inferInsert;
-export type CreateUserInput = z.infer<typeof createUserSchema>;
+export type UserIdentity = typeof userIdentities.$inferSelect;
 
 export type Conversation = typeof conversations.$inferSelect;
 export type InsertConversation = z.infer<typeof insertConversationSchema>;
@@ -1117,78 +1116,3 @@ export type InsertCoachingPlanStep = z.infer<typeof insertCoachingPlanStepSchema
 
 export type ProgressReflection = typeof progressReflections.$inferSelect;
 export type InsertProgressReflection = z.infer<typeof insertProgressReflectionSchema>;
-
-// ---------------------------------------------------------------------------
-// Admin system (see docs/ADMIN.md). admin_keys is the only root of trust for
-// admin access: a request is admin only when it proves possession of an
-// Ed25519 private key whose public key is registered (and not revoked) here.
-// ---------------------------------------------------------------------------
-
-export const adminKeys = pgTable("admin_keys", {
-  id: serial("id").primaryKey(),
-  publicKey: text("public_key").notNull().unique(),  // base64 Ed25519 public key
-  label: text("label"),
-  contactEmail: text("contact_email"),               // contact metadata only, never auth
-  contactPhone: text("contact_phone"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  revokedAt: timestamp("revoked_at"),
-  lastUsedAt: timestamp("last_used_at"),
-});
-
-export const adminChallenges = pgTable("admin_challenges", {
-  nonce: text("nonce").primaryKey(),                 // base64 random 32 bytes
-  publicKey: text("public_key").notNull(),
-  expiresAt: timestamp("expires_at").notNull(),
-  usedAt: timestamp("used_at"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-
-export const adminSessions = pgTable("admin_sessions", {
-  token: text("token").primaryKey(),                 // base64 random 48 bytes
-  adminKeyId: integer("admin_key_id").references(() => adminKeys.id, { onDelete: "cascade" }),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  expiresAt: timestamp("expires_at").notNull(),
-});
-
-export const insertAdminKeySchema = createInsertSchema(adminKeys).omit({
-  id: true,
-  createdAt: true,
-  lastUsedAt: true,
-});
-
-export type AdminKey = typeof adminKeys.$inferSelect;
-export type InsertAdminKey = z.infer<typeof insertAdminKeySchema>;
-export type AdminChallenge = typeof adminChallenges.$inferSelect;
-export type AdminSession = typeof adminSessions.$inferSelect;
-
-// ---------------------------------------------------------------------------
-// Two-factor authentication (TOTP) + trusted devices
-// ---------------------------------------------------------------------------
-
-// One row per user who has started or completed TOTP enrollment. The secret
-// is stored AES-256-GCM encrypted (server/lib/encryption.ts). A row with
-// enabled = false means enrollment was started but never confirmed.
-export const userTwoFactor = pgTable("user_two_factor", {
-  userId: text("user_id").primaryKey(),
-  secret: text("secret").notNull(),
-  enabled: boolean("enabled").default(false).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  enabledAt: timestamp("enabled_at"),
-});
-
-// Second-factor bearer tokens. Only the SHA-256 hash is stored; the raw
-// token lives on the client. kind = "session" (12h, issued after every
-// successful OTP) or "device" (30d, the "trust this device" option).
-export const secondFactorTokens = pgTable("second_factor_tokens", {
-  id: serial("id").primaryKey(),
-  tokenHash: text("token_hash").notNull().unique(),
-  userId: text("user_id").notNull(),
-  kind: text("kind").notNull(),
-  label: text("label"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  lastUsedAt: timestamp("last_used_at"),
-  expiresAt: timestamp("expires_at").notNull(),
-});
-
-export type UserTwoFactor = typeof userTwoFactor.$inferSelect;
-export type SecondFactorToken = typeof secondFactorTokens.$inferSelect;

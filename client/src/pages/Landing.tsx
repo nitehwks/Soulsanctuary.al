@@ -33,10 +33,8 @@ export default function Landing() {
     window.location.href = "/sign-in";
   };
 
-  const handleGuestAccess = () => {
-    localStorage.setItem('guestMode', 'true');
-    localStorage.setItem('guestUserId', 'guest-' + Date.now());
-    window.location.reload();
+  const handleSignUp = () => {
+    window.location.href = "/sign-up";
   };
 
   return (
@@ -80,8 +78,8 @@ export default function Landing() {
               <Button size="lg" onClick={handleLogin} className="w-full sm:w-auto touch-target" data-testid="button-login-hero">
                 Begin Your Journey
               </Button>
-              <Button size="lg" variant="outline" onClick={handleGuestAccess} className="w-full sm:w-auto touch-target" data-testid="button-guest-hero">
-                Try as Guest
+              <Button size="lg" variant="outline" onClick={handleSignUp} className="w-full sm:w-auto touch-target" data-testid="button-signup-hero">
+                Create Account
               </Button>
             </div>
           </motion.div>
@@ -244,8 +242,8 @@ export default function Landing() {
             <Button size="lg" onClick={handleLogin} data-testid="button-login-bottom">
               Sign In to Begin
             </Button>
-            <Button size="lg" variant="outline" onClick={handleGuestAccess} data-testid="button-guest-bottom">
-              Try as Guest
+            <Button size="lg" variant="outline" onClick={handleSignUp} data-testid="button-signup-bottom">
+              Create Account
             </Button>
           </div>
         </div>

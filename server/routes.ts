@@ -1,7 +1,8 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import { createHmac } from "crypto";
 import { storage } from "./storage";
-import { insertConversationSchema, insertMessageSchema, insertUserContextSchema, insertUserPreferencesSchema, createUserSchema, insertFeatureFlagSchema } from "@shared/schema";
+import { insertConversationSchema, insertMessageSchema, insertUserContextSchema, insertUserPreferencesSchema, insertFeatureFlagSchema } from "@shared/schema";
 import { redactPII, analyzeSentiment, extractKeyPhrases } from "./lib/pii-redactor";
 import { analyzeMoodFromMessage, saveMoodObservations, generateWellnessAssessment, buildTherapistContext } from "./lib/wellness-analyzer";
 import { 
@@ -17,7 +18,7 @@ import {
 import { logConsentChange, logDataExport, logDataModification } from "./lib/audit-logger";
 import { buildFeedbackItems } from "./lib/feedback";
 import { registerAdminRoutes } from "./admin-routes";
-import { register2faRoutes } from "./twofa-routes";
+import { requireAdmin } from "./lib/admin";
 import { detectCrisis, detectTherapyTrigger, formatCrisisResources, CrisisAssessment } from "./lib/crisis-detection";
 import { selectTherapyModule, formatTherapyExercise, THERAPY_EXERCISES, getRelevantScripture } from "./lib/therapy-modules";
 import { wrapResponseWithSafety, generateDisclaimer, generateConsentText, formatPastoralGuidanceContext } from "./lib/safety-wrapper";
@@ -33,7 +34,7 @@ import { generateSmartReplies, type SmartReply } from "./lib/smart-replies";
 import { createAndStoreInsight, getAggregatedInsights } from "./lib/psychological-analyzer";
 import { updateUserProfile, getProfileSummary, generateCoachingPlan, getEnhancedProfileContext } from "./lib/profile-aggregator";
 import { processMessageForLearning } from "./lib/contextualLearning";
-import { setupAuth, isAuthenticated } from "./clerkAuth";
+import { isAuthenticated } from "./clerkAuth";
 import OpenAI from "openai";
 import { z } from "zod";
 
@@ -41,6 +42,17 @@ const openai = new OpenAI({
   baseURL: process.env.AI_INTEGRATIONS_OPENROUTER_BASE_URL,
   apiKey: process.env.AI_INTEGRATIONS_OPENROUTER_API_KEY,
 });
+
+function getGroupPseudonym(userId: string, groupId: number): string {
+  const key = process.env.SESSION_SECRET;
+  if (!key) {
+    throw new Error("SESSION_SECRET is required for anonymous group identities");
+  }
+  return createHmac("sha256", key)
+    .update(`group:${groupId}:user:${userId}`)
+    .digest("hex")
+    .slice(0, 32);
+}
 
 const setupContactSchema = z.object({
   email: z.string().email().optional(),
@@ -236,12 +248,9 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
   
-  await setupAuth(app);
-
   // Clerk is the single authentication boundary for every application API.
-  // Admin endpoints keep their separate key-based root of trust.
   app.use((req: any, res, next) => {
-    if (!req.path.startsWith("/api") || req.path.startsWith("/api/admin")) {
+    if (!req.path.startsWith("/api")) {
       return next();
     }
 
@@ -261,10 +270,10 @@ export async function registerRoutes(
     });
   });
 
-  app.param("userId", (req: any, res, next, requestedUserId) => {
-    if (requestedUserId !== req.userId) {
-      return res.status(403).json({ message: "Forbidden" });
-    }
+  app.param("userId", (req: any, _res, next) => {
+    // Legacy route shapes still contain :userId, but the URL value is never
+    // authoritative. Bind it to the Clerk-authenticated application user.
+    req.params.userId = req.userId;
     next();
   });
 
@@ -353,7 +362,7 @@ export async function registerRoutes(
       await storage.upsertUser({
         id: current.id,
         username: current.username,
-        password: current.password,
+        role: current.role,
         name: current.name,
         email: nextEmail,
         firstName: current.firstName,
@@ -2224,18 +2233,14 @@ Guidelines:
     }
   });
 
-  // Join group (anonymous)
-  app.post("/api/groups/:id/join", async (req, res) => {
+  // Join group with a server-derived, group-scoped anonymous identity.
+  app.post("/api/groups/:id/join", async (req: any, res) => {
     try {
       const groupId = parseInt(req.params.id);
-      const { anonUserHash, displayName } = req.body;
+      const { displayName } = req.body;
       
       if (isNaN(groupId)) {
         return res.status(400).json({ error: "Invalid group ID" });
-      }
-      
-      if (!anonUserHash) {
-        return res.status(400).json({ error: "anonUserHash is required" });
       }
       
       // Check if group exists
@@ -2244,6 +2249,8 @@ Guidelines:
         return res.status(404).json({ error: "Group not found" });
       }
       
+      const anonUserHash = getGroupPseudonym(req.userId, groupId);
+
       // Check if already a member
       const existingMember = await storage.getGroupMember(groupId, anonUserHash);
       if (existingMember) {
@@ -2269,20 +2276,16 @@ Guidelines:
     }
   });
 
-  // Leave group (anonymous)
-  app.post("/api/groups/:id/leave", async (req, res) => {
+  // Leave using the caller's server-derived anonymous identity.
+  app.post("/api/groups/:id/leave", async (req: any, res) => {
     try {
       const groupId = parseInt(req.params.id);
-      const { anonUserHash } = req.body;
       
       if (isNaN(groupId)) {
         return res.status(400).json({ error: "Invalid group ID" });
       }
       
-      if (!anonUserHash) {
-        return res.status(400).json({ error: "anonUserHash is required" });
-      }
-      
+      const anonUserHash = getGroupPseudonym(req.userId, groupId);
       const member = await storage.getGroupMember(groupId, anonUserHash);
       if (!member) {
         return res.status(404).json({ error: "You are not a member of this group" });
@@ -2313,17 +2316,17 @@ Guidelines:
   });
 
   // Send message to group
-  app.post("/api/groups/:id/messages", async (req, res) => {
+  app.post("/api/groups/:id/messages", async (req: any, res) => {
     try {
       const groupId = parseInt(req.params.id);
-      const { anonUserHash, message, replyToId } = req.body;
+      const { message, replyToId } = req.body;
       
       if (isNaN(groupId)) {
         return res.status(400).json({ error: "Invalid group ID" });
       }
       
-      if (!anonUserHash || !message) {
-        return res.status(400).json({ error: "anonUserHash and message are required" });
+      if (!message) {
+        return res.status(400).json({ error: "message is required" });
       }
       
       // Check if group exists
@@ -2332,7 +2335,9 @@ Guidelines:
         return res.status(404).json({ error: "Group not found" });
       }
       
-      // Verify user is a member
+      const anonUserHash = getGroupPseudonym(req.userId, groupId);
+
+      // Verify the authenticated user is a member.
       const member = await storage.getGroupMember(groupId, anonUserHash);
       if (!member) {
         return res.status(403).json({ error: "You must join the group first" });
@@ -2559,7 +2564,7 @@ Guidelines:
   });
 
   // Feature Flags API Routes
-  app.get("/api/feature-flags", async (req, res) => {
+  app.get("/api/feature-flags", requireAdmin, async (req, res) => {
     try {
       const flags = await storage.getAllFeatureFlags();
       res.json(flags);
@@ -2569,7 +2574,7 @@ Guidelines:
     }
   });
 
-  app.get("/api/feature-flags/:id", async (req, res) => {
+  app.get("/api/feature-flags/:id", requireAdmin, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -2589,7 +2594,7 @@ Guidelines:
   app.get("/api/feature-flags/check/:key", async (req, res) => {
     try {
       const key = req.params.key;
-      const userId = req.query.userId as string | undefined;
+      const userId = (req as any).userId as string;
       const enabled = await storage.isFeatureEnabled(key, userId);
       res.json({ key, enabled });
     } catch (error: any) {
@@ -2598,7 +2603,7 @@ Guidelines:
     }
   });
 
-  app.post("/api/feature-flags", isAuthenticated, async (req: any, res) => {
+  app.post("/api/feature-flags", requireAdmin, async (req: any, res) => {
     try {
       const parseResult = insertFeatureFlagSchema.safeParse(req.body);
       if (!parseResult.success) {
@@ -2621,7 +2626,7 @@ Guidelines:
     }
   });
 
-  app.patch("/api/feature-flags/:id", isAuthenticated, async (req: any, res) => {
+  app.patch("/api/feature-flags/:id", requireAdmin, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -2647,7 +2652,7 @@ Guidelines:
     }
   });
 
-  app.delete("/api/feature-flags/:id", isAuthenticated, async (req: any, res) => {
+  app.delete("/api/feature-flags/:id", requireAdmin, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -2667,13 +2672,9 @@ Guidelines:
     }
   });
 
-  // Admin API: challenge-response auth anchored in the admin_keys DB table.
-  // Safe to register on the public deployment - no registered key, no token.
+  // Admin APIs use the same Clerk identity boundary as every other API,
+  // followed by the server-side application role check in requireAdmin.
   registerAdminRoutes(app);
-
-  // Two-factor auth (TOTP + trusted devices). Enforcement itself lives in
-  // isAuthenticated (server/clerkAuth.ts); these are the management routes.
-  register2faRoutes(app);
 
   return httpServer;
 }

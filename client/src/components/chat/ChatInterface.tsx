@@ -858,7 +858,7 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
       )}
 
       <AnimatePresence>
-        {showCoaching && mode === "coach" && (
+        {showCoaching && mode === "coach" && userId && (
           <motion.div
             initial={{ x: 60, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}

@@ -1,6 +1,5 @@
 import { 
   type User, 
-  type InsertUser,
   type UpsertUser,
   type Conversation,
   type InsertConversation,
@@ -58,12 +57,6 @@ import {
   type InsertClinicianSession,
   type FeatureFlag,
   type InsertFeatureFlag,
-  type AdminKey,
-  type InsertAdminKey,
-  type AdminChallenge,
-  type AdminSession,
-  type UserTwoFactor,
-  type SecondFactorToken,
   type Relationship,
   type InsertRelationship,
   type LifeEvent,
@@ -79,6 +72,7 @@ import {
   type LearningQueueItem,
   type InsertLearningQueueItem,
   users,
+  userIdentities,
   clinicianSessions,
   featureFlags,
   conversations,
@@ -114,23 +108,16 @@ import {
   psychologicalProfile,
   goalProgress,
   learningQueue,
-  adminKeys,
-  adminChallenges,
-  adminSessions,
-  userTwoFactor,
-  secondFactorTokens
 } from "@shared/schema";
-import { randomUUID } from "crypto";
 import { db } from "../db/index";
-import { eq, and, desc, ilike, sql, gte, gt, lt, isNull, count } from "drizzle-orm";
+import { eq, and, desc, ilike, sql, gte, lt, count } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
+  getUserByIdentity(provider: string, providerUserId: string): Promise<User | undefined>;
+  linkUserIdentity(userId: string, provider: string, providerUserId: string): Promise<User>;
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
-  getAllUsers(): Promise<User[]>;
-  createUser(user: InsertUser): Promise<User>;
-  createUserWithNameEmail(name: string, email: string): Promise<User>;
   upsertUser(user: UpsertUser): Promise<User>;
   
   createConversation(conversation: InsertConversation): Promise<Conversation>;
@@ -267,31 +254,6 @@ export interface IStorage {
   getGroupMessages(groupId: number, limit?: number): Promise<GroupMessage[]>;
   moderateGroupMessage(id: number, reason: string): Promise<GroupMessage | undefined>;
 
-  // Admin methods (public-key authenticated; DB is the root of trust)
-  getAdminKeyByPublicKey(publicKey: string): Promise<AdminKey | undefined>;
-  listAdminKeys(): Promise<AdminKey[]>;
-  insertAdminKey(key: InsertAdminKey): Promise<AdminKey>;
-  revokeAdminKey(id: number): Promise<AdminKey | undefined>;
-  touchAdminKey(id: number): Promise<void>;
-  createAdminChallenge(nonce: string, publicKey: string, expiresAt: Date): Promise<void>;
-  consumeAdminChallenge(nonce: string): Promise<AdminChallenge | undefined>;
-  createAdminSession(token: string, adminKeyId: number, expiresAt: Date): Promise<void>;
-  deleteAdminSession(token: string): Promise<void>;
-  getValidAdminSession(token: string): Promise<{ session: AdminSession; key: AdminKey } | undefined>;
-  deleteExpiredAdminChallengesAndSessions(): Promise<void>;
-
-  // Two-factor authentication (TOTP) + trusted devices
-  getTwoFactor(userId: string): Promise<UserTwoFactor | undefined>;
-  upsertTwoFactorSecret(userId: string, encryptedSecret: string): Promise<UserTwoFactor>;
-  enableTwoFactor(userId: string): Promise<void>;
-  deleteTwoFactor(userId: string): Promise<void>;
-  createSecondFactorToken(tokenHash: string, userId: string, kind: string, label: string | null, expiresAt: Date): Promise<SecondFactorToken>;
-  getSecondFactorTokenByHash(tokenHash: string): Promise<SecondFactorToken | undefined>;
-  touchSecondFactorToken(id: number): Promise<void>;
-  listTrustedDevices(userId: string): Promise<SecondFactorToken[]>;
-  deleteSecondFactorToken(id: number, userId: string): Promise<boolean>;
-  deleteUserSecondFactorTokens(userId: string): Promise<void>;
-  deleteExpiredSecondFactorTokens(): Promise<void>;
   listAuditLogs(limit: number, offset: number, action?: string): Promise<AuditLog[]>;
   getModeratedGroupMessages(): Promise<GroupMessage[]>;
   unmoderateGroupMessage(id: number): Promise<GroupMessage | undefined>;
@@ -401,6 +363,39 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  async getUserByIdentity(provider: string, providerUserId: string): Promise<User | undefined> {
+    const [row] = await db
+      .select({ user: users })
+      .from(userIdentities)
+      .innerJoin(users, eq(userIdentities.userId, users.id))
+      .where(
+        and(
+          eq(userIdentities.provider, provider),
+          eq(userIdentities.providerUserId, providerUserId),
+        ),
+      );
+    return row?.user;
+  }
+
+  async linkUserIdentity(
+    userId: string,
+    provider: string,
+    providerUserId: string,
+  ): Promise<User> {
+    await db
+      .insert(userIdentities)
+      .values({ userId, provider, providerUserId })
+      .onConflictDoNothing({
+        target: [userIdentities.provider, userIdentities.providerUserId],
+      });
+
+    const user = await this.getUserByIdentity(provider, providerUserId);
+    if (!user) {
+      throw new Error("Failed to link user identity");
+    }
+    return user;
+  }
+
   async getUserByUsername(username: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.username, username));
     return user;
@@ -412,25 +407,6 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(users)
       .where(sql`lower(${users.email}) = ${normalizedEmail}`);
-    return user;
-  }
-
-  async getAllUsers(): Promise<User[]> {
-    return await db.select().from(users).orderBy(desc(users.createdAt));
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db.insert(users).values(insertUser).returning();
-    return user;
-  }
-
-  async createUserWithNameEmail(name: string, email: string): Promise<User> {
-    const [user] = await db.insert(users).values({
-      username: email,
-      password: randomUUID(),
-      name,
-      email
-    }).returning();
     return user;
   }
 
@@ -1225,148 +1201,6 @@ export class DatabaseStorage implements IStorage {
       .where(eq(groupMessages.id, id))
       .returning();
     return updated;
-  }
-
-  // Admin methods
-  async getAdminKeyByPublicKey(publicKey: string): Promise<AdminKey | undefined> {
-    const [key] = await db.select().from(adminKeys).where(eq(adminKeys.publicKey, publicKey));
-    return key;
-  }
-
-  async listAdminKeys(): Promise<AdminKey[]> {
-    return await db.select().from(adminKeys).orderBy(desc(adminKeys.createdAt));
-  }
-
-  async insertAdminKey(key: InsertAdminKey): Promise<AdminKey> {
-    const [created] = await db.insert(adminKeys).values(key).returning();
-    return created;
-  }
-
-  async revokeAdminKey(id: number): Promise<AdminKey | undefined> {
-    const [updated] = await db.update(adminKeys)
-      .set({ revokedAt: new Date() })
-      .where(eq(adminKeys.id, id))
-      .returning();
-    return updated;
-  }
-
-  async touchAdminKey(id: number): Promise<void> {
-    await db.update(adminKeys).set({ lastUsedAt: new Date() }).where(eq(adminKeys.id, id));
-  }
-
-  async createAdminChallenge(nonce: string, publicKey: string, expiresAt: Date): Promise<void> {
-    await db.insert(adminChallenges).values({ nonce, publicKey, expiresAt });
-  }
-
-  // Atomically marks the challenge used; returns it only if it was unused and unexpired.
-  async consumeAdminChallenge(nonce: string): Promise<AdminChallenge | undefined> {
-    const [updated] = await db.update(adminChallenges)
-      .set({ usedAt: new Date() })
-      .where(and(
-        eq(adminChallenges.nonce, nonce),
-        isNull(adminChallenges.usedAt),
-        gt(adminChallenges.expiresAt, new Date())
-      ))
-      .returning();
-    return updated;
-  }
-
-  async createAdminSession(token: string, adminKeyId: number, expiresAt: Date): Promise<void> {
-    await db.insert(adminSessions).values({ token, adminKeyId, expiresAt });
-  }
-
-  async deleteAdminSession(token: string): Promise<void> {
-    await db.delete(adminSessions).where(eq(adminSessions.token, token));
-  }
-
-  async getValidAdminSession(token: string): Promise<{ session: AdminSession; key: AdminKey } | undefined> {
-    const [row] = await db.select({ session: adminSessions, key: adminKeys })
-      .from(adminSessions)
-      .innerJoin(adminKeys, eq(adminSessions.adminKeyId, adminKeys.id))
-      .where(and(
-        eq(adminSessions.token, token),
-        gt(adminSessions.expiresAt, new Date()),
-        isNull(adminKeys.revokedAt)
-      ));
-    return row;
-  }
-
-  async deleteExpiredAdminChallengesAndSessions(): Promise<void> {
-    const now = new Date();
-    await db.delete(adminChallenges).where(lt(adminChallenges.expiresAt, now));
-    await db.delete(adminSessions).where(lt(adminSessions.expiresAt, now));
-  }
-
-  // Two-factor authentication (TOTP) + trusted devices
-
-  async getTwoFactor(userId: string): Promise<UserTwoFactor | undefined> {
-    const [row] = await db.select().from(userTwoFactor).where(eq(userTwoFactor.userId, userId));
-    return row;
-  }
-
-  async upsertTwoFactorSecret(userId: string, encryptedSecret: string): Promise<UserTwoFactor> {
-    const [row] = await db.insert(userTwoFactor)
-      .values({ userId, secret: encryptedSecret, enabled: false })
-      .onConflictDoUpdate({
-        target: userTwoFactor.userId,
-        set: { secret: encryptedSecret, enabled: false, enabledAt: null },
-      })
-      .returning();
-    return row;
-  }
-
-  async enableTwoFactor(userId: string): Promise<void> {
-    await db.update(userTwoFactor)
-      .set({ enabled: true, enabledAt: new Date() })
-      .where(eq(userTwoFactor.userId, userId));
-  }
-
-  async deleteTwoFactor(userId: string): Promise<void> {
-    await db.delete(userTwoFactor).where(eq(userTwoFactor.userId, userId));
-  }
-
-  async createSecondFactorToken(tokenHash: string, userId: string, kind: string, label: string | null, expiresAt: Date): Promise<SecondFactorToken> {
-    const [row] = await db.insert(secondFactorTokens)
-      .values({ tokenHash, userId, kind, label, expiresAt })
-      .returning();
-    return row;
-  }
-
-  async getSecondFactorTokenByHash(tokenHash: string): Promise<SecondFactorToken | undefined> {
-    const [row] = await db.select().from(secondFactorTokens)
-      .where(eq(secondFactorTokens.tokenHash, tokenHash));
-    return row;
-  }
-
-  async touchSecondFactorToken(id: number): Promise<void> {
-    await db.update(secondFactorTokens)
-      .set({ lastUsedAt: new Date() })
-      .where(eq(secondFactorTokens.id, id));
-  }
-
-  async listTrustedDevices(userId: string): Promise<SecondFactorToken[]> {
-    return await db.select().from(secondFactorTokens)
-      .where(and(
-        eq(secondFactorTokens.userId, userId),
-        eq(secondFactorTokens.kind, "device"),
-        gt(secondFactorTokens.expiresAt, new Date()),
-      ))
-      .orderBy(desc(secondFactorTokens.createdAt));
-  }
-
-  async deleteSecondFactorToken(id: number, userId: string): Promise<boolean> {
-    const result = await db.delete(secondFactorTokens)
-      .where(and(eq(secondFactorTokens.id, id), eq(secondFactorTokens.userId, userId)))
-      .returning();
-    return result.length > 0;
-  }
-
-  async deleteUserSecondFactorTokens(userId: string): Promise<void> {
-    await db.delete(secondFactorTokens).where(eq(secondFactorTokens.userId, userId));
-  }
-
-  async deleteExpiredSecondFactorTokens(): Promise<void> {
-    await db.delete(secondFactorTokens).where(lt(secondFactorTokens.expiresAt, new Date()));
   }
 
   async listAuditLogs(limit: number, offset: number, action?: string): Promise<AuditLog[]> {

@@ -19,7 +19,7 @@ interface Goal {
 }
 
 interface CoachingHighlightsProps {
-  userId?: string;
+  userId: string;
   onSuggestPrompt?: (prompt: string) => void;
 }
 
@@ -47,11 +47,11 @@ export function CoachingHighlights({ userId, onSuggestPrompt }: CoachingHighligh
   const [activePromptIndex, setActivePromptIndex] = useState(0);
 
   useEffect(() => {
-    const stored = localStorage.getItem(`coaching-goals-${userId || 'guest'}`);
+    const stored = localStorage.getItem(`coaching-goals-${userId}`);
     if (stored) {
       setGoals(JSON.parse(stored));
     }
-    const storedStreak = localStorage.getItem(`coaching-streak-${userId || 'guest'}`);
+    const storedStreak = localStorage.getItem(`coaching-streak-${userId}`);
     if (storedStreak) {
       setStreak(parseInt(storedStreak));
     }
@@ -66,7 +66,7 @@ export function CoachingHighlights({ userId, onSuggestPrompt }: CoachingHighligh
 
   const saveGoals = (newGoals: Goal[]) => {
     setGoals(newGoals);
-    localStorage.setItem(`coaching-goals-${userId || 'guest'}`, JSON.stringify(newGoals));
+    localStorage.setItem(`coaching-goals-${userId}`, JSON.stringify(newGoals));
   };
 
   const addGoal = () => {
