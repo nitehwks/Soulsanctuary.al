@@ -69,24 +69,20 @@ function AppRouter() {
     return (
       <Switch>
         <Route path="/sign-in/*?">
-          <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4 gap-4">
-            <SignIn
-              routing="path"
-              path={`${basePath}/sign-in`}
-              signUpUrl={`${basePath}/sign-up`}
-              fallbackRedirectUrl={basePath || "/"}
-            />
-          </div>
+          <SignIn
+            routing="path"
+            path={`${basePath}/sign-in`}
+            signUpUrl={`${basePath}/sign-up`}
+            fallbackRedirectUrl={basePath || "/"}
+          />
         </Route>
         <Route path="/sign-up/*?">
-          <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4 gap-4">
-            <SignUp
-              routing="path"
-              path={`${basePath}/sign-up`}
-              signInUrl={`${basePath}/sign-in`}
-              fallbackRedirectUrl={basePath || "/"}
-            />
-          </div>
+          <SignUp
+            routing="path"
+            path={`${basePath}/sign-up`}
+            signInUrl={`${basePath}/sign-in`}
+            fallbackRedirectUrl={basePath || "/"}
+          />
         </Route>
         <Route path="/sales" component={Sales} />
         <Route path="/" component={Landing} />
