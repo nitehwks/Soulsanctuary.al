@@ -1,12 +1,8 @@
 import { createClerkClient } from "@clerk/express";
-
-type ClerkEnvironment = "development" | "production";
-
-function getClerkEnvironment(): ClerkEnvironment {
-  return process.env.NODE_ENV === "production"
-    ? "production"
-    : "development";
-}
+import {
+  getClerkEnvironment,
+  type ClerkEnvironment,
+} from "@shared/clerkEnvironment";
 
 export function getClerkConfig(environment = getClerkEnvironment()) {
   const devPublishableKey =

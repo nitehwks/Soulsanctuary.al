@@ -50,21 +50,6 @@ async function getOrCreateLocalUser(auth: ReturnType<typeof getAuth>) {
   if (!clerkUserId) return undefined;
 
   const provider = getClerkProvider(auth);
-  const sessionClaims = auth.sessionClaims as
-    | { userId?: unknown }
-    | undefined;
-  const claimedLocalUserId = sessionClaims?.userId;
-
-  if (
-    typeof claimedLocalUserId === "string" &&
-    claimedLocalUserId.length > 0
-  ) {
-    const user =
-      (await storage.getUser(claimedLocalUserId)) ??
-      (await storage.upsertUser({ id: claimedLocalUserId }));
-    return storage.linkUserIdentity(user.id, provider, clerkUserId);
-  }
-
   return getOrCreateIdentityMappedUser(clerkUserId, provider);
 }
 
