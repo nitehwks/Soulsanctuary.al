@@ -10,7 +10,8 @@
     "start": "if [ -f .env.local ]; then NODE_ENV=production node --env-file=.env.local dist/index.cjs; else NODE_ENV=production node dist/index.cjs; fi",
     "check": "tsc",
     "db:push": "if [ -f .env.local ]; then node --env-file=.env.local node_modules/drizzle-kit/bin.cjs push; else drizzle-kit push; fi",
-    "mobile:sync": "npm run build && npx cap sync",
+    "mobile:sync": "CLERK_TARGET=development npm run build && npx cap sync",
+    "mobile:sync:production": "CLERK_TARGET=production npm run build && npx cap sync",
     "mobile:ios": "npm run mobile:sync && npx cap open ios",
     "mobile:android": "npm run mobile:sync && npx cap open android"
   },
@@ -71,7 +72,6 @@
     "embla-carousel-react": "^8.6.0",
     "express": "^4.21.2",
     "framer-motion": "^12.23.24",
-    "http-proxy-middleware": "^4.2.0",
     "i18next": "^25.7.2",
     "i18next-browser-languagedetector": "^8.2.0",
     "input-otp": "^1.4.2",

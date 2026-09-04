@@ -1,6 +1,7 @@
 import type { RequestHandler } from "express";
-import { clerkClient, getAuth } from "@clerk/express";
+import { getAuth } from "@clerk/express";
 import { storage } from "./storage";
+import { appClerkClient } from "./clerkConfig";
 
 declare global {
   namespace Express {
@@ -29,7 +30,7 @@ async function getOrCreateIdentityMappedUser(
   );
   if (existingUser) return existingUser;
 
-  const clerkUser = await clerkClient.users.getUser(clerkUserId);
+  const clerkUser = await appClerkClient.users.getUser(clerkUserId);
   const primaryEmail = clerkUser.primaryEmailAddress;
   const verifiedEmail =
     primaryEmail?.verification?.status === "verified"
@@ -104,7 +105,7 @@ export const requireAdmin: RequestHandler = async (req, res, next) => {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const clerkUser = await clerkClient.users.getUser(clerkUserId);
+    const clerkUser = await appClerkClient.users.getUser(clerkUserId);
     const metadata = clerkUser.publicMetadata as {
       role?: unknown;
       isAdmin?: unknown;

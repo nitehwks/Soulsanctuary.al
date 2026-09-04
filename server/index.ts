@@ -1,15 +1,10 @@
 import express, { type Request, Response, NextFunction } from "express";
 import cors from "cors";
 import { clerkMiddleware } from "@clerk/express";
-import { publishableKeyFromHost } from "@clerk/shared/keys";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
-import {
-  CLERK_PROXY_PATH,
-  clerkProxyMiddleware,
-  getClerkProxyHost,
-} from "./middlewares/clerkProxyMiddleware";
+import { appClerkClient, getClerkConfig } from "./clerkConfig";
 
 const app = express();
 const httpServer = createServer(app);
@@ -21,7 +16,6 @@ declare module "http" {
   }
 }
 
-app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
 app.use(cors({ credentials: true, origin: true }));
 
 app.use(
@@ -34,12 +28,10 @@ app.use(
 
 app.use(express.urlencoded({ extended: false }));
 app.use(
-  clerkMiddleware((req) => ({
-    publishableKey: publishableKeyFromHost(
-      getClerkProxyHost(req) ?? "",
-      process.env.CLERK_PUBLISHABLE_KEY,
-    ),
-  })),
+  clerkMiddleware({
+    clerkClient: appClerkClient,
+    ...getClerkConfig(),
+  }),
 );
 
 export function log(message: string, source = "express") {
