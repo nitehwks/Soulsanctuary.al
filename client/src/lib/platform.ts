@@ -55,6 +55,14 @@ export function isNativeApp(): boolean {
 }
 
 /**
+ * Check specifically for an installed Capacitor app. Electron is treated as
+ * a web Clerk client and does not implement Capacitor's native auth bridge.
+ */
+export function isCapacitorNativeApp(): boolean {
+  return (window as any).Capacitor?.isNativePlatform?.() === true;
+}
+
+/**
  * Check if running as a desktop app (Electron)
  */
 export function isDesktopApp(): boolean {

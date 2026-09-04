@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { useUser } from "@clerk/react";
+import { useAppUser } from "@/lib/auth";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -33,7 +33,7 @@ const CATEGORY_META: Record<
 };
 
 export function FeedbackWorkspace() {
-  const { user } = useUser();
+  const { user } = useAppUser();
   const userId = user?.externalId ?? user?.id;
   const userEmail = user?.primaryEmailAddress?.emailAddress ?? "";
   const { toast } = useToast();

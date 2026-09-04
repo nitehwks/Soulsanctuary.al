@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { useUser } from "@clerk/react";
+import { useAppUser } from "@/lib/auth";
 import { apiFetch } from "@/lib/queryClient";
 
 interface TopicGroup {
@@ -47,7 +47,7 @@ interface KnowledgePanelProps {
 }
 
 export function KnowledgePanel({ isOpen, onClose }: KnowledgePanelProps) {
-  const { user } = useUser();
+  const { user } = useAppUser();
   const [data, setData] = useState<KnowledgeData | null>(null);
   const [loading, setLoading] = useState(false);
   const [expandedTopic, setExpandedTopic] = useState<string | null>(null);

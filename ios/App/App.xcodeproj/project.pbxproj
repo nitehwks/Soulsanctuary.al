@@ -15,6 +15,9 @@
 		504EC3121FED79650016851F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC3101FED79650016851F /* LaunchScreen.storyboard */; };
 		50B271D11FEDC1A000F3C39B /* public in Resources */ = {isa = PBXBuildFile; fileRef = 50B271D01FEDC1A000F3C39B /* public */; };
 		B124E34FE86CCAB3CB0B683F /* Pods_SoulSanctuary.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 39A4C51EA4DAFFA536C1B954 /* Pods_SoulSanctuary.framework */; };
+		C1E24A8B2F00000000000001 /* BridgeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1E24A8B2F00000000000002 /* BridgeViewController.swift */; };
+		C1E24A8B2F00000000000003 /* ClerkNativePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1E24A8B2F00000000000004 /* ClerkNativePlugin.swift */; };
+		C1E24A8B2F00000000000005 /* ClerkKit in Frameworks */ = {isa = PBXBuildFile; productRef = C1E24A8B2F00000000000006 /* ClerkKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -29,6 +32,8 @@
 		504EC3131FED79650016851F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		50B271D01FEDC1A000F3C39B /* public */ = {isa = PBXFileReference; lastKnownFileType = folder; path = public; sourceTree = "<group>"; };
 		BE70FF0560DF4F3DFEE8D451 /* Pods-SoulSanctuary.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SoulSanctuary.release.xcconfig"; path = "Pods/Target Support Files/Pods-SoulSanctuary/Pods-SoulSanctuary.release.xcconfig"; sourceTree = "<group>"; };
+		C1E24A8B2F00000000000002 /* BridgeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeViewController.swift; sourceTree = "<group>"; };
+		C1E24A8B2F00000000000004 /* ClerkNativePlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClerkNativePlugin.swift; sourceTree = "<group>"; };
 		DC6FD1BB037960DB27EAABC9 /* Pods-SoulSanctuary.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SoulSanctuary.debug.xcconfig"; path = "Pods/Target Support Files/Pods-SoulSanctuary/Pods-SoulSanctuary.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -38,6 +43,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				B124E34FE86CCAB3CB0B683F /* Pods_SoulSanctuary.framework in Frameworks */,
+				C1E24A8B2F00000000000005 /* ClerkKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -75,6 +81,8 @@
 			children = (
 				50379B222058CBB4000EE86E /* capacitor.config.json */,
 				504EC3071FED79650016851F /* AppDelegate.swift */,
+				C1E24A8B2F00000000000002 /* BridgeViewController.swift */,
+				C1E24A8B2F00000000000004 /* ClerkNativePlugin.swift */,
 				504EC30B1FED79650016851F /* Main.storyboard */,
 				504EC30E1FED79650016851F /* Assets.xcassets */,
 				504EC3101FED79650016851F /* LaunchScreen.storyboard */,
@@ -111,6 +119,9 @@
 			);
 			dependencies = (
 			);
+			packageProductDependencies = (
+				C1E24A8B2F00000000000006 /* ClerkKit */,
+			);
 			name = SoulSanctuary;
 			productName = SoulSanctuary;
 			productReference = 504EC3041FED79650016851F /* SoulSanctuary.app */;
@@ -142,6 +153,9 @@
 				Base,
 			);
 			mainGroup = 504EC2FB1FED79650016851F;
+			packageReferences = (
+				C1E24A8B2F00000000000007 /* XCRemoteSwiftPackageReference "clerk-ios" */,
+			);
 			productRefGroup = 504EC3051FED79650016851F /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -209,6 +223,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
+				C1E24A8B2F00000000000001 /* BridgeViewController.swift in Sources */,
+				C1E24A8B2F00000000000003 /* ClerkNativePlugin.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -287,7 +303,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
@@ -343,7 +359,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
@@ -361,7 +377,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				INFOPLIST_FILE = App/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -385,7 +401,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				INFOPLIST_FILE = App/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -421,6 +437,23 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+/* Begin XCRemoteSwiftPackageReference section */
+		C1E24A8B2F00000000000007 /* XCRemoteSwiftPackageReference "clerk-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/clerk/clerk-ios.git";
+			requirement = {
+kind = exactVersion;
+version = 1.5.2;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+/* Begin XCSwiftPackageProductDependency section */
+		C1E24A8B2F00000000000006 /* ClerkKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C1E24A8B2F00000000000007 /* XCRemoteSwiftPackageReference "clerk-ios" */;
+			productName = ClerkKit;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 504EC2FC1FED79650016851F /* Project object */;
 }

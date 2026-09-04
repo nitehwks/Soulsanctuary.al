@@ -2,6 +2,8 @@ import { createRoot } from "react-dom/client";
 import { ClerkProvider } from "@clerk/react";
 import { Router as WouterRouter, useLocation } from "wouter";
 import App from "./App";
+import { NativeAppAuthProvider, WebAppAuthProvider } from "./lib/auth";
+import { isCapacitorNativeApp } from "./lib/platform";
 import "./index.css";
 import "./i18n";
 
@@ -22,6 +24,14 @@ if (!clerkPubKey) {
 
 function ClerkRoot() {
   const [, setLocation] = useLocation();
+  if (isCapacitorNativeApp()) {
+    return (
+      <NativeAppAuthProvider publishableKey={clerkPubKey}>
+        <App />
+      </NativeAppAuthProvider>
+    );
+  }
+
   return (
     <ClerkProvider
       publishableKey={clerkPubKey}
@@ -30,7 +40,9 @@ function ClerkRoot() {
       routerPush={(to) => setLocation(stripBase(to))}
       routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
     >
-      <App />
+      <WebAppAuthProvider>
+        <App />
+      </WebAppAuthProvider>
     </ClerkProvider>
   );
 }

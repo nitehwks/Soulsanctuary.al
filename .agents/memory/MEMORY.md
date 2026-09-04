@@ -1,4 +1,5 @@
 - [Capacitor CLI needs Node 22](capacitor-node-version.md) — resolved July 2026 by installing the nodejs-22 module; keep workspace Node >=22 for cap sync.
-- [Clerk in Capacitor iOS](clerk-capacitor-ios.md) — browser social auth cannot return to a bundled capacitor:// origin; use Clerk native-app support, not web-only redirects.
-- [Clerk identity bridge](clerk-identity-bridge.md) — prefer the managed local-ID claim, but persist a subject mapping so standard Clerk sessions preserve application data.
+- [Clerk in Capacitor native apps](clerk-capacitor-native.md) — use official hosted auth and native session storage, never WebView OAuth callbacks or JS token persistence.
+- [Clerk environment policy](clerk-environment-policy.md) — use one complete Development pair everywhere until a complete Production pair and instance are ready.
+- [Clerk identity bridge](clerk-identity-bridge.md) — bind Clerk issuer/subject to stable local ownership; use verified email only for the initial legacy link.
 - [Drizzle post-merge prompts](drizzle-post-merge-prompts.md) — push --force still asks rename questions; post-merge schema sync must supply non-interactive answers.

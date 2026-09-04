@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import { useUser } from "@clerk/react";
+import { useAppUser } from "@/lib/auth";
 import { useVoiceChat } from "@/hooks/useVoiceChat";
 import { useKeyboard } from "@/hooks/useKeyboard";
 import { apiFetch } from "@/lib/queryClient";
@@ -66,7 +66,7 @@ export function ChatInterface({ mode = "chat", onModelsUsed }: ChatInterfaceProp
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const messageInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
-  const { user, isLoaded: isUserLoaded } = useUser();
+  const { user, isLoaded: isUserLoaded } = useAppUser();
   const { height: keyboardHeight } = useKeyboard();
   const userId = user?.externalId ?? user?.id;
 

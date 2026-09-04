@@ -1,10 +1,10 @@
 import { Switch, Route } from "wouter";
-import { useAuth as useClerkAuth, SignIn, SignUp, useClerk } from "@clerk/react";
+import { SignIn, SignUp } from "@clerk/react";
 import { queryClient, setClerkTokenGetter } from "./lib/queryClient";
 import { QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { applyPlatformClasses, isNativeApp } from "@/lib/platform";
+import { applyPlatformClasses, isCapacitorNativeApp, isNativeApp } from "@/lib/platform";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import Dashboard from "@/pages/Dashboard";
@@ -20,34 +20,29 @@ import Sales from "@/pages/Sales";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Loader2 } from "lucide-react";
 import { useEffect, lazy, Suspense, useRef } from "react";
+import { useAppAuth } from "./lib/auth";
 
 const AdminDashboard = lazy(() => import("@/pages/AdminDashboard"));
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 function ClerkQueryClientCacheInvalidator() {
-  const { addListener } = useClerk();
+  const { user } = useAppAuth();
   const queryClient = useQueryClient();
   const prevUserIdRef = useRef<string | null | undefined>(undefined);
 
   useEffect(() => {
-    const unsubscribe = addListener(({ user }) => {
-      const userId = user?.id ?? null;
-      if (
-        prevUserIdRef.current !== undefined &&
-        prevUserIdRef.current !== userId
-      ) {
-        queryClient.clear();
-      }
-      prevUserIdRef.current = userId;
-    });
-    return unsubscribe;
-  }, [addListener, queryClient]);
+    const userId = user?.id ?? null;
+    if (prevUserIdRef.current !== undefined && prevUserIdRef.current !== userId) {
+      queryClient.clear();
+    }
+    prevUserIdRef.current = userId;
+  }, [queryClient, user?.id]);
 
   return null;
 }
 
 function AppRouter() {
-  const { getToken, isLoaded, isSignedIn } = useClerkAuth();
+  const { getToken, isLoaded, isSignedIn, startHostedAuth, error } = useAppAuth();
 
   // Native API calls are cross-origin and need a fresh Clerk bearer token.
   // Web API calls use Clerk's same-origin session cookies instead.
@@ -66,6 +61,31 @@ function AppRouter() {
   }
 
   if (!isSignedIn) {
+    if (isCapacitorNativeApp()) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-background p-6">
+          <div className="w-full max-w-sm space-y-4 text-center">
+            <h1 className="text-xl font-semibold text-foreground">Welcome</h1>
+            <p className="text-sm text-muted-foreground">Sign in to continue.</p>
+            {error ? <p className="text-sm text-destructive">{error}</p> : null}
+            <button
+              type="button"
+              className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+              onClick={() => void startHostedAuth("signIn")}
+            >
+              Sign in
+            </button>
+            <button
+              type="button"
+              className="w-full rounded-md border border-input px-4 py-2 text-sm font-medium text-foreground"
+              onClick={() => void startHostedAuth("signUp")}
+            >
+              Create account
+            </button>
+          </div>
+        </div>
+      );
+    }
     return (
       <Switch>
         <Route path="/sign-in/*?">

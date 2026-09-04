@@ -1,10 +1,10 @@
 ---
 name: Clerk identity bridge
-description: Identity precedence when managed and standard Clerk sessions share local application data.
+description: Stable local ownership when external Clerk subjects replace legacy application identities.
 ---
 
-Use a verified managed local-user claim as the primary application-data key, and bind that key to the authenticated Clerk issuer and subject. When the claim is absent, resolve the subject through the durable identity binding; verified email is allowed only for the initial legacy link.
+Resolve authenticated users through a durable Clerk issuer-and-subject mapping. A verified email match is allowed only to create the initial migration link to an existing local user.
 
-**Why:** Replit-managed Clerk preserves migrated local IDs in session claims, while standard Clerk sessions may expose only the provider subject. Treating the provider subject directly as a local ID can orphan existing data, but rejecting it can lock out valid users.
+**Why:** External Clerk subjects are not application user IDs. Trusting a session claim or client-submitted ID as a local owner can misbind data, while using the provider subject directly can orphan legacy records.
 
-**How to apply:** Clerk API calls use the authenticated provider subject. Local data uses the claimed local ID when present, otherwise the persisted issuer-and-subject mapping. Never trust a client-submitted user ID as the bridge.
+**How to apply:** Authenticate with Clerk, look up the persisted issuer/subject binding, and use the bound local ID for application data. Permit verified-email matching only during first-time migration. Never use client input or arbitrary session claims as the bridge.

@@ -12,7 +12,7 @@ import {
   User,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
-import { useClerk, useUser } from "@clerk/react";
+import { useAppAuth, useAppUser } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import {
   Sheet,
@@ -50,8 +50,8 @@ export function AppMenu({
   onOpenChange: (open: boolean) => void;
 }) {
   const [location, navigate] = useLocation();
-  const { user } = useUser();
-  const { signOut } = useClerk();
+  const { user } = useAppUser();
+  const { signOut } = useAppAuth();
 
   const close = () => onOpenChange(false);
 
@@ -136,7 +136,7 @@ export function AppMenu({
               variant="ghost"
               className="w-full justify-start gap-3 h-12 text-destructive"
               onClick={() => {
-                void signOut({ redirectUrl: "/" });
+                void signOut();
                 close();
               }}
               data-testid="menu-logout"
