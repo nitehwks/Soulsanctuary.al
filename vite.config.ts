@@ -8,15 +8,19 @@ export default defineConfig(() => {
   const useProductionClerk =
     process.env.CLERK_TARGET === "production" ||
     process.env.REPLIT_DEPLOYMENT === "1";
-  const clerkPublishableKey = process.env[
-    useProductionClerk
-      ? "EXTERNAL_CLERK_PROD_PUBLISHABLE_KEY"
-      : "EXTERNAL_CLERK_DEV_PUBLISHABLE_KEY"
-  ];
+  const prodPublishableKey =
+    process.env.EXTERNAL_CLERK_PROD_PUBLISHABLE_KEY;
+  const hasProductionKeys = Boolean(
+    prodPublishableKey && process.env.EXTERNAL_CLERK_PROD_SECRET_KEY,
+  );
+  const clerkPublishableKey =
+    useProductionClerk && hasProductionKeys
+      ? prodPublishableKey
+      : process.env.EXTERNAL_CLERK_DEV_PUBLISHABLE_KEY;
 
   if (!clerkPublishableKey) {
     throw new Error(
-      `Missing external Clerk ${useProductionClerk ? "production" : "development"} publishable key.`,
+      "Missing external Clerk Development publishable key.",
     );
   }
 

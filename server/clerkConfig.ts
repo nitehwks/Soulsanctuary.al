@@ -9,21 +9,23 @@ function getClerkEnvironment(): ClerkEnvironment {
 }
 
 export function getClerkConfig(environment = getClerkEnvironment()) {
-  const isProduction = environment === "production";
-  const publishableKey = process.env[
-    isProduction
-      ? "EXTERNAL_CLERK_PROD_PUBLISHABLE_KEY"
-      : "EXTERNAL_CLERK_DEV_PUBLISHABLE_KEY"
-  ];
-  const secretKey = process.env[
-    isProduction
-      ? "EXTERNAL_CLERK_PROD_SECRET_KEY"
-      : "EXTERNAL_CLERK_DEV_SECRET_KEY"
-  ];
+  const devPublishableKey =
+    process.env.EXTERNAL_CLERK_DEV_PUBLISHABLE_KEY;
+  const devSecretKey = process.env.EXTERNAL_CLERK_DEV_SECRET_KEY;
+  const prodPublishableKey =
+    process.env.EXTERNAL_CLERK_PROD_PUBLISHABLE_KEY;
+  const prodSecretKey = process.env.EXTERNAL_CLERK_PROD_SECRET_KEY;
+  const hasProductionKeys = Boolean(prodPublishableKey && prodSecretKey);
+  const useProductionKeys =
+    environment === "production" && hasProductionKeys;
+  const publishableKey = useProductionKeys
+    ? prodPublishableKey
+    : devPublishableKey;
+  const secretKey = useProductionKeys ? prodSecretKey : devSecretKey;
 
   if (!publishableKey || !secretKey) {
     throw new Error(
-      `Missing external Clerk ${environment} credentials. Configure both the publishable and secret key in Replit Secrets.`,
+      "Missing external Clerk Development credentials. Configure both the publishable and secret key in Replit Secrets.",
     );
   }
 
