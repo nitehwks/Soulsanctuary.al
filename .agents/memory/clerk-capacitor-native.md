@@ -8,3 +8,5 @@ Keep Clerk React's standard web flow for browsers. Bundled Capacitor apps must u
 **Why:** Google and other OAuth providers do not reliably support embedded WebView authentication, and a bundled Capacitor origin is not a normal hosted HTTPS callback. Ad hoc redirect relays or JavaScript token persistence weaken reliability and security.
 
 **How to apply:** Use ClerkKit hosted auth on iOS and Clerk Android hosted auth on Android. Let each SDK own its callback and secure session persistence. Do not revive WebView OAuth callbacks, custom OAuth relays, or JavaScript token storage.
+
+The external Development instance has Native API enabled with both native applications registered. Its iOS associated-domain entry is configured for the Development Frontend API host.
