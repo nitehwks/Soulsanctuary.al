@@ -31,6 +31,9 @@ app.use(
   clerkMiddleware({
     clerkClient: appClerkClient,
     ...getClerkConfig(),
+    // External Clerk uses its own Frontend API, not the former managed proxy.
+    // Explicit empty string overrides deployment-injected proxy defaults.
+    proxyUrl: "",
   }),
 );
 
