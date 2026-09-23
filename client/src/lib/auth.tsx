@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -102,19 +103,34 @@ export function NativeAppAuthProvider({
     user: null,
   });
   const [error, setError] = useState<string | null>(null);
+  const initialized = useRef(false);
+  const authOperation = useRef(false);
+  const stateRevision = useRef(0);
 
   const refresh = useCallback(async () => {
-    const nextState = await ClerkNative.getState();
-    setState(nextState);
-    setError(null);
+    if (!initialized.current || authOperation.current) return;
+    const revision = stateRevision.current;
+    try {
+      const nextState = await ClerkNative.getState();
+      if (initialized.current && revision === stateRevision.current) {
+        setState(nextState);
+        setError(null);
+      }
+    } catch (cause) {
+      if (initialized.current && revision === stateRevision.current) {
+        setError(cause instanceof Error ? cause.message : "Unable to refresh authentication.");
+      }
+    }
   }, []);
 
   useEffect(() => {
     let active = true;
+    initialized.current = false;
     void (async () => {
       try {
         const nextState = await ClerkNative.configure({ publishableKey });
         if (active) {
+          initialized.current = true;
           setState(nextState);
           setError(null);
         }
@@ -127,6 +143,8 @@ export function NativeAppAuthProvider({
     })();
     return () => {
       active = false;
+      initialized.current = false;
+      stateRevision.current++;
     };
   }, [publishableKey]);
 
@@ -151,23 +169,34 @@ export function NativeAppAuthProvider({
 
   const startHostedAuth = useCallback(
     async (mode: "signIn" | "signUp") => {
+      if (!initialized.current || authOperation.current) return;
+      authOperation.current = true;
+      stateRevision.current++;
       try {
         setError(null);
         const nextState = await ClerkNative.startHostedAuth({ mode });
         setState(nextState);
       } catch (cause) {
         setError(cause instanceof Error ? cause.message : "Unable to start authentication.");
+      } finally {
+        authOperation.current = false;
       }
     },
     [refresh],
   );
 
   const signOut = useCallback(async () => {
+    if (!initialized.current || authOperation.current) return;
+    authOperation.current = true;
+    stateRevision.current++;
     try {
       const nextState = await ClerkNative.signOut();
       setState(nextState);
+      setError(null);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Unable to sign out.");
+    } finally {
+      authOperation.current = false;
     }
   }, [refresh]);
 

@@ -33,7 +33,9 @@ class ClerkNativePlugin : Plugin() {
             try {
                 Clerk.initialize(activity, key)
                 publishableKey = key
-                Clerk.isInitialized.filter { it }.first()
+                kotlinx.coroutines.withTimeout(15_000) {
+                    Clerk.isInitialized.filter { it }.first()
+                }
                 call.resolve(state())
             } catch (error: Exception) {
                 call.reject("Unable to configure Clerk", error.message, error)
@@ -127,7 +129,7 @@ class ClerkNativePlugin : Plugin() {
     private fun state(): JSObject {
         val user = Clerk.user
         val state = JSObject()
-            .put("isLoaded", true)
+            .put("isLoaded", Clerk.isInitialized.value)
             .put("isSignedIn", Clerk.isSignedIn)
 
         if (user == null) {

@@ -5,9 +5,11 @@ description: Credential-pair rule while the external Clerk production instance i
 
 Use the external Clerk Development publishable and secret keys together for every target until a complete external Production pair is available. Never mix one environment's publishable key with the other's secret key.
 
-**Why:** The external Production publishable key exists without its matching secret, and the Production instance cannot yet be activated under the current Clerk configuration. A complete Development pair is safer and internally consistent.
+**Why:** The external Production pair was previously incomplete. Both credentials are now present, but credential presence alone does not confirm native registration, provider configuration, or production-instance readiness.
 
 **How to apply:** Keep release/mobile production builds on the Development fallback until both Production credentials are present and the production-instance migration is ready. Treat switching environments as a coordinated client-and-server change.
+
+Do not pair a Development mobile bundle with a Production backend. Confirm instance readiness before the coordinated switch; adding the second Production credential makes the current release selector choose Production.
 
 External Clerk must explicitly disable inherited managed proxy defaults.
 

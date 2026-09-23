@@ -7,7 +7,7 @@
 		<string>applinks:soulsanctuary.app</string>
 		<string>applinks:*.replit.app</string>
 		<string>applinks:*.replit.dev</string>
-		<string>webcredentials:credible-lizard-74.accounts.dev</string>
+		<string>webcredentials:credible-lizard-74.clerk.accounts.dev</string>
 	</array>
 </dict>
 </plist>
